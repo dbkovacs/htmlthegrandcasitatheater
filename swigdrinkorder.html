@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grand Caista Theater - Drink Order</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+        .bg-brand-dark {
+             background-color: #380000;
+        }
+        .bg-brand-card {
+            background-color: #2a0000;
+        }
+        .text-brand-gold {
+            color: #fde047; /* Tailwind's yellow-300 */
+        }
+        .bg-brand-gold {
+            background-color: #fde047; /* Tailwind's yellow-300 */
+        }
+        .hover\:bg-brand-gold-dark:hover {
+            background-color: #facc15; /* Tailwind's yellow-400 */
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-brand-card shadow-2xl rounded-2xl w-full max-w-2xl border-2 border-yellow-300/20 p-8 md:p-12 text-center">
+        
+        <h1 class="text-4xl font-bold mb-6 text-brand-gold font-cinzel text-shadow">Care for a Drink?</h1>
+
+        <div class="mb-8 pb-8 border-b-2 border-yellow-300/20 flex flex-col items-center">
+            <a id="doordash-link" href="#" target="_blank" class="w-full max-w-md bg-brand-gold hover:bg-brand-gold-dark text-stone-900 font-bold py-4 px-6 rounded-lg text-center transition duration-300 ease-in-out transform hover:scale-105 shadow-lg font-cinzel flex items-center justify-center text-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Join Group Order
+            </a>
+            <!-- UPDATED: Moved and emphasized rhyming text -->
+            <p class="text-yellow-300/80 text-xl mt-6 italic leading-relaxed">
+                The movie's picked, the seats are prime,<br>so Stacy says it's beverage time!<br>A tasty treat to make you smile,<br>so join the order, stay a while.<br>It's on the house, a bubbly delight,<br>to make your movie night just right!
+            </p>
+        </div>
+
+        <div class="my-8">
+            <img src="cover_image_1699279352.png.720x405_q85_crop_upscale.png" alt="Swig Drink Banner" class="w-full rounded-lg shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/600x200/1a202c/fde047?text=Banner+Image';">
+        </div>
+        
+        <div class="flex justify-between items-center gap-4 my-8">
+            <img src="Gemini_Generated_Image_ilgefjilgefjilge.png" alt="Popcorn" class="w-1/2 rounded-lg shadow-md" onerror="this.onerror=null;this.src='https://placehold.co/250x250/1a202c/fde047?text=Popcorn';">
+            <img src="Gemini_Generated_Image_id28axid28axid28.png" alt="Candy" class="w-1/2 rounded-lg shadow-md" onerror="this.onerror=null;this.src='https://placehold.co/250x250/1a202c/fde047?text=Candy';">
+        </div>
+
+        <p class="text-gray-400 mb-8">
+            Freshly popped popcorn and a selection of classic movie candies will also be provided.
+        </p>
+
+    </div>
+
+    <!-- Return to Main Page Button -->
+    <a href="index.html" class="fixed bottom-4 left-4 text-sm font-cinzel text-yellow-300/50 hover:text-brand-gold transition-colors flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Return to Main Page
+    </a>
+
+    <script>
+        // ===================================================================
+        // === EDIT YOUR DOOR DASH LINK HERE ===
+        // ===================================================================
+        const config = {
+            doorDashUrl: "https://drd.sh/cart/fbZIjJ66yNXfocSF/"
+        };
+        // ===================================================================
+        // === NO NEED TO EDIT BELOW THIS LINE ===
+        // ===================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const doorDashLink = document.getElementById('doordash-link');
+            if (config.doorDashUrl) {
+                doorDashLink.href = config.doorDashUrl;
+            } else {
+                // If the link is empty, disable the button
+                doorDashLink.classList.add('opacity-50', 'cursor-not-allowed');
+                doorDashLink.textContent = 'Group Order Closed';
+                doorDashLink.href = '#';
+            }
+        });
+    </script>
+</body>
+</html>
