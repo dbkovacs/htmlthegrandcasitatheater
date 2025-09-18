@@ -3,80 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Signup - The Grand Casita Theater</title>
+    <title>Pick a Movie - The Grand Casita Theater</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="layout-styles.css">
 </head>
-<body class="text-gray-200">
+<body class="bg-brand-dark text-white">
 
-    <div class="container mx-auto px-4 py-8 md:py-16 max-w-3xl">
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-4xl">
 
         <header class="text-center mb-12">
-            <h1 class="font-playfair text-4xl md:text-6xl text-amber-400">The Grand Casita Theater</h1>
-            <p class="text-xl text-gray-400 mt-2">Create Your Perfect Movie Night</p>
+            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Pick a Movie</h1>
+            <p class="text-xl text-gray-300 mt-2">Submit your choice for an upcoming movie night!</p>
         </header>
 
-        <main class="bg-gray-800 p-8 rounded-2xl shadow-2xl shadow-black/50">
+        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
             <form id="signupForm">
                 <div class="flex flex-col md:flex-row gap-8 md:gap-12">
                     
                     <div class="flex-1">
-                        <div class="space-y-8">
+                        <div class="space-y-6">
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Your Name</label>
-                                <input type="text" name="name" id="name" required class="w-full bg-gray-700 border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition">
+                                <label for="name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name</label>
+                                <input type="text" name="name" id="name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
                             </div>
 
                             <div>
-                                <label for="movie" class="block text-sm font-medium text-gray-300 mb-2">Movie Title</label>
-                                <input type="text" name="movie" id="movie" required class="w-full bg-gray-700 border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition">
+                                <label for="movie" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Movie Title</label>
+                                <input type="text" name="movie" id="movie" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
                             </div>
 
-                            <fieldset>
-                                <legend class="block text-sm font-medium text-gray-300 mb-3">Audience</legend>
-                                <div class="flex items-center gap-x-6">
-                                    <div class="flex items-center">
-                                        <input id="kidsWelcome" name="audience" type="radio" value="Kids Welcome" checked class="h-4 w-4 text-amber-500 border-gray-600 focus:ring-amber-500">
-                                        <label for="kidsWelcome" class="ml-3 block text-sm font-medium leading-6 text-gray-300">Kids Welcome</label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input id="adultsOnly" name="audience" type="radio" value="Adults Only" class="h-4 w-4 text-amber-500 border-gray-600 focus:ring-amber-500">
-                                        <label for="adultsOnly" class="ml-3 block text-sm font-medium leading-6 text-gray-300">Adults Only</label>
-                                    </div>
-                                </div>
-                            </fieldset>
+                             <div>
+                                <label for="noteToDavid" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Note to David</label>
+                                <textarea name="noteToDavid" id="noteToDavid" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Hoping you can find the 1960's version with Paul Newman'"></textarea>
+                            </div>
 
                             <div>
-                                <label for="greeting" class="block text-sm font-medium text-gray-300 mb-2">Greeting for Your Guests</label>
-                                <textarea name="greeting" id="greeting" rows="4" class="w-full bg-gray-700 border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition" placeholder="e.g., 'Welcome movie lovers! Get ready for an epic night!'"></textarea>
+                                <label for="greeting" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Greeting for Guests</label>
+                                <textarea name="greeting" id="greeting" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Welcome movie lovers!'"></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-col items-center justify-start pt-2 md:w-28">
-                        <label for="temperature" class="block text-sm font-medium text-gray-300 mb-4 text-center">
-                            Set Theater Temp
-                            <span class="text-xs text-gray-400 block mt-1">(We'll do our best!)</span>
-                            <span id="tempValue" class="font-bold text-amber-400 text-2xl block mt-2">70&deg;F</span>
+                    <div class="flex flex-col items-center justify-start pt-2 md:w-32">
+                        <label for="temperature" class="block text-sm font-medium text-gray-300 mb-4 text-center font-cinzel tracking-wider">
+                            Theater Temp
+                            <span id="tempValue" class="font-bold text-brand-gold text-3xl block mt-2">75&deg;F</span>
                         </label>
-                        <div class="h-64 w-full flex justify-center">
-                             <input type="range" name="temperature" id="temperature" min="60" max="80" value="70" class="vertical-slider">
+                        <div class="h-64 w-full flex justify-center py-2">
+                             <input type="range" name="temperature" id="temperature" min="70" max="80" value="75" class="thermostat-slider">
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-10">
-                    <button type="submit" id="submitButton" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
-                        Submit Movie Night
+                <div class="mt-10 border-t border-yellow-300/10 pt-6">
+                    <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg">
+                        Submit Movie Request
                     </button>
                 </div>
             </form>
             
-            <div id="responseMessage" class="mt-6 text-center text-lg"></div>
+            <div id="responseMessage" class="mt-6 text-center text-lg h-8"></div>
         </main>
+
+        <footer class="text-center p-4 text-xs text-gray-500 mt-8">
+            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+            <p id="build-timestamp" class="mt-2"></p>
+        </footer>
     </div>
 
     <script type="module" src="signups.js"></script>
