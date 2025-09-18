@@ -1,35 +1,71 @@
+<!--
+    Folder: /
+    File: admin.html
+    Extension: .html
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <link rel="stylesheet" href="layout-styles.css"> 
+    <title>Admin Panel - The Grand Casita Theater</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="layout-styles.css">
 </head>
-<body>
-    <h1>Admin Panel</h1>
+<body class="bg-brand-dark text-white">
 
-    <div id="login-container">
-        <h2>Login</h2>
-        <form id="login-form">
-            <label for="login-email">Email:</label>
-            <input type="email" id="login-email" required>
-            <br><br>
-            <label for="login-password">Password:</label>
-            <input type="password" id="login-password" required>
-            <br><br>
-            <button type="submit">Log In</button>
-        </form>
-    </div>
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-4xl">
 
-    <div id="dashboard" style="display:none;">
-        <h2>Dashboard</h2>
-        <h3>Pending Submissions</h3>
-<div id="submissions-container">
-    </div>
-        <button id="logout-button">Log Out</button>
+        <header class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Admin Panel</h1>
+        </header>
+
+        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
+            <!-- Login Container -->
+            <div id="login-container">
+                <h2 class="font-cinzel text-3xl text-center text-brand-gold text-shadow mb-6">Login</h2>
+                <form id="login-form" class="max-w-sm mx-auto space-y-6">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Email</label>
+                        <input type="email" id="login-email" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Password</label>
+                        <input type="password" id="login-password" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="btn-velvet primary w-full">Log In</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dashboard (hidden by default) -->
+            <div id="dashboard" style="display:none;">
+                <div class="flex justify-between items-center mb-8 border-b border-yellow-300/10 pb-4">
+                    <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
+                    <button id="logout-button" class="btn-velvet">Log Out</button>
+                </div>
+                <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
+                <div id="submissions-container" class="space-y-6">
+                    <!-- Pending movies will be loaded here by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
+            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+            <p id="build-timestamp" class="mt-2"></p>
+        </footer>
     </div>
 
     <script type="module" src="admin.js"></script>
+
 </body>
 </html>
+<!--
+    File: admin.html
+    Build Timestamp: 2025-09-18T16:00:00-06:00
+-->

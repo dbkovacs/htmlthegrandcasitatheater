@@ -1,3 +1,9 @@
+/*
+    Folder: /
+    File: admin.js
+    Extension: .js
+*/
+
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -8,11 +14,12 @@ const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('login-form');
 const logoutButton = document.getElementById('logout-button');
 const submissionsContainer = document.getElementById('submissions-container');
+const timestampContainer = document.getElementById('build-timestamp');
 
 // --- Main Function to Load Submissions ---
 async function loadSubmissions() {
     if (!submissionsContainer) return;
-    submissionsContainer.innerHTML = 'Loading submissions...';
+    submissionsContainer.innerHTML = '<p class="text-gray-400">Loading submissions...</p>';
 
     try {
         const moviesRef = collection(db, 'movies');
@@ -20,7 +27,7 @@ async function loadSubmissions() {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            submissionsContainer.innerHTML = '<p>No pending submissions found.</p>';
+            submissionsContainer.innerHTML = '<p class="text-gray-400">No pending submissions found.</p>';
             return;
         }
 
@@ -29,45 +36,52 @@ async function loadSubmissions() {
             const movie = doc.data();
             const movieId = doc.id;
             const movieCard = document.createElement('div');
-            movieCard.className = 'submission-card';
+            // This is the new themed card container
+            movieCard.className = 'bg-black/40 p-6 rounded-lg border border-yellow-300/10 space-y-4';
             movieCard.setAttribute('data-id', movieId);
 
+            // This is the new, themed HTML for each card.
             movieCard.innerHTML = `
-                <h4>${movie.movieTitle}</h4>
-                <p>Submitted by: ${movie.hostName}</p>
-                <hr>
-                <div class="admin-actions">
+                <div>
+                    <h4 class="font-cinzel text-2xl text-brand-gold">${movie.movieTitle}</h4>
+                    <p class="text-sm text-gray-400">Submitted by: ${movie.hostName}</p>
+                    ${movie.noteToDavid ? `<p class="text-sm text-gray-300 mt-2 italic border-l-2 border-yellow-300/20 pl-3"><strong>Note:</strong> ${movie.noteToDavid}</p>` : ''}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="showDate-${movieId}">Show Date:</label>
-                        <input type="date" id="showDate-${movieId}" class="show-date-input" required>
+                        <label for="showDate-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Show Date</label>
+                        <input type="date" id="showDate-${movieId}" class="show-date-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition">
                     </div>
                     <div>
-                        <label for="trailerLink-${movieId}">Trailer Link:</label>
-                        <input type="url" id="trailerLink-${movieId}" class="trailer-link-input" placeholder="https://youtube.com/watch?v=...">
+                        <label for="trailerLink-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Trailer Link</label>
+                        <input type="url" id="trailerLink-${movieId}" class="trailer-link-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="https://youtube.com/watch?v=...">
                     </div>
-                    <div>
-                        <label for="posterFile-${movieId}">Movie Poster:</label>
-                        <div class="poster-upload-area" id="posterArea-${movieId}">
-                            <span>Drag & Drop Poster Here</span>
-                        </div>
-                        <input type="file" id="posterFile-${movieId}" class="poster-file-input" accept="image/*" style="display:none;">
+                </div>
+                <div>
+                    <label for="posterFile-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Movie Poster</label>
+                    <div class="poster-upload-area" id="posterArea-${movieId}">
+                        <span>Drag & Drop Poster Here</span>
                     </div>
-                    <button class="approve-btn">Approve</button>
-                    <button class="decline-btn">Decline</button>
+                    <input type="file" id="posterFile-${movieId}" class="poster-file-input" accept="image/*" style="display:none;">
+                </div>
+                <div class="flex gap-4 pt-2">
+                    <button class="btn-velvet primary approve-btn flex-1">Approve</button>
+                    <button class="btn-velvet decline-btn flex-1">Decline</button>
                 </div>
             `;
             submissionsContainer.appendChild(movieCard);
         });
     } catch (error) {
         console.error("Error loading submissions:", error);
-        submissionsContainer.innerHTML = '<p>Error loading submissions. Check console.</p>';
+        submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions. Check console.</p>';
     }
 }
+
 
 // --- Event Handlers for Admin Actions ---
 submissionsContainer.addEventListener('click', async (e) => {
     const target = e.target;
-    const card = target.closest('.submission-card');
+    const card = target.closest('.submission-card, .bg-black\\/40'); // Handle new class name
     if (!card) return;
 
     const movieId = card.getAttribute('data-id');
@@ -93,8 +107,7 @@ submissionsContainer.addEventListener('click', async (e) => {
             const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
             await uploadBytes(posterRef, posterFile);
             const posterURL = await getDownloadURL(posterRef);
-            console.log('File uploaded, URL:', posterURL);
-
+            
             // 2. Update Document in Firestore
             const movieDocRef = doc(db, 'movies', movieId);
             await updateDoc(movieDocRef, {
@@ -115,7 +128,7 @@ submissionsContainer.addEventListener('click', async (e) => {
         }
     }
 
-    // --- Decline Button Logic (Bonus) ---
+    // --- Decline Button Logic ---
     if (target.classList.contains('decline-btn')) {
         if (confirm('Are you sure you want to decline this movie? It will be deleted.')) {
             try {
@@ -130,7 +143,7 @@ submissionsContainer.addEventListener('click', async (e) => {
     }
 });
 
-// --- Drag and Drop Logic (Bonus) ---
+// --- Drag and Drop Logic ---
 submissionsContainer.addEventListener('dragover', (e) => {
     e.preventDefault();
     const area = e.target.closest('.poster-upload-area');
@@ -154,7 +167,7 @@ submissionsContainer.addEventListener('drop', (e) => {
 });
 
 
-// --- Authentication Logic (no changes below this line) ---
+// --- Authentication Logic ---
 onAuthStateChanged(auth, user => {
     if (user) {
         loginContainer.style.display = 'none';
@@ -179,3 +192,16 @@ loginForm.addEventListener('submit', async (e) => {
 logoutButton.addEventListener('click', () => {
     signOut(auth).catch((error) => console.error("Error signing out:", error));
 });
+
+
+// Add visible build timestamp to the footer
+document.addEventListener('DOMContentLoaded', () => {
+    if (timestampContainer) {
+        timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
+    }
+});
+
+/*
+    File: admin.js
+    Build Timestamp: 2025-09-18T16:05:00-06:00
+*/
