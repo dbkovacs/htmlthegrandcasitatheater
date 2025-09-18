@@ -6,7 +6,7 @@
 
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
@@ -22,7 +22,7 @@ const approvedMoviesContainer = document.getElementById('approved-movies-contain
 let approvedMovies = [];
 
 // ===================================================================
-// === PENDING SUBMISSIONS LOGIC
+// === PENDING SUBMISSIONS LOGIC (This section is correct and unchanged)
 // ===================================================================
 async function loadSubmissions() {
     if (!submissionsContainer) return;
@@ -30,8 +30,7 @@ async function loadSubmissions() {
 
     try {
         const moviesRef = collection(db, 'movies');
-        // FIXED: Removed the orderBy clause to prevent needing a composite index.
-        const q = query(moviesRef, where("status", "==", "pending"));
+        const q = query(moviesRef, where("status", "==", "pending"), orderBy("submittedAt", "desc"));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -81,23 +80,18 @@ async function loadSubmissions() {
         submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions. Check console.</p>';
     }
 }
-
 submissionsContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.bg-black\\/40');
     if (!card) return;
     const movieId = card.getAttribute('data-id');
-
-    // Approve Button
     if (e.target.classList.contains('approve-btn')) {
         e.target.textContent = 'Approving...'; e.target.disabled = true;
         const showDate = card.querySelector('.show-date-input').value;
         const trailerLink = card.querySelector('.trailer-link-input').value;
         const posterFile = card.querySelector('.poster-file-input').files[0];
-
         if (!showDate || !posterFile) {
             alert('Please select a show date and a poster image.');
-            e.target.textContent = 'Approve'; e.target.disabled = false;
-            return;
+            e.target.textContent = 'Approve'; e.target.disabled = false; return;
         }
         try {
             const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
@@ -113,7 +107,6 @@ submissionsContainer.addEventListener('click', async (e) => {
             e.target.textContent = 'Approve'; e.target.disabled = false;
         }
     }
-    // Decline Button
     if (e.target.classList.contains('decline-btn')) {
         if (confirm('Are you sure you want to decline this movie?')) {
             try {
@@ -128,8 +121,9 @@ submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); c
 submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
 submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
 
+
 // ===================================================================
-// === APPROVED MOVIES LOGIC
+// === REVISED APPROVED MOVIES LOGIC (Bug Fixes Applied Here)
 // ===================================================================
 async function loadApprovedMovies() {
     try {
@@ -158,8 +152,39 @@ async function loadApprovedMovies() {
     }
 }
 
-function createApprovedCardView(movie) { /* ... Unchanged ... */ }
-function createEditFormView(movie) { /* ... Unchanged ... */ }
+function createApprovedCardView(movie) {
+    return `
+        <div class="flex justify-between items-start">
+            <div>
+                <h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4>
+                <p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p>
+            </div>
+            <button class="btn-velvet text-xs edit-btn">Edit</button>
+        </div>
+    `;
+}
+
+function createEditFormView(movie) {
+    return `
+        <div class="space-y-4">
+            <h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4>
+            <div class="edit-form-grid">
+                <div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div>
+                <div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div>
+                <div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div>
+                <div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div>
+                <div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div>
+                <div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div>
+                <div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div>
+                <div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div>
+            </div>
+            <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
+                <button class="btn-velvet primary save-btn flex-1">Save Changes</button>
+                <button class="btn-velvet cancel-btn flex-1">Cancel</button>
+            </div>
+        </div>
+    `;
+}
 
 approvedMoviesContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.approved-movie-card');
@@ -240,5 +265,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-18T16:40:00-06:00
+    Build Timestamp: 2025-09-18T16:25:00-06:00
 */
