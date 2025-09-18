@@ -8,68 +8,117 @@ import { db } from './firebase-config.js';
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- DOM Element References ---
-const tempSlider = document.getElementById('temperature');
-const tempValue = document.getElementById('tempValue');
 const form = document.getElementById('signupForm');
 const submitButton = document.getElementById('submitButton');
 const responseMessage = document.getElementById('responseMessage');
+const timestampContainer = document.getElementById('build-timestamp');
+const tempValueDisplay = document.getElementById('tempValue');
+const thermostatContainer = document.getElementById('thermostat-container');
+const thermostatFill = document.getElementById('thermostat-fill');
+const thermostatThumb = document.getElementById('thermostat-thumb');
+const temperatureInput = document.getElementById('temperature');
 
-// --- Script to handle temperature slider value display ---
-if (tempSlider && tempValue) {
-    tempSlider.addEventListener('input', (event) => {
-        tempValue.innerHTML = `${event.target.value}&deg;F`;
-    });
+// --- Custom Thermostat Logic ---
+const minTemp = 70;
+const maxTemp = 80;
+let isDragging = false;
+
+function updateThermostat(yPosition) {
+    const bounds = thermostatContainer.getBoundingClientRect();
+    const percentage = 1 - Math.max(0, Math.min(1, (yPosition - bounds.top) / bounds.height));
+    const temp = Math.round(percentage * (maxTemp - minTemp) + minTemp);
+    
+    // Update the visuals
+    const visualPercent = (temp - minTemp) / (maxTemp - minTemp) * 100;
+    thermostatFill.style.height = `${visualPercent}%`;
+    thermostatThumb.style.bottom = `calc(${visualPercent}% - 16px)`; // Center thumb
+    tempValueDisplay.innerHTML = `${temp}&deg;F`;
+    
+    // Update the hidden input for form submission
+    temperatureInput.value = temp;
 }
 
-// --- Script to handle form submission to Firestore ---
+thermostatContainer.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    updateThermostat(e.clientY);
+});
+thermostatContainer.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    updateThermostat(e.touches[0].clientY);
+});
+window.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        updateThermostat(e.clientY);
+    }
+});
+window.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+        updateThermostat(e.touches[0].clientY);
+    }
+});
+window.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+window.addEventListener('touchend', () => {
+    isDragging = false;
+});
+
+
+// --- Form Submission Logic ---
 if (form) {
     form.addEventListener('submit', async function(e) {
-        e.preventDefault(); // Prevent the default form submission
+        e.preventDefault();
         
-        // Show loading state
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
         responseMessage.textContent = '';
         responseMessage.classList.remove('text-green-400', 'text-red-400');
 
         try {
-            // 1. Collect the form data into an object matching our Firestore schema.
             const signupData = {
                 hostName: document.getElementById('name').value,
                 movieTitle: document.getElementById('movie').value,
-                audience: document.querySelector('input[name="audience"]:checked').value,
-                thermostat: parseInt(document.getElementById('temperature').value, 10),
+                noteToDavid: document.getElementById('noteToDavid').value,
                 greeting: document.getElementById('greeting').value,
-                status: "pending", // Automatically set the status to pending
-                submittedAt: serverTimestamp() // Add a server-side timestamp
+                thermostat: parseInt(temperatureInput.value, 10), // Get value from hidden input
+                status: "pending",
+                submittedAt: serverTimestamp()
             };
 
-            // 2. Add a new document to the "movies" collection in Firestore.
-            const docRef = await addDoc(collection(db, "movies"), signupData);
-            console.log("Document written with ID: ", docRef.id);
+            await addDoc(collection(db, "movies"), signupData);
 
-            // 3. Show success message and reset the form.
-            responseMessage.textContent = 'Success! Your movie night has been submitted for approval.';
+            responseMessage.textContent = 'Success! Your movie has been submitted for approval.';
             responseMessage.classList.add('text-green-400');
             form.reset(); 
-            if (tempValue) {
-                tempValue.innerHTML = '70&deg;F'; // Reset slider display
-            }
-
+            updateThermostat(thermostatContainer.getBoundingClientRect().height / 2); // Reset to middle
+            
         } catch (error) {
             console.error('Error adding document: ', error);
             responseMessage.textContent = 'Oops! Something went wrong. Please try again.';
             responseMessage.classList.add('text-red-400');
         } finally {
-            // Restore button state
             submitButton.disabled = false;
-            submitButton.textContent = 'Submit Movie Night';
+            submitButton.textContent = 'Submit Movie Request';
         }
     });
 }
 
-// Add build timestamp to the footer comment in the HTML
+// --- Page Load Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-    const timestampComment = document.createComment(`Build Timestamp: ${new Date().toLocaleString()}`);
-    document.body.appendChild(timestampComment);
+    // Set initial thermostat position
+    const initialTemp = parseInt(temperatureInput.value, 10);
+    const initialPercent = (initialTemp - minTemp) / (maxTemp - minTemp);
+    const bounds = thermostatContainer.getBoundingClientRect();
+    const initialY = bounds.top + (1 - initialPercent) * bounds.height;
+    updateThermostat(initialY);
+
+    // Set visible build timestamp
+    if (timestampContainer) {
+        timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
+    }
 });
+
+/*
+    File: signups.js
+    Build Timestamp: 2025-09-18T15:45:00-06:00
+*/

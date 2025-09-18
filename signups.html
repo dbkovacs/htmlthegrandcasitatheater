@@ -1,3 +1,8 @@
+<!--
+    Folder: /
+    File: signups.html
+    Extension: .html
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,23 +28,28 @@
             <form id="signupForm">
                 <div class="flex flex-col md:flex-row gap-8 md:gap-12">
                     
+                    <!-- Left side: Main form fields -->
                     <div class="flex-1">
                         <div class="space-y-6">
+                            <!-- Your Name -->
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name</label>
                                 <input type="text" name="name" id="name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
                             </div>
 
+                            <!-- Movie Title -->
                             <div>
                                 <label for="movie" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Movie Title</label>
                                 <input type="text" name="movie" id="movie" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
                             </div>
 
-                             <div>
+                             <!-- Note to David -->
+                            <div>
                                 <label for="noteToDavid" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Note to David</label>
                                 <textarea name="noteToDavid" id="noteToDavid" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Hoping you can find the 1960's version with Paul Newman'"></textarea>
                             </div>
 
+                            <!-- Greeting Message -->
                             <div>
                                 <label for="greeting" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Greeting for Guests</label>
                                 <textarea name="greeting" id="greeting" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Welcome movie lovers!'"></textarea>
@@ -47,17 +57,22 @@
                         </div>
                     </div>
 
+                    <!-- Right side: Custom Vertical Thermostat -->
                     <div class="flex flex-col items-center justify-start pt-2 md:w-32">
-                        <label for="temperature" class="block text-sm font-medium text-gray-300 mb-4 text-center font-cinzel tracking-wider">
-                            Theater Temp
+                        <div class="text-center mb-4">
+                            <label class="block text-sm font-medium text-gray-300 font-cinzel tracking-wider">Theater Temp</label>
                             <span id="tempValue" class="font-bold text-brand-gold text-3xl block mt-2">75&deg;F</span>
-                        </label>
-                        <div class="h-64 w-full flex justify-center py-2">
-                             <input type="range" name="temperature" id="temperature" min="70" max="80" value="75" class="thermostat-slider">
                         </div>
+                        <div id="thermostat-container" class="relative w-10 h-64 cursor-pointer select-none">
+                            <div class="thermostat-track"></div>
+                            <div id="thermostat-fill" class="thermostat-fill"></div>
+                            <div id="thermostat-thumb" class="thermostat-thumb"></div>
+                        </div>
+                        <input type="hidden" id="temperature" name="temperature" value="75">
                     </div>
                 </div>
 
+                <!-- Submit Button -->
                 <div class="mt-10 border-t border-yellow-300/10 pt-6">
                     <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg">
                         Submit Movie Request
@@ -68,7 +83,7 @@
             <div id="responseMessage" class="mt-6 text-center text-lg h-8"></div>
         </main>
 
-        <footer class="text-center p-4 text-xs text-gray-500 mt-8">
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
             <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
             <p id="build-timestamp" class="mt-2"></p>
         </footer>
@@ -78,3 +93,7 @@
 
 </body>
 </html>
+<!--
+    File: signups.html
+    Build Timestamp: 2025-09-18T15:45:00-06:00
+-->
