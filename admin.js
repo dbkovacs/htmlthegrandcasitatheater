@@ -18,11 +18,11 @@ const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
 
-// --- In-memory store for movie data to reduce reads ---
+// --- In-memory store for movie data ---
 let approvedMovies = [];
 
 // ===================================================================
-// === PENDING SUBMISSIONS LOGIC (This section is now fixed)
+// === PENDING SUBMISSIONS LOGIC
 // ===================================================================
 async function loadSubmissions() {
     if (!submissionsContainer) return;
@@ -30,7 +30,6 @@ async function loadSubmissions() {
 
     try {
         const moviesRef = collection(db, 'movies');
-        // FIXED: The query is now simplified to only filter by status, which does not require a special index.
         const q = query(moviesRef, where("status", "==", "pending"));
         const querySnapshot = await getDocs(q);
 
@@ -122,9 +121,8 @@ submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); c
 submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
 submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
 
-
 // ===================================================================
-// === APPROVED MOVIES LOGIC (This section is correct and unchanged)
+// === APPROVED MOVIES LOGIC (Updated with Status Flags)
 // ===================================================================
 async function loadApprovedMovies() {
     try {
@@ -140,11 +138,29 @@ async function loadApprovedMovies() {
             approvedMoviesContainer.innerHTML = '<p class="text-gray-400">No approved movies found.</p>';
             return;
         }
+
+        const now = new Date();
+        let nextCutoff = new Date(now);
+        nextCutoff.setHours(1, 0, 0, 0);
+        const dayOfWeek = nextCutoff.getDay();
+        const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+        nextCutoff.setDate(now.getDate() + daysUntilFriday);
+        const currentMovie = approvedMovies.find(movie => new Date(movie.showDate + 'T00:00:00') < nextCutoff) || null;
+        
         approvedMovies.forEach(movie => {
+            let status = 'past';
+            if (currentMovie) {
+                if (movie.id === currentMovie.id) {
+                    status = 'current';
+                } else if (new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00')) {
+                    status = 'upcoming';
+                }
+            }
+            
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
             card.setAttribute('data-id', movie.id);
-            card.innerHTML = createApprovedCardView(movie);
+            card.innerHTML = createApprovedCardView(movie, status);
             approvedMoviesContainer.appendChild(card);
         });
     } catch (error) {
@@ -153,12 +169,41 @@ async function loadApprovedMovies() {
     }
 }
 
-function createApprovedCardView(movie) {
-    return `<div class="flex justify-between items-start"><div><h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4><p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p></div><button class="btn-velvet text-xs edit-btn">Edit</button></div>`;
+function createApprovedCardView(movie, status) {
+    return `
+        <div class="status-flag status-flag-${status}"></div>
+        <div class="pl-4">
+             <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4>
+                    <p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p>
+                </div>
+                <button class="btn-velvet text-xs edit-btn">Edit</button>
+            </div>
+        </div>
+    `;
 }
 
 function createEditFormView(movie) {
-    return `<div class="space-y-4"><h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4><div class="edit-form-grid"><div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div><div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div><div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div><div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div><div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div><div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div><div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div><div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div></div><div class="flex gap-4 pt-4 border-t border-yellow-300/10"><button class="btn-velvet primary save-btn flex-1">Save Changes</button><button class="btn-velvet cancel-btn flex-1">Cancel</button></div></div>`;
+    return `
+        <div class="space-y-4">
+            <h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4>
+            <div class="edit-form-grid">
+                <div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div>
+                <div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div>
+                <div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div>
+                <div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div>
+                <div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div>
+                <div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div>
+                <div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div>
+                <div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div>
+            </div>
+            <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
+                <button class="btn-velvet primary save-btn flex-1">Save Changes</button>
+                <button class="btn-velvet cancel-btn flex-1">Cancel</button>
+            </div>
+        </div>
+    `;
 }
 
 approvedMoviesContainer.addEventListener('click', async (e) => {
@@ -166,9 +211,10 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     if (!card) return;
     const movieId = card.getAttribute('data-id');
     const movieData = approvedMovies.find(m => m.id === movieId);
+    if (!movieData) return;
 
     if (e.target.classList.contains('edit-btn')) {
-        if (movieData) card.innerHTML = createEditFormView(movieData);
+        card.innerHTML = createEditFormView(movieData);
     }
     if (e.target.classList.contains('save-btn')) {
         const updatedData = {
@@ -184,21 +230,20 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
         try {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
             const index = approvedMovies.findIndex(m => m.id === movieId);
-            if (index !== -1) approvedMovies[index] = { id: movieId, ...updatedData };
-            card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData });
+            if (index !== -1) approvedMovies[index] = { ...approvedMovies[index], ...updatedData };
+            card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData }, card.querySelector('.status-flag').className.split('-').pop());
         } catch (error) {
             console.error("Error updating document:", error);
             alert("Failed to save changes.");
         }
     }
     if (e.target.classList.contains('cancel-btn')) {
-        if (movieData) card.innerHTML = createApprovedCardView(movieData);
+        card.innerHTML = createApprovedCardView(movieData, card.querySelector('.status-flag').className.split('-').pop());
     }
 });
 
-
 // ===================================================================
-// === AUTHENTICATION & INITIALIZATION (This section is correct and unchanged)
+// === AUTHENTICATION & INITIALIZATION
 // ===================================================================
 onAuthStateChanged(auth, user => {
     if (user) {
@@ -233,5 +278,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-18T16:25:00-06:00
+    Build Timestamp: 2025-09-18T16:30:00-06:00
 */

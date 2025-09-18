@@ -304,7 +304,61 @@ body {
     color: #fde047; /* yellow-300 */
     background-color: #374151; /* gray-700 */
 }
+/*
+    Folder: /
+    File: layout-styles.css
+    Extension: .css
+*/
 
+/* === Original Theme Styles (Keep these) === */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #380000;
+}
+/* ... existing styles ... */
+
+
+/* === Admin Panel Styles (Keep existing) === */
+.submission-card {
+    border: 1px solid #4a5568;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background-color: #1f2937;
+}
+/* ... existing admin styles ... */
+
+
+/* === NEW STYLES FOR APPROVED MOVIE STATUS FLAGS (Add these to the bottom) === */
+.approved-movie-card {
+    position: relative; /* Required for positioning the flag */
+    overflow: hidden; /* Keeps the flag corners neat */
+}
+
+.status-flag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+}
+
+.status-flag-current {
+    background-color: #fde047; /* Gold */
+}
+
+.status-flag-upcoming {
+    background-color: #3b82f6; /* Blue */
+}
+
+.status-flag-past {
+    background-color: #6b7280; /* Gray */
+}
+
+/*
+    File: layout-styles.css
+    Build Timestamp: 2025-09-18T16:30:00-06:00
+*/
 /*
     File: layout-styles.css
     Build Timestamp: 2025-09-18T16:25:00-06:00
