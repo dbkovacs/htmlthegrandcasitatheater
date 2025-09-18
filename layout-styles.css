@@ -109,6 +109,53 @@ body {
     background-color: #4b5563; /* gray-600 */
 }
 
+/* === New Thermostat Slider Styles === */
+input[type=range].thermostat-slider {
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr;
+    width: 24px;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border-radius: 12px;
+    background: #111;
+    border: 2px solid #4a3300;
+}
+input[type=range].thermostat-slider::-webkit-slider-runnable-track {
+    width: 24px;
+    height: 100%;
+    cursor: pointer;
+    background: linear-gradient(to top, #4c0000, #fde047);
+    border-radius: 12px;
+}
+input[type=range].thermostat-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 3px solid #000;
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    background: #fde047;
+    cursor: pointer;
+    margin-left: -6px;
+    box-shadow: 0 0 5px rgba(253, 224, 71, 0.7);
+}
+input[type=range].thermostat-slider::-moz-range-track {
+    width: 24px;
+    height: 100%;
+    cursor: pointer;
+    background: linear-gradient(to top, #4c0000, #fde047);
+    border-radius: 12px;
+}
+input[type=range].thermostat-slider::-moz-range-thumb {
+    border: 3px solid #000;
+    height: 26px;
+    width: 26px;
+    border-radius: 50%;
+    background: #fde047;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(253, 224, 71, 0.7);
+}
 /*
     File: layout-styles.css
     Build Timestamp: 2025-09-18T15:25:35-06:00
