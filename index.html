@@ -87,6 +87,17 @@
                 </div>
             </div>
 
+             <div id="adults-only-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+                <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-red-500/50">
+                    <h3 class="text-2xl font-bold mb-4 text-red-400 font-cinzel">Age Restriction</h3>
+                    <p class="text-gray-200 mb-6">This screening is for adults only (21+). Please confirm you meet the age requirement to proceed.</p>
+                    <div class="flex justify-center gap-4">
+                        <button id="confirm-age-button" class="w-full px-6 py-3 bg-yellow-300 hover:bg-yellow-400 text-stone-900 font-bold rounded-lg transition-colors font-cinzel">I Confirm</button>
+                        <button id="cancel-age-button" class="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors font-cinzel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
             <section id="coming-soon-section" class="py-12">
                 <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-center text-shadow font-cinzel mb-8">Coming Soon</h2>
                 <div id="coming-soon-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -104,6 +115,7 @@
 
     <footer class="text-center p-4 text-xs text-gray-500">
         <a href="admin.html" style="text-decoration: none; color: inherit;">&copy;</a> 2025 The Grand Casita Theater
+        <p id="build-timestamp" class="mt-1"></p>
     </footer>
 
     <script type="module" src="app.js"></script>
