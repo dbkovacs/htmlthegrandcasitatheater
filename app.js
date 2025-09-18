@@ -6,7 +6,7 @@ const mainContent = document.getElementById('main-content');
 const comingSoonContainer = document.getElementById('coming-soon-container');
 const historyContainer = document.getElementById('history-container');
 
-// --- Main Function to Load and Display Movies ---
+// --- Main Function to Load and Display Movies --- dkedit 1:53
 async function loadAndDisplayMovies() {
     try {
         // 1. Fetch all "Approved" movies from Firestore, ordered by date
