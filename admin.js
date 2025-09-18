@@ -22,7 +22,7 @@ const approvedMoviesContainer = document.getElementById('approved-movies-contain
 let approvedMovies = [];
 
 // ===================================================================
-// === PENDING SUBMISSIONS LOGIC (This section is correct and unchanged)
+// === PENDING SUBMISSIONS LOGIC (This section is now fixed)
 // ===================================================================
 async function loadSubmissions() {
     if (!submissionsContainer) return;
@@ -30,7 +30,8 @@ async function loadSubmissions() {
 
     try {
         const moviesRef = collection(db, 'movies');
-        const q = query(moviesRef, where("status", "==", "pending"), orderBy("submittedAt", "desc"));
+        // FIXED: The query is now simplified to only filter by status, which does not require a special index.
+        const q = query(moviesRef, where("status", "==", "pending"));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -123,7 +124,7 @@ submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const
 
 
 // ===================================================================
-// === REVISED APPROVED MOVIES LOGIC (Bug Fixes Applied Here)
+// === APPROVED MOVIES LOGIC (This section is correct and unchanged)
 // ===================================================================
 async function loadApprovedMovies() {
     try {
@@ -131,7 +132,7 @@ async function loadApprovedMovies() {
         const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(q);
         
-        approvedMovies = []; // Clear and refill the local store
+        approvedMovies = [];
         querySnapshot.forEach(doc => approvedMovies.push({ id: doc.id, ...doc.data() }));
 
         approvedMoviesContainer.innerHTML = '';
@@ -153,52 +154,22 @@ async function loadApprovedMovies() {
 }
 
 function createApprovedCardView(movie) {
-    return `
-        <div class="flex justify-between items-start">
-            <div>
-                <h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4>
-                <p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p>
-            </div>
-            <button class="btn-velvet text-xs edit-btn">Edit</button>
-        </div>
-    `;
+    return `<div class="flex justify-between items-start"><div><h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4><p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p></div><button class="btn-velvet text-xs edit-btn">Edit</button></div>`;
 }
 
 function createEditFormView(movie) {
-    return `
-        <div class="space-y-4">
-            <h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4>
-            <div class="edit-form-grid">
-                <div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div>
-                <div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div>
-                <div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div>
-                <div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div>
-                <div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div>
-                <div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div>
-                <div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div>
-                <div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div>
-            </div>
-            <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
-                <button class="btn-velvet primary save-btn flex-1">Save Changes</button>
-                <button class="btn-velvet cancel-btn flex-1">Cancel</button>
-            </div>
-        </div>
-    `;
+    return `<div class="space-y-4"><h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4><div class="edit-form-grid"><div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div><div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div><div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div><div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div><div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div><div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div><div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div><div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div></div><div class="flex gap-4 pt-4 border-t border-yellow-300/10"><button class="btn-velvet primary save-btn flex-1">Save Changes</button><button class="btn-velvet cancel-btn flex-1">Cancel</button></div></div>`;
 }
 
 approvedMoviesContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.approved-movie-card');
     if (!card) return;
     const movieId = card.getAttribute('data-id');
-    
-    // Find the movie data from our in-memory array to avoid extra reads
     const movieData = approvedMovies.find(m => m.id === movieId);
 
-    // Edit Button
     if (e.target.classList.contains('edit-btn')) {
         if (movieData) card.innerHTML = createEditFormView(movieData);
     }
-    // Save Button
     if (e.target.classList.contains('save-btn')) {
         const updatedData = {
             movieTitle: card.querySelector(`#edit-movieTitle-${movieId}`).value,
@@ -212,17 +183,14 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
         };
         try {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
-            // Update the in-memory store
             const index = approvedMovies.findIndex(m => m.id === movieId);
             if (index !== -1) approvedMovies[index] = { id: movieId, ...updatedData };
-            // Revert card to display view
             card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData });
         } catch (error) {
             console.error("Error updating document:", error);
             alert("Failed to save changes.");
         }
     }
-    // Cancel Button
     if (e.target.classList.contains('cancel-btn')) {
         if (movieData) card.innerHTML = createApprovedCardView(movieData);
     }
@@ -230,7 +198,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
 
 // ===================================================================
-// === AUTHENTICATION & INITIALIZATION
+// === AUTHENTICATION & INITIALIZATION (This section is correct and unchanged)
 // ===================================================================
 onAuthStateChanged(auth, user => {
     if (user) {
