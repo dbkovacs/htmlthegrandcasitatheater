@@ -8,101 +8,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #380000; /* Fallback color */
-        }
-        .font-cinzel {
-            font-family: 'Cinzel', serif;
-        }
-        .text-shadow {
-            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-        }
-        .bg-brand-dark {
-            background-color: #380000;
-        }
-        .bg-brand-card {
-            background-color: #2a0000;
-        }
-        .text-brand-gold {
-            color: #fde047; /* Tailwind's yellow-300 */
-        }
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-            overflow: hidden;
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        <a href="admin.html" style="text-decoration: none; color: inherit;">&copy;</a>
-        /* =================================
-          Velvet Curtain Button Style
-          ================================= */
-        .btn-velvet {
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #000;
-            color: #fde047;
-            background-color: #4c0000;
-            background-image: linear-gradient(45deg, rgba(0,0,0,0.2) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2) 75%, transparent 75%, transparent);
-            background-size: 20px 20px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
-            transition: all 0.3s ease;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-velvet:not(.disabled):hover {
-            background-color: #fde047;
-            color: #4c0000;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 0 10px rgba(255, 255, 255, 0.3);
-            background-image: none;
-        }
-        .btn-velvet.primary {
-            background-color: #fde047;
-            color: #4c0000;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-            background-image: none;
-        }
-        .btn-velvet.primary:not(.disabled):hover {
-            background-color: #facc15;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.4), 0 0 10px rgba(255, 255, 255, 0.3);
-        }
-        .btn-velvet.disabled {
-            background-color: #4a5568; /* gray-700 */
-            color: #a0aec0; /* gray-500 */
-            cursor: not-allowed;
-            background-image: none;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-            opacity: 0.6;
-        }
-    </style>
+    <link rel="stylesheet" href="layout-styles.css">
 </head>
 <body class="bg-brand-dark text-white">
 
     <div class="container mx-auto px-4 py-8 md:py-12 relative"> 
         <div class="relative max-w-4xl mx-auto">
             <main id="main-content" class="bg-brand-card shadow-2xl rounded-2xl overflow-hidden border-2 border-yellow-300/20 relative z-10">
-                <!-- Movie Poster at the top -->
                 <div id="poster-container" class="p-4 md:p-8 flex flex-col items-center justify-center bg-black/20">
                     <div class="relative w-full max-w-sm mx-auto">
-                        <img src="https://thegrandcasitatheater.com/Gemini_Generated_Image_q6fw4mq6fw4mq6fwtransflogov4.png" alt="Ornate Frame" class="w-full h-auto" onerror="this.onerror=null; this.src='https://placehold.co/600x900/000000/FFFFFF?text=Frame'">
+                        <img src="https://thegrandcasitatheater.com/Gemini_Generated_Image_q6fw4mq6fw4mq6fwtransflogov4.png" alt="Ornate Frame" class="w-full h-auto">
                         <div class="absolute" style="top: 34%; left: 20%; width: 60%; height: 65%;">
                             <img id="movie-poster" class="w-full h-full" src="" alt="Movie Poster" style="object-fit: contain;">
                         </div>
                     </div>
                 </div>
-                <!-- Invitation Details below -->
                 <div id="invitation-details" class="p-8 md:p-12 flex flex-col justify-center">
                     <p class="text-lg md:text-xl text-brand-gold font-semibold mb-2 text-shadow font-cinzel">You're Invited By</p>
                     <h1 id="inviter-name" class="text-4xl md:text-5xl font-bold mb-4 text-shadow font-cinzel"></h1>
@@ -114,7 +34,6 @@
                     <p id="movie-tagline" class="text-md text-gray-300 mt-2 mb-4"></p>
                     
                     <div class="my-4 space-y-3 text-gray-300">
-                        <!-- Event Info -->
                         <div class="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300/70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             <span id="event-date-display" class="font-semibold"></span>
@@ -140,7 +59,6 @@
                         <p id="audience-message" class="text-gray-300 mt-1 text-sm h-4"></p>
                     </div>
 
-                    <!-- === VELVET CURTAIN ACTIONS === -->
                     <div id="actions-container" class="mt-6 w-full space-y-2">
                         <div class="flex">
                             <button id="trailer-link" class="btn-velvet w-full">Watch Trailer</button>
@@ -157,9 +75,17 @@
                             <a href="products.html" id="products-button" class="btn-velvet w-full">Products</a>
                         </div>
                     </div>
-                    <!-- === END VELVET CURTAIN ACTIONS === -->
                 </div>
-                </main>
+            </main>
+
+            <div id="trailer-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+                <div class="bg-gray-900 rounded-lg overflow-hidden shadow-xl w-full max-w-4xl relative border-2 border-yellow-300/50">
+                    <button id="close-trailer-modal" class="absolute top-2 right-4 text-white text-4xl hover:text-gray-400 z-10">&times;</button>
+                    <div class="video-container">
+                        <iframe id="youtube-player" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
 
             <section id="coming-soon-section" class="py-12">
                 <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-center text-shadow font-cinzel mb-8">Coming Soon</h2>
@@ -173,365 +99,13 @@
                     </div>
             </section>
 
-        </div> </div> ```
-
----
-
-### ## Step 2: Add the Display Logic to `app.js`
-
-Now, we'll replace the content of your **`app.js`** file with the complete logic to fetch, sort, and display all the approved movies from Firestore.
-
-This code does the following:
-1.  Fetches all movies with `status: "Approved"`.
-2.  Determines the "Current Movie" based on your rule (the one showing this week, starting from last Friday).
-3.  Sorts all other movies into "Coming Soon" or "History" arrays.
-4.  Renders the HTML for each movie into the correct container.
-
-Replace the entire contents of your **`app.js`** file with this new code:
-
-```javascript
-import { db } from './firebase-config.js';
-import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// --- DOM Element References ---
-const mainContent = document.getElementById('main-content');
-const comingSoonContainer = document.getElementById('coming-soon-container');
-const historyContainer = document.getElementById('history-container');
-
-// --- Main Function to Load and Display Movies ---
-async function loadAndDisplayMovies() {
-    try {
-        // 1. Fetch all "Approved" movies from Firestore, ordered by date
-        const moviesRef = collection(db, 'movies');
-        const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "desc"));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-            mainContent.innerHTML = '<p class="text-center p-8">No movies found. Check back soon!</p>';
-            return;
-        }
-
-        // 2. Process and Sort Movies
-        const allMovies = [];
-        querySnapshot.forEach(doc => {
-            allMovies.push({ id: doc.id, ...doc.data() });
-        });
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to the start of today
-
-        // Find the start of the current movie week (last Friday)
-        let lastFriday = new Date(today);
-        lastFriday.setDate(lastFriday.getDate() - (lastFriday.getDay() + 2) % 7);
-        lastFriday.setHours(1, 0, 0, 0); // 1 AM as per your rule
-
-        let currentMovie = null;
-        const comingSoonMovies = [];
-        const historyMovies = [];
-
-        for (const movie of allMovies) {
-            const showDate = new Date(movie.showDate + 'T00:00:00'); // Treat date as local time
-            
-            if (showDate >= lastFriday && !currentMovie) {
-                currentMovie = movie;
-            } else if (showDate > today) {
-                comingSoonMovies.push(movie);
-            } else {
-                historyMovies.push(movie);
-            }
-        }
-        // comingSoonMovies should be ascending
-        comingSoonMovies.reverse();
-
-        // 3. Render the movies into their sections
-        if (currentMovie) {
-            renderCurrentMovie(currentMovie);
-        } else {
-            // What to show if there's no current movie?
-            mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie scheduled for this week. See what's coming soon!</h2></div>`;
-        }
-        renderComingSoon(comingSoonMovies);
-        renderHistory(historyMovies);
-
-    } catch (error) {
-        console.error("Error loading movies:", error);
-        mainContent.innerHTML = '<p>Error loading movie data. Please try again later.</p>';
-    }
-}
-
-// --- Render Functions ---
-function renderCurrentMovie(movie) {
-    // This populates your main movie display area
-    document.getElementById('inviter-name').textContent = movie.hostName || 'The Grand Casita Theater';
-    document.getElementById('inviter-comment').textContent = movie.greeting || `Invites you to a screening of:`;
-    document.getElementById('movie-title').textContent = movie.movieTitle;
-    document.getElementById('movie-poster').src = movie.posterURL;
-    document.getElementById('trailer-link').setAttribute('data-trailer-url', movie.trailerLink); // We can wire this up later
-    document.getElementById('event-date-display').textContent = new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    // Add other fields as needed
-}
-
-function renderComingSoon(movies) {
-    if (!comingSoonContainer) return;
-    if (movies.length === 0) {
-        document.getElementById('coming-soon-section').style.display = 'none';
-        return;
-    }
-    comingSoonContainer.innerHTML = '';
-    movies.forEach(movie => {
-        const movieCard = document.createElement('div');
-        movieCard.className = 'bg-brand-card rounded-lg overflow-hidden shadow-lg';
-        movieCard.innerHTML = `
-            <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover">
-            <div class="p-2 text-center">
-                <h3 class="text-sm font-bold font-cinzel">${movie.movieTitle}</h3>
-                <p class="text-xs text-gray-400">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-            </div>
-        `;
-        comingSoonContainer.appendChild(movieCard);
-    });
-}
-
-function renderHistory(movies) {
-    if (!historyContainer) return;
-     if (movies.length === 0) {
-        document.getElementById('history-section').style.display = 'none';
-        return;
-    }
-    historyContainer.innerHTML = '';
-    movies.forEach((movie, index) => {
-        const movieCard = document.createElement('div');
-        const isReversed = index % 2 !== 0; // Alternate layout
-        movieCard.className = `flex flex-col md:flex-row ${isReversed ? 'md:flex-row-reverse' : ''} bg-brand-card rounded-lg overflow-hidden shadow-lg items-center`;
-
-        movieCard.innerHTML = `
-            <div class="md:w-1/4 w-1/2">
-                <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover">
-            </div>
-            <div class="p-4 md:w-3/4">
-                <h3 class="text-xl font-bold font-cinzel">${movie.movieTitle}</h3>
-                <p class="text-sm text-gray-300">Hosted by: ${movie.hostName}</p>
-                <p class="text-sm text-gray-400">Screened on: ${new Date(movie.showDate + 'T00:00:00').toLocaleDateString()}</p>
-            </div>
-        `;
-        historyContainer.appendChild(movieCard);
-    });
-}
-
-// --- Run on Page Load ---
-document.addEventListener('DOMContentLoaded', loadAndDisplayMovies);
-            </main>
-
-            <!-- Trailer Modal -->
-            <div id="trailer-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
-                <div class="bg-gray-900 rounded-lg overflow-hidden shadow-xl w-full max-w-4xl relative border-2 border-yellow-300/50">
-                    <button id="close-trailer-modal" class="absolute top-2 right-4 text-white text-4xl hover:text-gray-400 z-10">&times;</button>
-                    <div class="video-container">
-                        <iframe id="youtube-player" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                </div>
-            </div>
-            <!-- Adults Only Modal -->
-            <div id="adults-only-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
-                <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-red-500/50">
-                    <h3 class="text-2xl font-bold mb-4 text-red-400 font-cinzel">Age Restriction</h3>
-                    <p class="text-gray-200 mb-6">This screening is for adults only (21+). Please confirm you meet the age requirement to proceed.</p>
-                    <div class="flex justify-center gap-4">
-                        <button id="confirm-age-button" class="w-full px-6 py-3 bg-yellow-300 hover:bg-yellow-400 text-stone-900 font-bold rounded-lg transition-colors font-cinzel">I Confirm</button>
-                        <button id="cancel-age-button" class="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors font-cinzel">Cancel</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-    <script>
-        // ===================================================================
-        // === EDIT YOUR INVITATION DETAILS HERE ===
-        // ===================================================================
-        const config = {
-            inviterName: "Casey",
-            inviterComment: "A Film Chosen by Casey",
-            movieTitle: "Clueless",
-            movieTagline: "\"Clothes. Popularity. Is there a problem here?”",
-            moviePosterUrl: "https://thegrandcasitatheater.com/clueless.jpg",
-            youtubeTrailerUrl: "https://www.youtube.com/embed/Mgjwq1ZzdPQ?si=5tUGaf2VpgZa4OPa",
-            // NEW: Paste your DoorDash Group Order URL here. If empty, the button will be disabled.
-            doorDashGroupOrderUrl: "", // Example: "https://www.doordash.com/store/..."
-            isAdultsOnly: true,
-            showProductsButton: true,
-            eventDate: {
-                year: 2025, month: 9, day: 18, display: "Thursday, September 18, 2025"
-            },
-            reservationDeadline: {
-                hour: 12, // 12 PM (Noon)
-                minute: 0
-            },
-            eventTime: {
-                startHour: 18, startMinute: 30, durationHours: 2, display: "Doors Open at 6:00 PM<br>Movie Starts 6:30 PM"
-            },
-            eventLocationAddress: "2392 Old Rosebud Ln, South Jordan, UT 84095",
-            eventLocationGoogleMapsUrl: "https://maps.google.com/?q=2392+Old+Rosebud+Ln,+South+Jordan,+UT+84095",
-        };
-        // ===================================================================
-        // === NO NEED TO EDIT BELOW THIS LINE ===
-        // ===================================================================
-        document.addEventListener('DOMContentLoaded', () => {
-            const mainContent = document.getElementById('main-content');
-            
-            const now = new Date();
-            const reservationDeadline = new Date(config.eventDate.year, config.eventDate.month - 1, config.eventDate.day, config.reservationDeadline.hour, config.reservationDeadline.minute, 0);
-            const eventEndDate = new Date(config.eventDate.year, config.eventDate.month - 1, config.eventDate.day, 23, 59, 59);
 
-            // --- Page State Logic ---
+    <footer class="text-center p-4 text-xs text-gray-500">
+        <a href="admin.html" style="text-decoration: none; color: inherit;">&copy;</a> 2025 The Grand Casita Theater
+    </footer>
 
-            // STATE 1: Event is completely over
-            if (now > eventEndDate) {
-                mainContent.innerHTML = `
-                    <div class="p-8 md:p-12 text-center">
-                        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-shadow font-cinzel text-brand-gold">Event Has Passed</h1>
-                        <p class="text-gray-300 text-lg mb-8">This movie night is over. Check the history for details and sign up to host your own!</p>
-                        <div class="mt-6 max-w-sm mx-auto space-y-2">
-                            <a href="history.html" class="btn-velvet w-full leading-tight">View History</a>
-                            <a href="signups.html" class="btn-velvet w-full">Pick a Movie</a>
-                        </div>
-                    </div>`;
-                return; 
-            }
-            
-            // STATE 2: Reservations are closed, but event hasn't passed
-            else if (now > reservationDeadline) {
-                // --- Replace Actions Section ---
-                const actionsContainer = document.getElementById('actions-container');
-                actionsContainer.innerHTML = `
-                    <div class="bg-black/30 p-4 rounded-lg border-l-4 border-yellow-300/50 text-center">
-                        <h3 class="text-2xl font-bold mb-2 text-shadow font-cinzel text-brand-gold">Reservations Closed</h3>
-                        <p class="text-gray-300">The deadline to reserve a seat has passed.</p>
-                        <p class="text-gray-300 mt-2">Please contact <strong>Stacy</strong> directly if you would still like to attend.</p>
-                    </div>
-                    <div class="mt-4 space-y-2">
-                         <a href="history.html" class="btn-velvet w-full leading-tight">View History</a>
-                         <a href="signups.html" class="btn-velvet w-full">Pick a Movie</a>
-                    </div>
-                `;
-            }
-
-            // STATE 3: Default view, reservations are open
-            else {
-                // Add Countdown Timer
-                const actionsContainer = document.getElementById('actions-container');
-                const countdownContainerHTML = `
-                    <div id="countdown-container" class="my-6 text-center">
-                        <p class="font-cinzel text-yellow-300/80 text-sm uppercase tracking-widest">Reservation Deadline</p>
-                        <div id="countdown-timer" class="text-2xl font-mono text-white mt-1"></div>
-                    </div>`;
-                actionsContainer.insertAdjacentHTML('beforebegin', countdownContainerHTML);
-                
-                const countdownElement = document.getElementById('countdown-timer');
-                const updateCountdown = () => {
-                    const currentTime = new Date();
-                    const timeDifference = reservationDeadline - currentTime;
-
-                    if (timeDifference <= 0) {
-                        countdownElement.innerHTML = "Reservation Deadline Passed";
-                        clearInterval(countdownInterval);
-                        setTimeout(() => window.location.reload(), 1200);
-                        return;
-                    }
-
-                    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
-
-                    countdownElement.innerHTML = `${String(days)}d : ${String(hours).padStart(2, '0')}h : ${String(minutes).padStart(2, '0')}m : ${String(seconds).padStart(2, '0')}s`;
-                };
-                const countdownInterval = setInterval(updateCountdown, 1000);
-                updateCountdown();
-            }
-
-            // --- Populate common content for states 2 & 3 ---
-            document.getElementById('movie-poster').src = config.moviePosterUrl;
-            document.getElementById('movie-poster').alt = `Poster for ${config.movieTitle}`;
-            document.getElementById('movie-poster').onerror = () => { posterImg.src = `https://placehold.co/600x900/2a0000/fde047?text=${encodeURIComponent(config.movieTitle)}`; };
-            document.getElementById('inviter-name').textContent = config.inviterName;
-            document.getElementById('inviter-comment').textContent = config.inviterComment;
-            document.getElementById('movie-title').textContent = config.movieTitle;
-            document.getElementById('movie-tagline').textContent = config.movieTagline;
-            document.getElementById('event-date-display').textContent = config.eventDate.display;
-            document.getElementById('event-time-display').innerHTML = config.eventTime.display;
-            document.getElementById('location-address').textContent = config.eventLocationAddress;
-            document.getElementById('google-maps-link').href = config.eventLocationGoogleMapsUrl;
-
-            const audienceSection = document.getElementById('audience-section');
-            if (audienceSection) { // Check if it exists before manipulating
-                if (config.isAdultsOnly) {
-                    document.getElementById('audience-label').textContent = "Adults Only";
-                    document.getElementById('audience-message').textContent = "This screening is for adults only (21+).";
-                    audienceSection.classList.add('bg-red-900/30', 'border-red-500/50');
-                } else {
-                    document.getElementById('audience-label').textContent = "Kids Welcome";
-                    document.getElementById('audience-message').textContent = "This is a family-friendly screening.";
-                }
-            }
-            
-            const productsButtonContainer = document.getElementById('products-button-container');
-            if (productsButtonContainer && !config.showProductsButton) {
-                productsButtonContainer.style.display = 'none';
-            }
-
-            // --- Handle Order a Drink Button State ---
-            const orderDrinkLink = document.getElementById('order-drink-link');
-            if (orderDrinkLink) {
-                if (config.doorDashGroupOrderUrl && config.doorDashGroupOrderUrl.trim() !== '') {
-                    orderDrinkLink.href = config.doorDashGroupOrderUrl;
-                    orderDrinkLink.classList.remove('disabled');
-                    orderDrinkLink.removeAttribute('onclick');
-                } else {
-                    orderDrinkLink.href = '#';
-                    orderDrinkLink.classList.add('disabled');
-                    orderDrinkLink.addEventListener('click', (e) => e.preventDefault());
-                }
-            }
-
-
-            // --- Common Modal and Button Event Listeners ---
-            const trailerLink = document.getElementById('trailer-link');
-            const trailerModal = document.getElementById('trailer-modal');
-            const closeTrailerModal = document.getElementById('close-trailer-modal');
-            const youtubePlayer = document.getElementById('youtube-player');
-            const reserveSeatButton = document.getElementById('reserve-seat-button');
-            const adultsOnlyModal = document.getElementById('adults-only-modal');
-            const confirmAgeButton = document.getElementById('confirm-age-button');
-            const cancelAgeButton = document.getElementById('cancel-age-button');
-            
-            if (trailerLink) {
-                const originalSrc = config.youtubeTrailerUrl.split('?')[0];
-                youtubePlayer.src = originalSrc;
-                trailerLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    trailerModal.classList.remove('hidden');
-                    if (!youtubePlayer.src.includes('autoplay=1')) youtubePlayer.src = `${originalSrc}?autoplay=1`;
-                });
-                const hideTrailerModal = () => {
-                    trailerModal.classList.add('hidden');
-                    youtubePlayer.src = originalSrc;
-                };
-                closeTrailerModal.addEventListener('click', hideTrailerModal);
-                trailerModal.addEventListener('click', (e) => { if (e.target === trailerModal) hideTrailerModal(); });
-            }
-
-            if (reserveSeatButton) {
-                reserveSeatButton.addEventListener('click', (e) => {
-                    if (config.isAdultsOnly) {
-                        e.preventDefault();
-                        adultsOnlyModal.classList.remove('hidden');
-                    }
-                });
-                confirmAgeButton.addEventListener('click', () => { window.location.href = 'reservations.html'; });
-                cancelAgeButton.addEventListener('click', () => { adultsOnlyModal.classList.add('hidden'); });
-            }
-        });
     <script type="module" src="app.js"></script>
 </body>
 </html>
-
