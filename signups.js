@@ -22,14 +22,14 @@ const minTemp = 70;
 const maxTemp = 80;
 let isDragging = false;
 
-function updateThermostat(yPosition) {
+function updateThermostat(xPosition) {
     const bounds = thermostatContainer.getBoundingClientRect();
-    const percentage = 1 - Math.max(0, Math.min(1, (yPosition - bounds.top) / bounds.height));
+    const percentage = Math.max(0, Math.min(1, (xPosition - bounds.left) / bounds.width));
     const temp = Math.round(percentage * (maxTemp - minTemp) + minTemp);
     
     // Update the visuals
     const visualPercent = (temp - minTemp) / (maxTemp - minTemp) * 100;
-    thermostatThumb.style.bottom = `calc(${visualPercent}% - 16px)`; // Center thumb
+    thermostatThumb.style.left = `${visualPercent}%`;
     tempValueDisplay.innerHTML = `${temp}&deg;F`;
     
     // Update the hidden input for form submission
@@ -38,22 +38,20 @@ function updateThermostat(yPosition) {
 
 thermostatContainer.addEventListener('mousedown', (e) => {
     isDragging = true;
-    updateThermostat(e.clientY);
+    updateThermostat(e.clientX);
 });
 thermostatContainer.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // Prevents page scroll on touch
     isDragging = true;
-    updateThermostat(e.touches[0].clientY);
+    updateThermostat(e.touches[0].clientX);
 });
 window.addEventListener('mousemove', (e) => {
     if (isDragging) {
-        updateThermostat(e.clientY);
+        updateThermostat(e.clientX);
     }
 });
 window.addEventListener('touchmove', (e) => {
     if (isDragging) {
-        e.preventDefault(); // Prevents page scroll on touch
-        updateThermostat(e.touches[0].clientY);
+        updateThermostat(e.touches[0].clientX);
     }
 });
 window.addEventListener('mouseup', () => {
@@ -94,8 +92,8 @@ if (form) {
             // Reset thermostat to default 75F
             const defaultPercent = (75 - minTemp) / (maxTemp - minTemp);
             const bounds = thermostatContainer.getBoundingClientRect();
-            const defaultY = bounds.top + (1 - defaultPercent) * bounds.height;
-            updateThermostat(defaultY);
+            const defaultX = bounds.left + defaultPercent * bounds.width;
+            updateThermostat(defaultX);
             
         } catch (error) {
             console.error('Error adding document: ', error);
@@ -114,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialTemp = 75;
     const initialPercent = (initialTemp - minTemp) / (maxTemp - minTemp);
     const bounds = thermostatContainer.getBoundingClientRect();
-    const initialY = bounds.top + (1 - initialPercent) * bounds.height;
-    updateThermostat(initialY);
+    const initialX = bounds.left + initialPercent * bounds.width;
+    updateThermostat(initialX);
 
     // Set visible build timestamp
     if (timestampContainer) {
@@ -125,5 +123,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: signups.js
-    Build Timestamp: 2025-09-18T15:50:00-06:00
+    Build Timestamp: 2025-09-18T15:55:00-06:00
 */

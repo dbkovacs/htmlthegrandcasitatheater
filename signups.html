@@ -17,7 +17,7 @@
 </head>
 <body class="bg-brand-dark text-white">
 
-    <div class="container mx-auto px-4 py-8 md:py-16 max-w-4xl">
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-2xl">
 
         <header class="text-center mb-12">
             <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Pick a Movie</h1>
@@ -25,54 +25,47 @@
         </header>
 
         <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
-            <form id="signupForm">
-                <div class="flex flex-col md:flex-row gap-8 md:gap-12">
-                    
-                    <!-- Left side: Main form fields -->
-                    <div class="flex-1">
-                        <div class="space-y-6">
-                            <!-- Your Name -->
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name</label>
-                                <input type="text" name="name" id="name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
-                            </div>
+            <form id="signupForm" class="space-y-8">
+                
+                <!-- Your Name -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name</label>
+                    <input type="text" name="name" id="name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                </div>
 
-                            <!-- Movie Title -->
-                            <div>
-                                <label for="movie" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Movie Title</label>
-                                <input type="text" name="movie" id="movie" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
-                            </div>
+                <!-- Movie Title -->
+                <div>
+                    <label for="movie" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Movie Title</label>
+                    <input type="text" name="movie" id="movie" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                </div>
 
-                             <!-- Note to David -->
-                            <div>
-                                <label for="noteToDavid" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Note to David</label>
-                                <textarea name="noteToDavid" id="noteToDavid" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Hoping you can find the 1960's version with Paul Newman'"></textarea>
-                            </div>
-
-                            <!-- Greeting Message -->
-                            <div>
-                                <label for="greeting" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Greeting for Guests</label>
-                                <textarea name="greeting" id="greeting" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Welcome movie lovers!'"></textarea>
-                            </div>
-                        </div>
+                <!-- Horizontal Thermostat -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-medium text-gray-300 font-cinzel tracking-wider">Theater Temp</label>
+                        <span id="tempValue" class="font-bold text-brand-gold text-xl">75&deg;F</span>
                     </div>
-
-                    <!-- Right side: Custom Vertical Thermostat -->
-                    <div class="flex flex-col items-center justify-start pt-2 md:w-32">
-                        <div class="text-center mb-4">
-                            <label class="block text-sm font-medium text-gray-300 font-cinzel tracking-wider">Theater Temp</label>
-                            <span id="tempValue" class="font-bold text-brand-gold text-3xl block mt-2">75&deg;F</span>
-                        </div>
-                        <div id="thermostat-container" class="relative w-10 h-64 cursor-pointer select-none">
-                            <div class="thermostat-track"></div>
-                            <div id="thermostat-thumb" class="thermostat-thumb"></div>
-                        </div>
-                        <input type="hidden" id="temperature" name="temperature" value="75">
+                    <div id="thermostat-container" class="relative w-full h-10 cursor-pointer select-none flex items-center">
+                        <div class="thermostat-track-horizontal"></div>
+                        <div id="thermostat-thumb" class="thermostat-thumb-horizontal"></div>
                     </div>
+                    <input type="hidden" id="temperature" name="temperature" value="75">
+                </div>
+
+                <!-- Greeting Message -->
+                <div>
+                    <label for="greeting" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Greeting for Guests</label>
+                    <textarea name="greeting" id="greeting" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Welcome movie lovers!'"></textarea>
+                </div>
+
+                <!-- Note to David -->
+                <div>
+                    <label for="noteToDavid" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Note to David</label>
+                    <textarea name="noteToDavid" id="noteToDavid" rows="3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 'Hoping you can find the 1960's version with Paul Newman'"></textarea>
                 </div>
 
                 <!-- Submit Button -->
-                <div class="mt-10 border-t border-yellow-300/10 pt-6">
+                <div class="border-t border-yellow-300/10 pt-8">
                     <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg">
                         Submit Movie Request
                     </button>
@@ -94,5 +87,5 @@
 </html>
 <!--
     File: signups.html
-    Build Timestamp: 2025-09-18T15:50:00-06:00
+    Build Timestamp: 2025-09-18T15:55:00-06:00
 -->
