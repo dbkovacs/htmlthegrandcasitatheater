@@ -14,7 +14,6 @@ const responseMessage = document.getElementById('responseMessage');
 const timestampContainer = document.getElementById('build-timestamp');
 const tempValueDisplay = document.getElementById('tempValue');
 const thermostatContainer = document.getElementById('thermostat-container');
-const thermostatFill = document.getElementById('thermostat-fill');
 const thermostatThumb = document.getElementById('thermostat-thumb');
 const temperatureInput = document.getElementById('temperature');
 
@@ -30,7 +29,6 @@ function updateThermostat(yPosition) {
     
     // Update the visuals
     const visualPercent = (temp - minTemp) / (maxTemp - minTemp) * 100;
-    thermostatFill.style.height = `${visualPercent}%`;
     thermostatThumb.style.bottom = `calc(${visualPercent}% - 16px)`; // Center thumb
     tempValueDisplay.innerHTML = `${temp}&deg;F`;
     
@@ -43,6 +41,7 @@ thermostatContainer.addEventListener('mousedown', (e) => {
     updateThermostat(e.clientY);
 });
 thermostatContainer.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevents page scroll on touch
     isDragging = true;
     updateThermostat(e.touches[0].clientY);
 });
@@ -53,6 +52,7 @@ window.addEventListener('mousemove', (e) => {
 });
 window.addEventListener('touchmove', (e) => {
     if (isDragging) {
+        e.preventDefault(); // Prevents page scroll on touch
         updateThermostat(e.touches[0].clientY);
     }
 });
@@ -80,7 +80,7 @@ if (form) {
                 movieTitle: document.getElementById('movie').value,
                 noteToDavid: document.getElementById('noteToDavid').value,
                 greeting: document.getElementById('greeting').value,
-                thermostat: parseInt(temperatureInput.value, 10), // Get value from hidden input
+                thermostat: parseInt(temperatureInput.value, 10),
                 status: "pending",
                 submittedAt: serverTimestamp()
             };
@@ -89,8 +89,13 @@ if (form) {
 
             responseMessage.textContent = 'Success! Your movie has been submitted for approval.';
             responseMessage.classList.add('text-green-400');
-            form.reset(); 
-            updateThermostat(thermostatContainer.getBoundingClientRect().height / 2); // Reset to middle
+            form.reset();
+            
+            // Reset thermostat to default 75F
+            const defaultPercent = (75 - minTemp) / (maxTemp - minTemp);
+            const bounds = thermostatContainer.getBoundingClientRect();
+            const defaultY = bounds.top + (1 - defaultPercent) * bounds.height;
+            updateThermostat(defaultY);
             
         } catch (error) {
             console.error('Error adding document: ', error);
@@ -105,8 +110,8 @@ if (form) {
 
 // --- Page Load Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Set initial thermostat position
-    const initialTemp = parseInt(temperatureInput.value, 10);
+    // Set initial thermostat position to default 75F
+    const initialTemp = 75;
     const initialPercent = (initialTemp - minTemp) / (maxTemp - minTemp);
     const bounds = thermostatContainer.getBoundingClientRect();
     const initialY = bounds.top + (1 - initialPercent) * bounds.height;
@@ -120,5 +125,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: signups.js
-    Build Timestamp: 2025-09-18T15:45:00-06:00
+    Build Timestamp: 2025-09-18T15:50:00-06:00
 */

@@ -135,9 +135,58 @@ body {
     /* ... existing admin styles ... */
 }
 
+/*
+    Folder: /
+    File: layout-styles.css
+    Extension: .css
+*/
 
-/* === REPLACE OLD SLIDER CSS WITH THIS NEW THERMOSTAT CSS === */
-.thermostat-container {
+/* === Original Theme Styles (Keep these) === */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #380000;
+}
+.font-cinzel { font-family: 'Cinzel', serif; }
+.text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+.bg-brand-dark { background-color: #380000; }
+.bg-brand-card { background-color: #2a0000; }
+.text-brand-gold { color: #fde047; }
+/* ... other existing styles ... */
+.btn-velvet {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #000;
+    color: #fde047;
+    background-color: #4c0000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-velvet.primary {
+    background-color: #fde047;
+    color: #4c0000;
+}
+/* ... other existing button styles ... */
+
+
+/* === Admin Panel Styles (Keep these) === */
+.submission-card {
+    border: 1px solid #4a5568;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background-color: #1f2937;
+}
+/* ... other existing admin styles ... */
+
+
+/* === NEW THERMOSTAT STYLES (Replace previous thermostat styles with these) === */
+#thermostat-container {
     touch-action: none; /* Prevents page scroll on mobile while dragging */
 }
 .thermostat-track {
@@ -147,18 +196,9 @@ body {
     transform: translateX(-50%);
     width: 12px;
     height: 100%;
-    background-color: #111;
+    background: linear-gradient(to top, #3B82F6, #FBBF24, #EF4444); /* Static Gradient: Blue -> Yellow -> Red */
     border-radius: 6px;
     box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-}
-.thermostat-fill {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 12px;
-    background: linear-gradient(to top, #3B82F6, #FBBF24, #EF4444); /* Blue -> Yellow -> Red */
-    border-radius: 6px;
 }
 .thermostat-thumb {
     position: absolute;
@@ -174,9 +214,5 @@ body {
 
 /*
     File: layout-styles.css
-    Build Timestamp: 2025-09-18T15:45:00-06:00
-*/
-/*
-    File: layout-styles.css
-    Build Timestamp: 2025-09-18T15:25:35-06:00
+    Build Timestamp: 2025-09-18T15:50:00-06:00
 */
