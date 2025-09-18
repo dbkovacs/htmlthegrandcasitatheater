@@ -9,24 +9,25 @@
 <body>
     <h1>Admin Panel</h1>
 
-    <script type="module" src="admin.js"></script>
     <div id="login-container">
-    <h2>Login</h2>
-    <form id="login-form">
-        <label for="login-email">Email:</label>
-        <input type="email" id="login-email" required>
-        <br><br>
-        <label for="login-password">Password:</label>
-        <input type="password" id="login-password" required>
-        <br><br>
-        <button type="submit">Log In</button>
-    </form>
-</div>
+        <h2>Login</h2>
+        <form id="login-form">
+            <label for="login-email">Email:</label>
+            <input type="email" id="login-email" required>
+            <br><br>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" required>
+            <br><br>
+            <button type="submit">Log In</button>
+        </form>
+    </div>
 
-<div id="dashboard" style="display:none;">
-    <h2>Dashboard</h2>
-    <p>Welcome, admin! Movie submissions will be listed here.</p>
-    <button id="logout-button">Log Out</button>
-</div>
+    <div id="dashboard" style="display:none;">
+        <h2>Dashboard</h2>
+        <p>Welcome, admin! Movie submissions will be listed here.</p>
+        <button id="logout-button">Log Out</button>
+    </div>
+
+    <script type="module" src="admin.js"></script>
 </body>
 </html>
