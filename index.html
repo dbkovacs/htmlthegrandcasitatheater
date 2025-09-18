@@ -1,123 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>You're Invited to the Movies!</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="layout-styles.css">
-</head>
-<body class="bg-brand-dark text-white">
+/*
+    Folder: /
+    File: layout-styles.css
+    Extension: .css
+*/
 
-    <div class="container mx-auto px-4 py-8 md:py-12 relative"> 
-        <div class="relative max-w-4xl mx-auto">
-            <main id="main-content" class="bg-brand-card shadow-2xl rounded-2xl overflow-hidden border-2 border-yellow-300/20 relative z-10">
-                <div id="poster-container" class="p-4 md:p-8 flex flex-col items-center justify-center bg-black/20">
-                    <div class="relative w-full max-w-sm mx-auto">
-                        <img src="https://thegrandcasitatheater.com/Gemini_Generated_Image_q6fw4mq6fw4mq6fwtransflogov4.png" alt="Ornate Frame" class="w-full h-auto">
-                        <div class="absolute" style="top: 34%; left: 20%; width: 60%; height: 65%;">
-                            <img id="movie-poster" class="w-full h-full" src="" alt="Movie Poster" style="object-fit: contain;">
-                        </div>
-                    </div>
-                </div>
-                <div id="invitation-details" class="p-8 md:p-12 flex flex-col justify-center">
-                    <p class="text-lg md:text-xl text-brand-gold font-semibold mb-2 text-shadow font-cinzel">You're Invited By</p>
-                    <h1 id="inviter-name" class="text-4xl md:text-5xl font-bold mb-4 text-shadow font-cinzel"></h1>
-                    <div class="mb-6 bg-black/20 p-4 rounded-lg border-l-4 border-yellow-300/50">
-                        <p id="inviter-comment" class="text-gray-300 italic"></p>
-                    </div>
-                    <div class="my-4 border-t border-yellow-300/20"></div>
-                    <h2 id="movie-title" class="text-3xl md:text-4xl font-black tracking-tighter text-shadow font-cinzel"></h2>
-                    <p id="movie-tagline" class="text-md text-gray-300 mt-2 mb-4"></p>
-                    
-                    <div class="my-4 space-y-3 text-gray-300">
-                        <div class="flex items-center gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300/70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            <span id="event-date-display" class="font-semibold"></span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300/70 flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span id="event-time-display" class="font-semibold leading-tight"></span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300/70 mt-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            <div>
-                                <a id="google-maps-link" href="#" target="_blank" class="hover:text-brand-gold transition-colors font-semibold">
-                                    <span id="location-address"></span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+/* === Original Theme Styles === */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #380000; /* Fallback color */
+}
+.font-cinzel {
+    font-family: 'Cinzel', serif;
+}
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.bg-brand-dark {
+    background-color: #380000;
+}
+.bg-brand-card {
+    background-color: #2a0000;
+}
+.text-brand-gold {
+    color: #fde047; /* Tailwind's yellow-300 */
+}
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+}
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
 
-                    <div id="audience-section" class="my-4 text-center p-3 rounded-lg border-2 border-transparent">
-                        <div class="inline-flex items-center space-x-4">
-                            <span id="audience-label" class="font-cinzel text-brand-gold text-xl font-bold"></span>
-                        </div>
-                        <p id="audience-message" class="text-gray-300 mt-1 text-sm h-4"></p>
-                    </div>
-
-                    <div id="actions-container" class="mt-6 w-full space-y-2">
-                        <div class="flex">
-                            <button id="trailer-link" class="btn-velvet w-full">Watch Trailer</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <a href="reservations.html" id="reserve-seat-button" class="btn-velvet w-1/2">Reserve Seat</a>
-                            <a id="order-drink-link" href="#" class="btn-velvet w-1/2">Order a Drink</a>
-                        </div>
-                        <div class="flex gap-2">
-                            <a href="history.html" class="btn-velvet w-1/2 leading-tight">Coming Soon<br>History</a>
-                            <a href="signups.html" class="btn-velvet w-1/2">Pick a Movie</a>
-                        </div>
-                        <div class="flex" id="products-button-container">
-                            <a href="products.html" id="products-button" class="btn-velvet w-full">Products</a>
-                        </div>
-                    </div>
-                </div>
-            </main>
-
-            <div id="trailer-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
-                <div class="bg-gray-900 rounded-lg overflow-hidden shadow-xl w-full max-w-4xl relative border-2 border-yellow-300/50">
-                    <button id="close-trailer-modal" class="absolute top-2 right-4 text-white text-4xl hover:text-gray-400 z-10">&times;</button>
-                    <div class="video-container">
-                        <iframe id="youtube-player" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                </div>
-            </div>
-
-             <div id="adults-only-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
-                <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-red-500/50">
-                    <h3 class="text-2xl font-bold mb-4 text-red-400 font-cinzel">Age Restriction</h3>
-                    <p class="text-gray-200 mb-6">This screening is for adults only (21+). Please confirm you meet the age requirement to proceed.</p>
-                    <div class="flex justify-center gap-4">
-                        <button id="confirm-age-button" class="w-full px-6 py-3 bg-yellow-300 hover:bg-yellow-400 text-stone-900 font-bold rounded-lg transition-colors font-cinzel">I Confirm</button>
-                        <button id="cancel-age-button" class="w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors font-cinzel">Cancel</button>
-                    </div>
-                </div>
-            </div>
-
-            <section id="coming-soon-section" class="py-12">
-                <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-center text-shadow font-cinzel mb-8">Coming Soon</h2>
-                <div id="coming-soon-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    </div>
-            </section>
-
-            <section id="history-section" class="py-12">
-                <h2 class="text-3xl md:text-4xl font-black tracking-tighter text-center text-shadow font-cinzel mb-8">History</h2>
-                <div id="history-container" class="space-y-8">
-                    </div>
-            </section>
-
-        </div>
-    </div>
-
-    <footer class="text-center p-4 text-xs text-gray-500">
-        <a href="admin.html" style="text-decoration: none; color: inherit;">&copy;</a> 2025 The Grand Casita Theater
-        <p id="build-timestamp" class="mt-1"></p>
-    </footer>
-
-    <script type="module" src="app.js"></script>
-</body>
-</html>
+/* =================================
+    Velvet Curtain Button Style
+   ================================= */
+.btn-velvet {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #000;
+    color: #fde047;
+    background-color: #4c0000;
+    background-image: linear-gradient(45deg, rgba(0,0,0,0.2) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2) 75%, transparent 75%, transparent);
+    background-size: 20px 20px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-velvet:not(.disabled):hover {
+    background-color: #fde047;
+    color: #4c0000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 0 10px rgba(255, 255, 255, 0.3);
+    background-image: none;
+}
+.btn-velvet.primary {
+    background-color: #fde047;
+    color: #4c0000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    background-image: none;
+}
+.btn-velvet.primary:not(.disabled):hover {
+    background-color: #facc15;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.4), 0
