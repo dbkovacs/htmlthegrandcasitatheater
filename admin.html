@@ -17,7 +17,7 @@
 </head>
 <body class="bg-brand-dark text-white">
 
-    <div class="container mx-auto px-4 py-8 md:py-16 max-w-4xl">
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-7xl">
 
         <header class="text-center mb-12">
             <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Admin Panel</h1>
@@ -48,10 +48,39 @@
                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
                     <button id="logout-button" class="btn-velvet">Log Out</button>
                 </div>
-                <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
-                <div id="submissions-container" class="space-y-6">
-                    <!-- Pending movies will be loaded here by JavaScript -->
-                </div>
+                
+                <!-- Pending Submissions Section -->
+                <section id="pending-section">
+                    <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
+                    <div id="submissions-container" class="space-y-6">
+                        <!-- Pending movies will be loaded here -->
+                    </div>
+                </section>
+
+                <div class="my-12 border-t border-yellow-300/20"></div>
+
+                <!-- Approved Movies Section -->
+                <section id="approved-section">
+                    <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Approved Movies</h3>
+                    <div class="mb-4">
+                        <input type="text" id="filter-input" placeholder="Filter by movie title..." class="w-full md:w-1/3 bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-300">
+                            <thead class="text-xs text-yellow-300 uppercase bg-black/40 font-cinzel">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 cursor-pointer" data-sort="movieTitle">Movie Title</th>
+                                    <th scope="col" class="px-6 py-3 cursor-pointer" data-sort="hostName">Host</th>
+                                    <th scope="col" class="px-6 py-3 cursor-pointer" data-sort="showDate">Show Date</th>
+                                    <th scope="col" class="px-6 py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approved-movies-tbody">
+                                <!-- Approved movies table rows will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </main>
 
@@ -67,5 +96,5 @@
 </html>
 <!--
     File: admin.html
-    Build Timestamp: 2025-09-18T16:00:00-06:00
+    Build Timestamp: 2025-09-18T16:15:00-06:00
 -->
