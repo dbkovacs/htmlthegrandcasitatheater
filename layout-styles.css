@@ -236,7 +236,79 @@ body {
     transform: translate(-50%, -50%); /* Center it on the track */
     cursor: pointer;
 }
+/*
+    Folder: /
+    File: layout-styles.css
+    Extension: .css
+*/
 
+/* === Original Theme Styles (Keep these) === */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #380000;
+}
+/* ... existing styles ... */
+
+
+/* === Admin Panel Styles (Keep existing) === */
+.submission-card {
+    border: 1px solid #4a5568;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background-color: #1f2937;
+}
+/* ... existing admin styles ... */
+
+
+/* === NEW STYLES FOR APPROVED MOVIE EDITOR (Add these to the bottom) === */
+.approved-movie-card {
+    background-color: #1f2937; /* A slightly different dark color */
+    border: 1px solid #4a5568;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+.edit-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+.edit-form-grid .col-span-2 {
+    grid-column: span 2 / span 2;
+}
+.edit-form-grid label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9ca3af; /* gray-400 */
+    margin-bottom: 0.25rem;
+    display: block;
+}
+.edit-form-grid input,
+.edit-form-grid textarea {
+    width: 100%;
+    background-color: #111827; /* gray-900 */
+    border: 1px solid #4a5568;
+    color: white;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+.edit-form-grid input[type="checkbox"] {
+    width: auto;
+    height: 1.25rem;
+    width: 1.25rem;
+    border-radius: 0.25rem;
+    color: #fde047; /* yellow-300 */
+    background-color: #374151; /* gray-700 */
+}
+
+/*
+    File: layout-styles.css
+    Build Timestamp: 2025-09-18T16:25:00-06:00
+*/
 /*
     File: layout-styles.css
     Build Timestamp: 2025-09-18T15:55:00-06:00
