@@ -1,11 +1,14 @@
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Troubleshooting Fix)
+   === COMPONENT: Themed Calendar Datepicker (Final Version)
    ===
-   === Note: This version uses higher specificity selectors (e.g., "body .datepicker")
-   === to forcefully override the datepicker's default styles.
+   === Author's Note: This version is crafted to solve the layout
+   === issues from previous attempts. It precisely targets elements
+   === for theming without breaking the component's core structure.
    =================================================================== */
 
-/* --- Variable Overrides --- */
+/* --- Step 1: Define the Theme Colors ---
+ * This block sets up our color palette using CSS variables.
+ * It's wrapped in a high-specificity selector to ensure it loads. */
 body .datepicker-container {
     --datepicker-bg: #2a0000; /* bg-brand-card */
     --datepicker-text-color: #f3e8d7; /* A warmer off-white */
@@ -16,7 +19,8 @@ body .datepicker-container {
     --datepicker-border-color: #000; /* Black border from .btn-velvet */
 }
 
-/* --- Main Calendar Styles --- */
+/* --- Step 2: Style the Main Calendar Container ---
+ * We apply our background, border, and shadow theme here. */
 body .datepicker {
     background-color: var(--datepicker-bg) !important;
     border: 1px solid var(--datepicker-border-color) !important;
@@ -27,60 +31,62 @@ body .datepicker {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5) !important;
 }
 
-/* --- Header & Navigation --- */
-body .datepicker-header {
+/* --- Step 3: FIX THE HEADER LAYOUT ---
+ * This is the critical fix. We are explicitly re-stating the flexbox
+ * properties with very high specificity to ensure the arrows and title
+ * align horizontally, as intended in your mockup. */
+body .datepicker .datepicker-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 0 0.25rem 0.75rem !important;
+    padding-bottom: 0.75rem !important;
 }
 
-body .datepicker-title {
+/* --- Step 4: Style Header Elements --- */
+body .datepicker .datepicker-title {
     color: var(--datepicker-accent-color) !important;
-    font-family: 'Cinzel', serif !important; /* Added !important */
+    font-family: 'Cinzel', serif !important;
     font-weight: 700 !important;
     font-size: 1.125rem !important;
-    flex-grow: 1;
+    flex-grow: 1 !important; /* This makes the title take up space, pushing arrows apart */
     text-align: center;
     pointer-events: none;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
 
-body .prev-btn, body .next-btn {
+body .datepicker .prev-btn,
+body .datepicker .next-btn {
     background-color: transparent !important;
     border: none !important;
     border-radius: 50% !important;
     width: 2.5rem;
     height: 2.5rem;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
     color: var(--datepicker-accent-color) !important;
     transition: background-color 0.2s ease-in-out;
+    /* Ensure buttons don't shrink */
+    flex-shrink: 0 !important;
 }
 
-body .prev-btn:hover, body .next-btn:hover {
+body .datepicker .prev-btn:hover,
+body .datepicker .next-btn:hover {
     background-color: var(--datepicker-hover-color) !important;
 }
 
-/* --- Calendar Grid --- */
-body .datepicker-main {
-    padding: 0 !important;
-}
-
-body .datepicker-view {
-    display: block !important;
-}
-
-body .datepicker-grid {
+/* --- Step 5: FIX THE CALENDAR GRID LAYOUT ---
+ * This is the second critical fix. We force the calendar area
+ * to be a 7-column grid. This will arrange both the days of the week
+ * (dow) and the dates (day) correctly. */
+body .datepicker .datepicker-grid {
     display: grid !important;
     grid-template-columns: repeat(7, 1fr) !important;
     width: 100% !important;
     gap: 0.25rem;
 }
 
-/* --- Day Styles (dow = Day of Week) --- */
-body .dow, body .day {
+/* --- Step 6: Style Individual Day Cells --- */
+body .datepicker .dow,
+body .datepicker .day {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -90,16 +96,16 @@ body .dow, body .day {
     border-radius: 50%;
 }
 
-body .dow {
+body .datepicker .dow {
     color: var(--datepicker-secondary-text-color) !important;
-    font-family: 'Cinzel', serif !important; /* Added !important */
+    font-family: 'Cinzel', serif !important;
     font-weight: 600 !important;
     font-size: 0.75rem !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-body .day {
+body .datepicker .day {
     color: var(--datepicker-text-color) !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 600;
@@ -107,24 +113,23 @@ body .day {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-body .day:hover {
+body .datepicker .day:hover {
     background-color: var(--datepicker-hover-color) !important;
 }
 
-/* Other months' days are less prominent */
-body .day.prev, body .day.next {
+body .datepicker .day.prev,
+body .datepicker .day.next {
     color: var(--datepicker-secondary-text-color) !important;
     opacity: 0.7;
     font-weight: 400;
 }
 
-/* The current day gets a gold border */
-body .day.today {
+body .datepicker .day.today {
     border: 1px solid var(--datepicker-accent-color);
 }
 
-/* The selected day looks like a primary button */
-body .day.selected, body .day.selected:hover {
+body .datepicker .day.selected,
+body .datepicker .day.selected:hover {
     background-color: var(--datepicker-accent-color) !important;
     color: var(--datepicker-accent-text-color) !important;
     font-weight: 700;
@@ -132,10 +137,11 @@ body .day.selected, body .day.selected:hover {
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3) !important;
 }
 
-/* Ensure selected text is readable on the gold background */
-body .day.today.selected {
+body .datepicker .day.today.selected {
     color: var(--datepicker-accent-text-color) !important;
 }
 
-body .datepicker-footer {
+/* Hide footer if it exists */
+body .datepicker .datepicker-footer {
     display: none !important;
+}
