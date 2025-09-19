@@ -276,14 +276,17 @@ loginForm.addEventListener('submit', async (e) => {
 logoutButton.addEventListener('click', () => {
     signOut(auth).catch((error) => console.error("Error signing out:", error));
 });
+
 document.addEventListener('DOMContentLoaded', () => {
-    if (timestampContainer) {
-        timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
-    }
+    const updateTimestamp = () => {
+        if (timestampContainer) {
+            timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
+        }
+    };
+    updateTimestamp();
 });
 
 /*
     File: admin.js
-    Lines: 300+
-    Build Timestamp: 2025-09-19T11:00:00-06:00
+    Build Timestamp: 2025-09-19T16:34:00-06:00
 */
