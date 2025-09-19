@@ -20,6 +20,12 @@ const approvedMoviesContainer = document.getElementById('approved-movies-contain
 
 // --- In-memory store for movie data ---
 let approvedMovies = [];
+const datepickerOptions = {
+    format: 'yyyy-mm-dd',
+    autohide: true,
+    orientation: 'bottom',
+    todayHighlight: true
+};
 
 // ===================================================================
 // === PENDING SUBMISSIONS LOGIC
@@ -54,7 +60,7 @@ async function loadSubmissions() {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="showDate-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Show Date</label>
-                        <input type="date" id="showDate-${movieId}" class="show-date-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                        <input type="text" id="showDate-${movieId}" class="show-date-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition">
                     </div>
                     <div>
                         <label for="trailerLink-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Trailer Link</label>
@@ -74,12 +80,17 @@ async function loadSubmissions() {
                 </div>
             `;
             submissionsContainer.appendChild(movieCard);
+
+            // Initialize Datepicker on the new input
+            const dateInput = movieCard.querySelector('.show-date-input');
+            if (dateInput) new Datepicker(dateInput, datepickerOptions);
         });
     } catch (error) {
         console.error("Error loading submissions:", error);
         submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions. Check console.</p>';
     }
 }
+
 submissionsContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.bg-black\\/40');
     if (!card) return;
@@ -191,7 +202,7 @@ function createEditFormView(movie) {
             <div class="edit-form-grid">
                 <div class="col-span-2"><label for="edit-movieTitle-${movie.id}">Movie Title</label><input type="text" id="edit-movieTitle-${movie.id}" value="${movie.movieTitle || ''}"></div>
                 <div><label for="edit-hostName-${movie.id}">Host Name</label><input type="text" id="edit-hostName-${movie.id}" value="${movie.hostName || ''}"></div>
-                <div><label for="edit-showDate-${movie.id}">Show Date</label><input type="date" id="edit-showDate-${movie.id}" value="${movie.showDate || ''}"></div>
+                <div><label for="edit-showDate-${movie.id}">Show Date</label><input type="text" id="edit-showDate-${movie.id}" class="show-date-input" value="${movie.showDate || ''}"></div>
                 <div class="col-span-2"><label for="edit-greeting-${movie.id}">Greeting</label><textarea id="edit-greeting-${movie.id}">${movie.greeting || ''}</textarea></div>
                 <div class="col-span-2"><label for="edit-movieTagline-${movie.id}">Tagline</label><input type="text" id="edit-movieTagline-${movie.id}" value="${movie.movieTagline || ''}"></div>
                 <div class="col-span-2"><label for="edit-trailerLink-${movie.id}">Trailer Link (YouTube)</label><input type="url" id="edit-trailerLink-${movie.id}" value="${movie.trailerLink || ''}"></div>
@@ -215,6 +226,8 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
     if (e.target.classList.contains('edit-btn')) {
         card.innerHTML = createEditFormView(movieData);
+        const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
+        if (dateInput) new Datepicker(dateInput, datepickerOptions);
     }
     if (e.target.classList.contains('save-btn')) {
         const updatedData = {
@@ -231,16 +244,22 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
             const index = approvedMovies.findIndex(m => m.id === movieId);
             if (index !== -1) approvedMovies[index] = { ...approvedMovies[index], ...updatedData };
-            card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData }, card.querySelector('.status-flag').className.split('-').pop());
+            // Find the current status to pass back to the view
+            const flagElement = card.querySelector('.status-flag');
+            const status = flagElement ? flagElement.className.split(' ').pop().replace('status-flag-', '') : 'past';
+            card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData }, status);
         } catch (error) {
             console.error("Error updating document:", error);
             alert("Failed to save changes.");
         }
     }
     if (e.target.classList.contains('cancel-btn')) {
-        card.innerHTML = createApprovedCardView(movieData, card.querySelector('.status-flag').className.split('-').pop());
+        const flagElement = card.querySelector('.status-flag');
+        const status = flagElement ? flagElement.className.split(' ').pop().replace('status-flag-', '') : 'past';
+        card.innerHTML = createApprovedCardView(movieData, status);
     }
 });
+
 
 // ===================================================================
 // === AUTHENTICATION & INITIALIZATION
@@ -278,5 +297,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-18T16:30:00-06:00
+    Build Timestamp: 2025-09-19T10:55:00-06:00
 */
