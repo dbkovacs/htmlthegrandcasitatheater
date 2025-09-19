@@ -290,7 +290,97 @@ document.addEventListener('DOMContentLoaded', () => {
         timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
     }
 });
+// --- Add this entire block to your admin.js file ---
 
+// --- CSV EXPORT LOGIC ---
+
+// Helper function to format a single row of CSV data
+function formatCSVRow(items) {
+    return items.map(item => {
+        let str = String(item === null || item === undefined ? '' : item);
+        // If the string contains a comma, double quote, or newline, enclose it in double quotes.
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            // Escape existing double quotes by doubling them up
+            str = `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    }).join(',');
+}
+
+async function exportMoviesToCSV() {
+    try {
+        console.log("Starting CSV export...");
+        // 1. Fetch all documents from the 'movies' collection
+        const moviesQuery = query(collection(db, 'movies'), orderBy("showDate", "desc"));
+        const querySnapshot = await getDocs(moviesQuery);
+
+        if (querySnapshot.empty) {
+            alert("No movies found to export.");
+            return;
+        }
+
+        // 2. Define CSV Headers
+        const headers = [
+            'id', 'showDate', 'status', 'movieTitle', 'hostName', 
+            'greeting', 'noteToDavid', 'posterURL', 'trailerLink', 
+            'movieTagline', 'isAdultsOnly', 'submittedAt'
+        ];
+        
+        let csvContent = formatCSVRow(headers) + "\r\n"; // Start with the header row
+
+        // 3. Convert each document to a CSV row
+        querySnapshot.forEach(doc => {
+            const movie = doc.data();
+            const submittedAt = movie.submittedAt?.toDate ? movie.submittedAt.toDate().toISOString() : '';
+            
+            const rowData = [
+                doc.id,
+                movie.showDate || '',
+                movie.status || '',
+                movie.movieTitle || '',
+                movie.hostName || '',
+                movie.greeting || '',
+                movie.noteToDavid || '',
+                movie.posterURL || '',
+                movie.trailerLink || '',
+                movie.movieTagline || '',
+                movie.isAdultsOnly ? 'true' : 'false',
+                submittedAt
+            ];
+            
+            csvContent += formatCSVRow(rowData) + "\r\n";
+        });
+
+        // 4. Trigger the download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            const timestamp = new Date().toISOString().slice(0, 10); // e.g., 2025-09-20
+            link.setAttribute("download", `movies_export_${timestamp}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+         console.log("CSV export successful!");
+
+    } catch (error) {
+        console.error("Error exporting to CSV:", error);
+        alert("An error occurred during the export. Check the console for details.");
+    }
+}
+
+// Add an event listener for the new button
+document.addEventListener('DOMContentLoaded', () => {
+    // ... your existing DOMContentLoaded code ...
+    
+    const exportButton = document.getElementById('export-csv-button');
+    if(exportButton) {
+        exportButton.addEventListener('click', exportMoviesToCSV);
+    }
+});
 /*
     File: admin.js
     Build Timestamp: 2025-09-19T17:30:00-06:00
