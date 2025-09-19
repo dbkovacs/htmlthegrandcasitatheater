@@ -1,15 +1,9 @@
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
 /* ===================================================================
    === 1. GLOBAL & THEME STYLES
    =================================================================== */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #380000; /* Fallback color */
+    background-color: #380000;
 }
 .font-cinzel {
     font-family: 'Cinzel', serif;
@@ -186,99 +180,4 @@ body {
     cursor: pointer;
 }
 
-/* ===================================================================
-   === 5. COMPONENT: Themed Calendar Datepicker (Final)
-   =================================================================== */
-.datepicker-container {
-    --datepicker-bg: #1f2937;
-    --datepicker-text-color: #d1d5db;
-    --datepicker-accent-color: #fde047;
-    --datepicker-accent-text-color: #111827;
-    --datepicker-secondary-text-color: #6b7280;
-    --datepicker-hover-color: #374151;
-    --datepicker-border-color: #4a5568;
-}
-.datepicker {
-    background-color: var(--datepicker-bg) !important;
-    border: 1px solid var(--datepicker-border-color) !important;
-    border-radius: 0.5rem !important;
-    padding: 0.5rem;
-    width: 290px;
-}
-.datepicker-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 0.25rem !important;
-}
-.datepicker-title {
-    color: var(--datepicker-accent-color) !important;
-    font-family: 'Cinzel', serif;
-    font-weight: 700 !important;
-    font-size: 1rem !important;
-    flex-grow: 1;
-    text-align: center;
-    pointer-events: none;
-}
-.prev-btn, .next-btn {
-    background-color: transparent !important;
-    border: none !important;
-    border-radius: 50% !important;
-    width: 2.25rem;
-    height: 2.25rem;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    color: var(--datepicker-accent-color) !important;
-}
-.prev-btn:hover, .next-btn:hover {
-    background-color: var(--datepicker-hover-color) !important;
-}
-.datepicker-main {
-    padding: 0.5rem 0 0 !important;
-}
-.datepicker-view { display: block !important; }
-.datepicker-grid {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    width: 100% !important;
-}
-.dow, .day {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 2.25rem;
-    width: 100%;
-    font-size: 0.875rem;
-    border-radius: 50%;
-}
-.dow {
-    color: var(--datepicker-secondary-text-color);
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-.day {
-    color: var(--datepicker-text-color);
-    cursor: pointer;
-}
-.day:hover {
-    background-color: var(--datepicker-hover-color);
-}
-.day.prev, .day.next {
-    color: var(--datepicker-secondary-text-color) !important;
-}
-.day.today {
-    border: 1px solid var(--datepicker-accent-color);
-}
-.day.selected, .day.selected:hover {
-    background-color: var(--datepicker-accent-color) !important;
-    color: var(--datepicker-accent-text-color) !important;
-    font-weight: bold;
-    border-color: var(--datepicker-accent-color) !important;
-}
-.datepicker-footer { display: none !important; }
-
-/*
-    File: layout-styles.css
-    Build Timestamp: 2025-09-19T16:10:00-06:00
-*/
+/* NOTE: All datepicker styles have been moved to datepicker-theme.css */
