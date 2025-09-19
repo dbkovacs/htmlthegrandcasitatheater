@@ -1,100 +1,141 @@
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Final Version)
+   === COMPONENT: Themed Calendar Datepicker (Troubleshooting Fix)
+   ===
+   === Note: This version uses higher specificity selectors (e.g., "body .datepicker")
+   === to forcefully override the datepicker's default styles.
    =================================================================== */
-.datepicker-container {
-    --datepicker-bg: #1f2937;
-    --datepicker-text-color: #d1d5db;
-    --datepicker-accent-color: #fde047;
-    --datepicker-accent-text-color: #111827;
-    --datepicker-secondary-text-color: #6b7280;
-    --datepicker-hover-color: #374151;
-    --datepicker-border-color: #4a5568;
+
+/* --- Variable Overrides --- */
+body .datepicker-container {
+    --datepicker-bg: #2a0000; /* bg-brand-card */
+    --datepicker-text-color: #f3e8d7; /* A warmer off-white */
+    --datepicker-accent-color: #fde047; /* text-brand-gold */
+    --datepicker-accent-text-color: #4c0000; /* Dark red from .btn-velvet */
+    --datepicker-secondary-text-color: rgba(253, 224, 71, 0.6); /* Muted gold */
+    --datepicker-hover-color: #4c0000; /* Dark red from .btn-velvet */
+    --datepicker-border-color: #000; /* Black border from .btn-velvet */
 }
-.datepicker {
+
+/* --- Main Calendar Styles --- */
+body .datepicker {
     background-color: var(--datepicker-bg) !important;
     border: 1px solid var(--datepicker-border-color) !important;
     border-radius: 0.5rem !important;
-    padding: 0.75rem;
-    width: 300px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+    padding: 0.75rem !important;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5) !important;
 }
-.datepicker-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 0.25rem 0.75rem;
-    background-color: var(--datepicker-bg); /* Solid background */
+
+/* --- Header & Navigation --- */
+body .datepicker-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 0.25rem 0.75rem !important;
 }
-.datepicker-title {
+
+body .datepicker-title {
     color: var(--datepicker-accent-color) !important;
-    font-family: 'Cinzel', serif;
+    font-family: 'Cinzel', serif !important; /* Added !important */
     font-weight: 700 !important;
-    font-size: 1rem !important;
+    font-size: 1.125rem !important;
     flex-grow: 1;
     text-align: center;
     pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
-.prev-btn, .next-btn {
+
+body .prev-btn, body .next-btn {
     background-color: transparent !important;
     border: none !important;
     border-radius: 50% !important;
-    width: 2.25rem;
-    height: 2.25rem;
-    display: flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     color: var(--datepicker-accent-color) !important;
     transition: background-color 0.2s ease-in-out;
 }
-.prev-btn:hover, .next-btn:hover {
+
+body .prev-btn:hover, body .next-btn:hover {
     background-color: var(--datepicker-hover-color) !important;
 }
-.datepicker-main {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    width: 100%;
+
+/* --- Calendar Grid --- */
+body .datepicker-main {
+    padding: 0 !important;
+}
+
+body .datepicker-view {
+    display: block !important;
+}
+
+body .datepicker-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    width: 100% !important;
     gap: 0.25rem;
 }
-.dow, .day {
+
+/* --- Day Styles (dow = Day of Week) --- */
+body .dow, body .day {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 3rem; /* Increased size for better visibility */
+    height: 2.25rem;
     width: 100%;
     font-size: 0.875rem;
     border-radius: 50%;
 }
-.dow {
-    color: var(--datepicker-secondary-text-color);
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
+
+body .dow {
+    color: var(--datepicker-secondary-text-color) !important;
+    font-family: 'Cinzel', serif !important; /* Added !important */
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
-.day {
-    color: var(--datepicker-text-color);
-    font-weight: 600; /* Bold for current month */
+
+body .day {
+    color: var(--datepicker-text-color) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
-.day:hover {
-    background-color: var(--datepicker-hover-color);
+
+body .day:hover {
+    background-color: var(--datepicker-hover-color) !important;
 }
-.day.prev, .day.next {
+
+/* Other months' days are less prominent */
+body .day.prev, body .day.next {
     color: var(--datepicker-secondary-text-color) !important;
-    font-weight: 400; /* Not bold for other months */
+    opacity: 0.7;
+    font-weight: 400;
 }
-.day.today {
+
+/* The current day gets a gold border */
+body .day.today {
     border: 1px solid var(--datepicker-accent-color);
-    color: var(--datepicker-accent-color);
 }
-.day.selected, .day.selected:hover {
+
+/* The selected day looks like a primary button */
+body .day.selected, body .day.selected:hover {
     background-color: var(--datepicker-accent-color) !important;
     color: var(--datepicker-accent-text-color) !important;
     font-weight: 700;
     border-color: var(--datepicker-accent-color) !important;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3) !important;
 }
-.day.today.selected {
+
+/* Ensure selected text is readable on the gold background */
+body .day.today.selected {
     color: var(--datepicker-accent-text-color) !important;
 }
-.datepicker-footer { 
-    display: none !important; 
-}
+
+body .datepicker-footer {
+    display: none !important;
