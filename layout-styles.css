@@ -4,7 +4,9 @@
     Extension: .css
 */
 
-/* === Original Theme Styles === */
+/* ===================================================================
+   === 1. GLOBAL & THEME STYLES
+   =================================================================== */
 body {
     font-family: 'Inter', sans-serif;
     background-color: #380000; /* Fallback color */
@@ -38,9 +40,9 @@ body {
     height: 100%;
 }
 
-/* =================================
-    Velvet Curtain Button Style
-   ================================= */
+/* ===================================================================
+   === 2. COMPONENT: Velvet Curtain Button
+   =================================================================== */
 .btn-velvet {
     font-family: 'Cinzel', serif;
     font-weight: 700;
@@ -83,16 +85,17 @@ body {
     opacity: 0.6;
 }
 
-/* === Admin Panel & Signups Page Styles === */
-.submission-card {
-    border: 1px solid #4a5568;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
+/* ===================================================================
+   === 3. PAGE: Admin Panel
+   =================================================================== */
+.approved-movie-card {
+    position: relative;
+    overflow: hidden;
     background-color: #1f2937;
-}
-.admin-actions > div {
-    margin-bottom: 12px;
+    border: 1px solid #4a5568;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
 }
 .poster-upload-area {
     border: 2px dashed #4a5568;
@@ -106,15 +109,6 @@ body {
 .poster-upload-area.drag-over {
     border-color: #fde047;
     background-color: #4b5563;
-}
-.approved-movie-card {
-    position: relative;
-    overflow: hidden;
-    background-color: #1f2937;
-    border: 1px solid #4a5568;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    transition: all 0.3s ease;
 }
 .edit-form-grid {
     display: grid;
@@ -162,7 +156,9 @@ body {
 .status-flag-upcoming { background-color: #3b82f6; }
 .status-flag-past { background-color: #6b7280; }
 
-/* === Custom Thermostat Styles === */
+/* ===================================================================
+   === 4. PAGE: Signups
+   =================================================================== */
 #thermostat-container {
     touch-action: pan-y;
 }
@@ -190,67 +186,86 @@ body {
     cursor: pointer;
 }
 
-/* === Datepicker Theme Styles === */
+/* ===================================================================
+   === 5. COMPONENT: Themed Calendar Datepicker
+   =================================================================== */
 .datepicker {
-    background-color: #111827 !important;
-    border-color: #4a5568 !important;
+    background-color: #111827 !important; /* gray-900 */
+    border: 1px solid #4a5568 !important; /* gray-700 */
     border-radius: 0.5rem !important;
     padding: 0.5rem;
+    width: 280px; /* Set a fixed width */
 }
 .datepicker-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
     background-color: transparent !important;
 }
-.datepicker-header .datepicker-title,
-.datepicker-header .prev-btn,
-.datepicker-header .next-btn {
-    color: #fde047 !important;
+.datepicker-header .datepicker-title {
+    color: #fde047 !important; /* brand-gold */
     font-family: 'Cinzel', serif;
     font-weight: 700;
     text-shadow: none;
+    font-size: 1rem;
+    pointer-events: none;
+}
+.datepicker-header .prev-btn,
+.datepicker-header .next-btn {
+    color: #fde047 !important; /* brand-gold */
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .datepicker-header .prev-btn:hover,
 .datepicker-header .next-btn:hover {
-    background-color: #374151 !important;
+    background-color: #374151 !important; /* gray-700 */
 }
 .datepicker-main {
     padding: 0 !important;
 }
+.datepicker-view {
+    width: 100%;
+}
+.datepicker-grid {
+    width: 100% !important;
+}
 .datepicker-view .days .dow {
-    color: #9ca3af;
+    color: #9ca3af; /* gray-400 */
     font-weight: bold;
+    height: 2rem;
 }
 .datepicker-picker span {
-    color: #d1d5db;
-    border-radius: 0.375rem;
+    color: #d1d5db; /* gray-300 */
+    border-radius: 50%;
     border: none;
+    width: 2.25rem;
+    height: 2.25rem;
 }
 .datepicker-picker span:hover {
-    background-color: #374151 !important;
+    background-color: #374151 !important; /* gray-700 */
 }
 .datepicker-picker span.focused,
 .datepicker-picker span.selected {
-    background-color: #fde047 !important;
-    color: #111827 !important;
+    background-color: #fde047 !important; /* brand-gold */
+    color: #111827 !important; /* gray-900 */
     font-weight: bold;
 }
 .datepicker-picker span.disabled,
 .datepicker-picker span.disabled:hover {
-    color: #4b5563 !important;
+    color: #4b5563 !important; /* gray-600 */
     background-color: transparent !important;
 }
 .datepicker-footer {
-    background-color: transparent !important;
-    border-top: 1px solid #4a5568 !important;
-    padding-top: 0.5rem;
-}
-.datepicker-footer .button {
-    color: #fde047 !important;
-    background-color: #374151 !important;
-    border-radius: 0.375rem !important;
-    border: none;
+    display: none !important; /* Hide the footer with today/clear buttons */
 }
 
 /*
     File: layout-styles.css
-    Build Timestamp: 2025-09-19T11:05:00-06:00
+    Lines: 280+
+    Build Timestamp: 2025-09-19T15:20:00-06:00
 */
