@@ -61,7 +61,7 @@
 
 .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
     background-color: var(--flatpickr-bg);
-    color: var(--flatpickr-text); /* THIS IS THE FIX */
+    color: var(--flatpickr-text);
     font-family: var(--font-heading);
     transition: background-color 0.2s ease;
 }
@@ -126,11 +126,12 @@ span.flatpickr-weekday {
     transition: all 0.2s ease-in-out;
 }
 
+/* --- THIS IS THE FIX for date hover color --- */
 .flatpickr-day:hover,
 .flatpickr-day.prevMonthDay:hover,
 .flatpickr-day.nextMonthDay:hover {
-    background: var(--flatpickr-hover);
-    color: var(--flatpickr-text);
+    background: var(--flatpickr-accent);
+    color: var(--flatpickr-accent-text);
     border-color: transparent;
 }
 
@@ -138,9 +139,16 @@ span.flatpickr-weekday {
     border-color: var(--flatpickr-accent);
 }
 
+.flatpickr-day.today:hover {
+    background: var(--flatpickr-accent);
+    color: var(--flatpickr-accent-text);
+    border-color: var(--flatpickr-accent);
+}
+
 .flatpickr-day.selected,
 .flatpickr-day.startRange,
-.flatpickr-day.endRange {
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover {
     background: var(--flatpickr-accent);
     color: var(--flatpickr-accent-text);
     border-color: var(--flatpickr-accent);
@@ -161,6 +169,6 @@ span.flatpickr-weekday {
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T17:55:00-06:00
+    Build Timestamp: 2025-09-19T18:05:00-06:00
 */
 
