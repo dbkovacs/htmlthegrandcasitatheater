@@ -242,23 +242,30 @@ body {
     font-size: 0.75rem;
 }
 .datepicker-picker span {
-    color: #d1d5db !important; /* Ensure all days are visible and use a consistent color */
+    color: #d1d5db; /* gray-300 - Standard day color */
     border-radius: 50%;
+    border: none;
     width: 2.25rem;
     height: 2.25rem;
 }
 .datepicker-picker span:hover {
     background-color: #374151 !important; /* gray-700 */
 }
+/* THIS IS THE FIX: Target prev/next month days */
+.datepicker-picker span.prev,
+.datepicker-picker span.next {
+    color: #6b7280 !important; /* gray-500, less visible */
+}
+/* Style for today's date */
+.datepicker-picker span.today {
+    border: 1px solid #fde047;
+}
 .datepicker-picker span.focused,
 .datepicker-picker span.selected {
     background-color: #fde047 !important; /* brand-gold */
     color: #111827 !important; /* gray-900 */
     font-weight: bold;
-}
-/* THIS IS THE FIX - Ensure all days are visible and use a consistent color for better contrast */
-.datepicker-picker span {
-    background-color: #1f2937 !important; /* Use the same background as the header for better visibility */
+    border-color: #fde047 !important;
 }
 .datepicker-picker span.disabled,
 .datepicker-picker span.disabled:hover {
