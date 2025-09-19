@@ -187,7 +187,7 @@ body {
 }
 
 /* ===================================================================
-   === 5. COMPONENT: Themed Calendar Datepicker
+   === 5. COMPONENT: Themed Calendar Datepicker (Corrected)
    =================================================================== */
 .datepicker {
     background-color: #111827 !important; /* gray-900 */
@@ -266,6 +266,6 @@ body {
 
 /*
     File: layout-styles.css
-    Lines: 280+
-    Build Timestamp: 2025-09-19T15:20:00-06:00
+    Lines: 283
+    Build Timestamp: 2025-09-19T15:25:00-06:00
 */
