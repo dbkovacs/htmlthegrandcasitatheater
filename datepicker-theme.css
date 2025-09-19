@@ -7,9 +7,9 @@
 /* ===================================================================
    === COMPONENT: Themed Calendar Datepicker
    ===
-   === STRATEGY: Increased selector specificity by prefixing layout
-   === rules with the '.datepicker' parent class. This forces our
-   === theme's grid layout to override the component's default styles.
+   === STRATEGY: This is the final override. Added a highly specific
+   === selector for the '.days' container to force the days of the week
+   === into a grid, correcting the final layout issue.
    =================================================================== */
 
 /* --- 1. Main Container & Base Styles --- */
@@ -25,10 +25,9 @@
 }
 
 /* --- 2. Header Layout & Styles --- */
-/* Using more specific selectors to enforce our layout */
 .datepicker .datepicker-header {
     display: grid;
-    grid-template-columns: auto 1fr auto; /* Buttons take their natural size */
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     padding-bottom: 0.75rem;
 }
@@ -67,6 +66,12 @@
 
 
 /* --- 3. Main Calendar Grid Layout --- */
+/* CRITICAL FIX: Enforce grid on the days-of-week container */
+.datepicker .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
 .datepicker .datepicker-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -129,6 +134,6 @@
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T16:40:00-06:00
+    Build Timestamp: 2025-09-19T16:50:00-06:00
 */
 
