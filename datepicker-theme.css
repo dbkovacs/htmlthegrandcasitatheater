@@ -7,45 +7,44 @@
 /* ===================================================================
    === COMPONENT: Themed Calendar Datepicker
    ===
-   === STRATEGY: Corrected selectors to directly target the datepicker's
-   === default classes. Removed the overly-specific parent selector
-   === that was preventing the styles from being applied.
+   === STRATEGY: Increased selector specificity by prefixing layout
+   === rules with the '.datepicker' parent class. This forces our
+   === theme's grid layout to override the component's default styles.
    =================================================================== */
 
-/* --- 1. Main Container & Header --- */
+/* --- 1. Main Container & Base Styles --- */
 .datepicker {
     background-color: #2a0000;
-    border: 1px solid #000;
+    border: 2px solid #000;
     border-radius: 0.5rem;
     padding: 0.75rem;
     width: 100%;
     max-width: 320px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
     font-family: 'Inter', sans-serif;
 }
 
-/* THIS IS THE KEY FIX: Directly targeting the generated elements */
-.datepicker-header, .datepicker-grid, .datepicker-footer {
-    display: grid; /* Using grid for footer too for consistency */
-}
-
-.datepicker-header {
-    grid-template-columns: 1fr 2fr 1fr;
+/* --- 2. Header Layout & Styles --- */
+/* Using more specific selectors to enforce our layout */
+.datepicker .datepicker-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* Buttons take their natural size */
     align-items: center;
     padding-bottom: 0.75rem;
 }
 
-/* --- 2. Header Elements (Title & Buttons) --- */
-.datepicker-title {
+.datepicker .datepicker-title {
     color: #fde047;
     font-family: 'Cinzel', serif;
     font-weight: 700;
     font-size: 1.125rem;
     text-align: center;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    grid-column: 2 / 3;
 }
 
-.prev-btn, .next-btn {
+.datepicker .prev-btn, 
+.datepicker .next-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -58,18 +57,24 @@
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
 }
+.datepicker .prev-btn { grid-column: 1 / 2; }
+.datepicker .next-btn { grid-column: 3 / 4; }
 
-.prev-btn:hover, .next-btn:hover {
+.datepicker .prev-btn:hover, 
+.datepicker .next-btn:hover {
     background-color: #4c0000;
 }
 
-/* --- 3. Days Grid --- */
-.datepicker-grid {
+
+/* --- 3. Main Calendar Grid Layout --- */
+.datepicker .datepicker-grid {
+    display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.25rem;
 }
 
-.dow, .day {
+.datepicker .dow, 
+.datepicker .day {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,7 +83,7 @@
     border-radius: 50%;
 }
 
-.dow {
+.datepicker .dow {
     color: rgba(253, 224, 71, 0.6);
     font-family: 'Cinzel', serif;
     font-weight: 600;
@@ -86,29 +91,31 @@
     text-transform: uppercase;
 }
 
-/* --- 4. Individual Day Styles & States --- */
-.day {
+/* --- 4. Individual Day Cell Styles & States --- */
+.datepicker .day {
     color: #f3e8d7;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    border: 1px solid transparent; /* Prevents layout shift on 'today' border */
 }
 
-.day:hover {
+.datepicker .day:hover {
     background-color: #4c0000;
 }
 
-.day.prev, .day.next {
+.datepicker .day.prev, 
+.datepicker .day.next {
     color: rgba(253, 224, 71, 0.6);
     opacity: 0.7;
     font-weight: 400;
 }
 
-.day.today {
-    border: 1px solid #fde047;
+.datepicker .day.today {
+    border-color: #fde047;
 }
 
-.day.selected {
+.datepicker .day.selected {
     background-color: #fde047;
     color: #4c0000;
     font-weight: 700;
@@ -116,14 +123,12 @@
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
 }
 
-/* --- 5. Footer --- */
-.datepicker-footer {
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(253, 224, 71, 0.1);
-    margin-top: 0.5rem;
+/* --- 5. Footer (Hidden) --- */
+.datepicker .datepicker-footer {
+    display: none;
 }
-
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T16:34:00-06:00
+    Build Timestamp: 2025-09-19T16:40:00-06:00
 */
+
