@@ -17,26 +17,15 @@ const logoutButton = document.getElementById('logout-button');
 const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
+const exportCsvButton = document.getElementById('export-csv-button');
 
 // --- In-memory store for movie data ---
 let approvedMovies = [];
-// Flatpickr configuration
 const flatpickrOptions = {
     dateFormat: "Y-m-d",
     altInput: true,
     altFormat: "F j, Y",
 };
-
-// Function to initialize all datepickers on the page
-function initializeDatepickers(container) {
-    const dateInputs = container.querySelectorAll('.show-date-input');
-    dateInputs.forEach(input => {
-        // Check if flatpickr is not already initialized on this element
-        if (!input._flatpickr) {
-            flatpickr(input, flatpickrOptions);
-        }
-    });
-}
 
 // ===================================================================
 // === PENDING SUBMISSIONS LOGIC
@@ -69,7 +58,7 @@ async function loadSubmissions() {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="showDate-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Show Date</label>
-                        <input type="text" id="showDate-${movieId}" class="show-date-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="Select a date...">
+                        <input type="text" id="showDate-${movieId}" class="show-date-input w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition">
                     </div>
                     <div>
                         <label for="trailerLink-${movieId}" class="block text-xs font-medium text-gray-300 mb-1 font-cinzel tracking-wider">Trailer Link</label>
@@ -89,16 +78,15 @@ async function loadSubmissions() {
                 </div>
             `;
             submissionsContainer.appendChild(movieCard);
+            
+            const dateInput = movieCard.querySelector('.show-date-input');
+            if (dateInput) flatpickr(dateInput, flatpickrOptions);
         });
-        // Initialize datepickers for the newly added cards
-        initializeDatepickers(submissionsContainer);
-
     } catch (error) {
         console.error("Error loading submissions:", error);
         submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions.</p>';
     }
 }
-
 submissionsContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.bg-black\\/40');
     if (!card) return;
@@ -158,18 +146,24 @@ async function loadApprovedMovies() {
         }
 
         const now = new Date();
-        let nextCutoff = new Date(now);
-        nextCutoff.setHours(1, 0, 0, 0);
-        const dayOfWeek = nextCutoff.getDay();
-        const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-        nextCutoff.setDate(now.getDate() + daysUntilFriday);
-        const currentMovie = approvedMovies.find(movie => new Date(movie.showDate + 'T00:00:00') < nextCutoff) || null;
+        now.setHours(0, 0, 0, 0);
+
+        const firstUpcomingIndex = approvedMovies.findIndex(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+
+        let currentMovie = null;
+        if (firstUpcomingIndex !== -1) {
+            currentMovie = approvedMovies[firstUpcomingIndex];
+        } else if (approvedMovies.length > 0) {
+            currentMovie = approvedMovies[0];
+        }
         
         approvedMovies.forEach(movie => {
             let status = 'past';
-            if (currentMovie) {
-                if (movie.id === currentMovie.id) { status = 'current'; } 
-                else if (new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00')) { status = 'upcoming'; }
+            const movieDate = new Date(movie.showDate + 'T00:00:00');
+            if (currentMovie && movie.id === currentMovie.id) {
+                status = 'current';
+            } else if (movieDate > now) {
+                status = 'upcoming';
             }
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
@@ -229,7 +223,8 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
     if (e.target.classList.contains('edit-btn')) {
         card.innerHTML = createEditFormView(movieData);
-        initializeDatepickers(card);
+        const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
+        if (dateInput) flatpickr(dateInput, flatpickrOptions);
     }
     if (e.target.classList.contains('save-btn')) {
         const updatedData = {
@@ -244,8 +239,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
         };
         try {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
-            const index = approvedMovies.findIndex(m => m.id === movieId);
-            if (index !== -1) approvedMovies[index] = { ...approvedMovies[index], ...updatedData };
+            alert("Changes saved successfully!");
             loadApprovedMovies(); 
         } catch (error) {
             console.error("Error updating document:", error);
@@ -256,6 +250,64 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
         loadApprovedMovies();
     }
 });
+
+// ===================================================================
+// === CSV EXPORT LOGIC
+// ===================================================================
+function formatCSVRow(items) {
+    return items.map(item => {
+        let str = String(item === null || item === undefined ? '' : item);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            str = `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    }).join(',');
+}
+
+async function exportMoviesToCSV() {
+    exportCsvButton.disabled = true;
+    exportCsvButton.textContent = 'Exporting...';
+    try {
+        const moviesQuery = query(collection(db, 'movies'), orderBy("showDate", "desc"));
+        const querySnapshot = await getDocs(moviesQuery);
+
+        if (querySnapshot.empty) {
+            alert("No movies found to export.");
+            return;
+        }
+
+        const headers = ['id', 'showDate', 'status', 'movieTitle', 'hostName', 'greeting', 'noteToDavid', 'posterURL', 'trailerLink', 'movieTagline', 'isAdultsOnly', 'submittedAt'];
+        let csvContent = formatCSVRow(headers) + "\r\n";
+
+        querySnapshot.forEach(doc => {
+            const movie = doc.data();
+            const submittedAt = movie.submittedAt?.toDate ? movie.submittedAt.toDate().toISOString() : '';
+            const rowData = [
+                doc.id, movie.showDate || '', movie.status || '', movie.movieTitle || '', movie.hostName || '',
+                movie.greeting || '', movie.noteToDavid || '', movie.posterURL || '', movie.trailerLink || '',
+                movie.movieTagline || '', movie.isAdultsOnly ? 'true' : 'false', submittedAt
+            ];
+            csvContent += formatCSVRow(rowData) + "\r\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        const timestamp = new Date().toISOString().slice(0, 10);
+        link.setAttribute("download", `movies_export_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error("Error exporting to CSV:", error);
+        alert("An error occurred during the export. Check the console for details.");
+    } finally {
+        exportCsvButton.disabled = false;
+        exportCsvButton.textContent = 'Export All to CSV';
+    }
+}
 
 // ===================================================================
 // === AUTHENTICATION & INITIALIZATION
@@ -285,104 +337,18 @@ loginForm.addEventListener('submit', async (e) => {
 logoutButton.addEventListener('click', () => {
     signOut(auth).catch((error) => console.error("Error signing out:", error));
 });
+
 document.addEventListener('DOMContentLoaded', () => {
     if (timestampContainer) {
         timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
     }
-});
-// --- Add this entire block to your admin.js file ---
-
-// --- CSV EXPORT LOGIC ---
-
-// Helper function to format a single row of CSV data
-function formatCSVRow(items) {
-    return items.map(item => {
-        let str = String(item === null || item === undefined ? '' : item);
-        // If the string contains a comma, double quote, or newline, enclose it in double quotes.
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            // Escape existing double quotes by doubling them up
-            str = `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-    }).join(',');
-}
-
-async function exportMoviesToCSV() {
-    try {
-        console.log("Starting CSV export...");
-        // 1. Fetch all documents from the 'movies' collection
-        const moviesQuery = query(collection(db, 'movies'), orderBy("showDate", "desc"));
-        const querySnapshot = await getDocs(moviesQuery);
-
-        if (querySnapshot.empty) {
-            alert("No movies found to export.");
-            return;
-        }
-
-        // 2. Define CSV Headers
-        const headers = [
-            'id', 'showDate', 'status', 'movieTitle', 'hostName', 
-            'greeting', 'noteToDavid', 'posterURL', 'trailerLink', 
-            'movieTagline', 'isAdultsOnly', 'submittedAt'
-        ];
-        
-        let csvContent = formatCSVRow(headers) + "\r\n"; // Start with the header row
-
-        // 3. Convert each document to a CSV row
-        querySnapshot.forEach(doc => {
-            const movie = doc.data();
-            const submittedAt = movie.submittedAt?.toDate ? movie.submittedAt.toDate().toISOString() : '';
-            
-            const rowData = [
-                doc.id,
-                movie.showDate || '',
-                movie.status || '',
-                movie.movieTitle || '',
-                movie.hostName || '',
-                movie.greeting || '',
-                movie.noteToDavid || '',
-                movie.posterURL || '',
-                movie.trailerLink || '',
-                movie.movieTagline || '',
-                movie.isAdultsOnly ? 'true' : 'false',
-                submittedAt
-            ];
-            
-            csvContent += formatCSVRow(rowData) + "\r\n";
-        });
-
-        // 4. Trigger the download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            const timestamp = new Date().toISOString().slice(0, 10); // e.g., 2025-09-20
-            link.setAttribute("download", `movies_export_${timestamp}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-         console.log("CSV export successful!");
-
-    } catch (error) {
-        console.error("Error exporting to CSV:", error);
-        alert("An error occurred during the export. Check the console for details.");
-    }
-}
-
-// Add an event listener for the new button
-document.addEventListener('DOMContentLoaded', () => {
-    // ... your existing DOMContentLoaded code ...
-    
-    const exportButton = document.getElementById('export-csv-button');
-    if(exportButton) {
-        exportButton.addEventListener('click', exportMoviesToCSV);
+    if(exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
 });
+
 /*
     File: admin.js
-    Build Timestamp: 2025-09-19T17:30:00-06:00
+    Build Timestamp: 2025-09-19T20:45:00-06:00
 */
 
