@@ -1,3 +1,9 @@
+/*
+    Folder: /
+    File: firebase-config.js
+    Extension: .js
+*/
+
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -6,7 +12,8 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBpSWNq4G0ldr9BwiSk3KEeEp4L0KG6xEs",
+  // PASTE YOUR NEW KEY HERE
+  apiKey: "AIzaSyC8KGYURpNoSFH5rxduLVvSspN3RzdVIlQ",
   authDomain: "htmlthegrandcasitatheater.firebaseapp.com",
   projectId: "htmlthegrandcasitatheater",
   storageBucket: "htmlthegrandcasitatheater.firebasestorage.app",
@@ -15,10 +22,15 @@ const firebaseConfig = {
   measurementId: "G-7KP0BL67YF"
 };
 
-// Initialize Firebase (ONLY ONCE)
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize and export Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+/*
+    File: firebase-config.js
+    Build Timestamp: 2025-09-18T16:45:00-06:00
+*/
