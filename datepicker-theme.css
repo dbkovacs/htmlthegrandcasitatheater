@@ -1,139 +1,129 @@
+/*
+    Folder: /
+    File: datepicker-theme.css
+    Extension: .css
+*/
+
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Nuclear Option)
+   === COMPONENT: Themed Calendar Datepicker
    ===
-   === STRATEGY: This version uses attribute selectors (e.g., div[class*="..."])
-   === to achieve the highest possible CSS specificity without resorting to "!important".
-   === This is a final attempt to forcefully override the component's stubborn internal styles.
+   === STRATEGY: Corrected selectors to directly target the datepicker's
+   === default classes. Removed the overly-specific parent selector
+   === that was preventing the styles from being applied.
    =================================================================== */
 
-/* --- 1. Variable Definitions --- */
-/* Applied to a known parent to ensure they are available */
-div[class*="datepicker-container"] {
-    --datepicker-bg: #2a0000;
-    --datepicker-text-color: #f3e8d7;
-    --datepicker-accent-color: #fde047;
-    --datepicker-accent-text-color: #4c0000;
-    --datepicker-secondary-text-color: rgba(253, 224, 71, 0.6);
-    --datepicker-hover-color: #4c0000;
-    --datepicker-border-color: #000;
-    --font-heading: 'Cinzel', serif;
-    --font-body: 'Inter', sans-serif;
-}
-
-/* --- 2. Main Container Theme --- */
-div[class*="datepicker-container"] .datepicker {
-    background-color: var(--datepicker-bg);
-    border: 1px solid var(--datepicker-border-color);
+/* --- 1. Main Container & Header --- */
+.datepicker {
+    background-color: #2a0000;
+    border: 1px solid #000;
     border-radius: 0.5rem;
     padding: 0.75rem;
     width: 100%;
     max-width: 320px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
+    font-family: 'Inter', sans-serif;
 }
 
-/* --- 3. CRITICAL LAYOUT OVERRIDE: Header --- */
-/* Forcing Flexbox with maximum specificity */
-div[class*="datepicker-container"] .datepicker-header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+/* THIS IS THE KEY FIX: Directly targeting the generated elements */
+.datepicker-header, .datepicker-grid, .datepicker-footer {
+    display: grid; /* Using grid for footer too for consistency */
+}
+
+.datepicker-header {
+    grid-template-columns: 1fr 2fr 1fr;
     align-items: center;
     padding-bottom: 0.75rem;
 }
 
-/* --- 4. Header Item Styling --- */
-div[class*="datepicker-container"] .datepicker-title {
-    color: var(--datepicker-accent-color);
-    font-family: var(--font-heading);
+/* --- 2. Header Elements (Title & Buttons) --- */
+.datepicker-title {
+    color: #fde047;
+    font-family: 'Cinzel', serif;
     font-weight: 700;
     font-size: 1.125rem;
-    flex-grow: 1;
     text-align: center;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
 
-div[class*="datepicker-container"] .prev-btn,
-div[class*="datepicker-container"] .next-btn {
+.prev-btn, .next-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: transparent;
     border: none;
     border-radius: 50%;
     width: 2.5rem;
     height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--datepicker-accent-color);
+    color: #fde047;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
-    flex-shrink: 0;
 }
 
-div[class*="datepicker-container"] .prev-btn:hover,
-div[class*="datepicker-container"] .next-btn:hover {
-    background-color: var(--datepicker-hover-color);
+.prev-btn:hover, .next-btn:hover {
+    background-color: #4c0000;
 }
 
-/* --- 5. CRITICAL LAYOUT OVERRIDE: Grid --- */
-/* Forcing Grid with maximum specificity */
-div[class*="datepicker-container"] .datepicker-grid {
-    display: grid;
+/* --- 3. Days Grid --- */
+.datepicker-grid {
     grid-template-columns: repeat(7, 1fr);
     gap: 0.25rem;
 }
 
-/* --- 6. Grid Cell Styling & Theming --- */
-div[class*="datepicker-container"] .dow,
-div[class*="datepicker-container"] .day {
+.dow, .day {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 2.25rem;
-    width: 100%;
     font-size: 0.875rem;
     border-radius: 50%;
 }
 
-div[class*="datepicker-container"] .dow {
-    color: var(--datepicker-secondary-text-color);
-    font-family: var(--font-heading);
+.dow {
+    color: rgba(253, 224, 71, 0.6);
+    font-family: 'Cinzel', serif;
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
 }
 
-div[class*="datepicker-container"] .day {
-    color: var(--datepicker-text-color);
-    font-family: var(--font-body);
+/* --- 4. Individual Day Styles & States --- */
+.day {
+    color: #f3e8d7;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-/* --- 7. Day State Theming --- */
-div[class*="datepicker-container"] .day:hover {
-    background-color: var(--datepicker-hover-color);
+.day:hover {
+    background-color: #4c0000;
 }
 
-div[class*="datepicker-container"] .day[class*="prev"],
-div[class*="datepicker-container"] .day[class*="next"] {
-    color: var(--datepicker-secondary-text-color);
+.day.prev, .day.next {
+    color: rgba(253, 224, 71, 0.6);
     opacity: 0.7;
     font-weight: 400;
 }
 
-div[class*="datepicker-container"] .day[class*="today"] {
-    border: 1px solid var(--datepicker-accent-color);
+.day.today {
+    border: 1px solid #fde047;
 }
 
-div[class*="datepicker-container"] .day[class*="selected"] {
-    background-color: var(--datepicker-accent-color);
-    color: var(--datepicker-accent-text-color);
+.day.selected {
+    background-color: #fde047;
+    color: #4c0000;
     font-weight: 700;
     border-color: transparent;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
 }
 
-/* --- 8. Cleanup --- */
-div[class*="datepicker-container"] .datepicker-footer {
-    display: none;
+/* --- 5. Footer --- */
+.datepicker-footer {
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(253, 224, 71, 0.1);
+    margin-top: 0.5rem;
 }
+
+/*
+    File: datepicker-theme.css
+    Build Timestamp: 2025-09-19T16:34:00-06:00
+*/
