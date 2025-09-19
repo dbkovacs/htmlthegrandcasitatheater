@@ -5,139 +5,137 @@
 */
 
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker
+   === COMPONENT: Flatpickr Calendar Theme for The Grand Casita
    ===
-   === STRATEGY: This is the definitive fix. Previous attempts were close
-   === but missed the nuance of the component's structure. This version
-   === uses highly specific selectors for BOTH the days-of-the-week
-   === header and the main days grid, forcing them into a correct
-   === 7-column layout with '!important'. This will resolve the issue.
+   === STRATEGY: A clean theme using CSS variables to override
+   === Flatpickr's default styles. This is a much more stable and
+   === maintainable approach than fighting with the old library.
    =================================================================== */
 
-/* --- 1. Main Container & Base Styles --- */
-.datepicker {
-    background-color: #2a0000;
-    border: 2px solid #000;
+:root {
+    --flatpickr-bg: #2a0000;
+    --flatpickr-text: #f3e8d7;
+    --flatpickr-accent: #fde047;
+    --flatpickr-accent-text: #4c0000;
+    --flatpickr-hover: #4c0000;
+    --flatpickr-border: #000;
+    --flatpickr-disabled: #4a5568;
+    --font-heading: 'Cinzel', serif;
+}
+
+.flatpickr-calendar {
+    background: var(--flatpickr-bg);
+    border: 2px solid var(--flatpickr-border);
     border-radius: 0.5rem;
-    padding: 0.75rem;
-    width: 100%;
-    max-width: 320px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
+    width: 320px;
     font-family: 'Inter', sans-serif;
 }
 
-/* --- 2. Header (Month/Year Navigation) --- */
-.datepicker .datepicker-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 0.75rem;
+/* --- Header --- */
+.flatpickr-months {
+    background: transparent;
 }
 
-.datepicker .datepicker-title {
-    color: #fde047;
-    font-family: 'Cinzel', serif;
+.flatpickr-month {
+    color: var(--flatpickr-text);
+    fill: var(--flatpickr-text);
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: transparent;
+    border: none;
+    color: var(--flatpickr-accent);
+    font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.125rem;
-    text-align: center;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-    flex-grow: 1;
 }
 
-.datepicker .prev-btn, 
-.datepicker .next-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
+.flatpickr-current-month input.cur-year {
+    background: transparent;
     border: none;
-    border-radius: 50%;
-    width: 2.5rem;
-    height: 2.5rem;
-    color: #fde047;
-    cursor: pointer;
+    color: var(--flatpickr-accent);
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: var(--flatpickr-accent);
+    fill: var(--flatpickr-accent);
     transition: background-color 0.2s ease-in-out;
-    flex-shrink: 0;
-}
-
-.datepicker .prev-btn:hover, 
-.datepicker .next-btn:hover {
-    background-color: #4c0000;
-}
-
-
-/* --- 3. Main Calendar Grid --- */
-/* CRITICAL FIX #1: Force the Days of the Week into a grid */
-.datepicker .datepicker-main .days .days-grid {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-}
-
-/* CRITICAL FIX #2: Force the main calendar days into a grid */
-.datepicker .datepicker-main .datepicker-grid {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    gap: 0.25rem;
-}
-
-
-/* --- 4. Individual Cell Styles --- */
-.datepicker .dow, 
-.datepicker .day {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 2.25rem;
-    font-size: 0.875rem;
     border-radius: 50%;
-    width: 100%; 
 }
 
-.datepicker .dow {
-    color: rgba(253, 224, 71, 0.6);
-    font-family: 'Cinzel', serif;
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background: var(--flatpickr-hover);
+    color: var(--flatpickr-accent);
+    fill: var(--flatpickr-accent);
+}
+
+/* --- Weekdays --- */
+.flatpickr-weekdays {
+    background: transparent;
+}
+
+span.flatpickr-weekday {
+    color: var(--flatpickr-accent);
+    opacity: 0.7;
+    font-family: var(--font-heading);
     font-weight: 600;
     font-size: 0.75rem;
-    text-transform: uppercase;
 }
 
-.datepicker .day {
-    color: #f3e8d7;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+/* --- Days --- */
+.dayContainer {
+    padding: 0;
+    border: none;
+}
+
+.flatpickr-day {
     border: 1px solid transparent;
+    color: var(--flatpickr-text);
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
 }
 
-.datepicker .day:hover {
-    background-color: #4c0000;
-}
-
-.datepicker .day.prev, 
-.datepicker .day.next {
-    color: rgba(253, 224, 71, 0.6);
-    opacity: 0.7;
-    font-weight: 400;
-}
-
-.datepicker .day.today {
-    border-color: #fde047;
-}
-
-.datepicker .day.selected {
-    background-color: #fde047;
-    color: #4c0000;
-    font-weight: 700;
+.flatpickr-day:hover,
+.flatpickr-day.prevMonthDay:hover,
+.flatpickr-day.nextMonthDay:hover {
+    background: var(--flatpickr-hover);
+    color: var(--flatpickr-text);
     border-color: transparent;
+}
+
+.flatpickr-day.today {
+    border-color: var(--flatpickr-accent);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: var(--flatpickr-accent);
+    color: var(--flatpickr-accent-text);
+    border-color: var(--flatpickr-accent);
     box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
 }
 
-/* --- 5. Footer (Hidden) --- */
-.datepicker .datepicker-footer {
-    display: none;
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+    color: var(--flatpickr-text);
+    opacity: 0.5;
+}
+
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+    background: transparent;
+    color: var(--flatpickr-disabled);
+    cursor: not-allowed;
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T17:25:00-06:00
+    Build Timestamp: 2025-09-19T17:30:00-06:00
 */
 
