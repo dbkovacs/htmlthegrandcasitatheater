@@ -17,7 +17,6 @@ const timestampContainer = document.getElementById('build-timestamp');
 async function loadAndDisplayMovies() {
     try {
         const moviesRef = collection(db, 'movies');
-        // --- LOGIC CHANGE 1: Sort by showDate ASCENDING to make finding the next movie easier ---
         const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "asc"));
         const querySnapshot = await getDocs(q);
 
@@ -26,43 +25,45 @@ async function loadAndDisplayMovies() {
             return;
         }
 
+        // --- NEW: Add data validation step ---
         const allMovies = [];
-        querySnapshot.forEach(doc => allMovies.push({ id: doc.id, ...doc.data() }));
+        querySnapshot.forEach(doc => {
+            const movieData = doc.data();
+            // Validate that showDate exists and is a valid date format
+            if (movieData.showDate && !isNaN(new Date(movieData.showDate))) {
+                allMovies.push({ id: doc.id, ...movieData });
+            } else {
+                console.warn(`Skipping movie with invalid or missing date: ${movieData.movieTitle || 'Unknown'} (ID: ${doc.id})`);
+            }
+        });
+        // --- END: Data validation ---
+
+        if (allMovies.length === 0) {
+            // This case handles when approved movies exist but all have bad dates.
+            mainContent.innerHTML = '<p class="text-center p-8">No valid movie screenings found. Please check data.</p>';
+            return;
+        }
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0); // Normalize to the start of the day for accurate date comparison
+        now.setHours(0, 0, 0, 0);
 
-        // --- REWRITTEN LOGIC TO FIND THE CORRECT CURRENT MOVIE ---
-        
-        // Find the first movie that is scheduled for today or in the future.
         let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
 
-        // If no future movies are found (meaning all shows have passed),
-        // set the most recent past movie as the "current" one to display its details.
         if (!currentMovie && allMovies.length > 0) {
-            currentMovie = allMovies[allMovies.length - 1]; // The last movie in the ascending list is the most recent.
+            currentMovie = allMovies[allMovies.length - 1];
         }
         
-        // --- END REWRITTEN LOGIC ---
-
         if (currentMovie) {
             renderCurrentMovie(currentMovie);
             
-            // Find the index of the current movie to correctly partition the others.
             const currentIndex = allMovies.findIndex(movie => movie.id === currentMovie.id);
-
-            // History movies are all movies that came *before* the current one in the sorted list.
             const historyMovies = allMovies.slice(0, currentIndex);
-            
-            // Coming Soon movies are all movies that come *after* the current one.
             const comingSoonMovies = allMovies.slice(currentIndex + 1);
             
-            // We need to reverse history to show the most recent first.
             renderHistory(historyMovies.reverse()); 
             renderComingSoon(comingSoonMovies);
 
         } else {
-            // This case handles when the database is truly empty.
             mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie is currently scheduled.</h2><p class="text-gray-400">Check back soon for updates!</p></div>`;
             document.getElementById('coming-soon-section').style.display = 'none';
             document.getElementById('history-section').style.display = 'none';
@@ -70,7 +71,7 @@ async function loadAndDisplayMovies() {
 
     } catch (error) {
         console.error("Error loading movies:", error);
-        mainContent.innerHTML = '<p>Error loading movie data. Please try again later.</p>';
+        mainContent.innerHTML = `<div class="bg-red-900/50 border border-red-500 text-red-300 p-4 rounded-lg text-center"><strong>Error loading movie data. Please try again later.</strong></div>`;
     } finally {
         if (timestampContainer) {
             timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
@@ -248,6 +249,6 @@ function renderHistory(movies) {
 document.addEventListener('DOMContentLoaded', loadAndDisplayMovies);
 /*
     File: app.js
-    Build Timestamp: 2025-09-19T19:25:00-06:00
+    Build Timestamp: 2025-09-19T20:10:00-06:00
 */
 
