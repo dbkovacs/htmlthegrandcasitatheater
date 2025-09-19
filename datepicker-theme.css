@@ -52,6 +52,25 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
 
+/* --- NEW: Month Dropdown Styling --- */
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+    background-color: var(--flatpickr-bg);
+    color: var(--flatpickr-text);
+    font-family: var(--font-heading);
+    transition: background-color 0.2s ease;
+}
+
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover {
+    background-color: var(--flatpickr-hover);
+}
+/* This handles the blue selection you saw */
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month.selected {
+    background: var(--flatpickr-accent) !important;
+    color: var(--flatpickr-accent-text) !important;
+}
+/* --- END: Month Dropdown Styling --- */
+
+
 .flatpickr-current-month input.cur-year {
     background: transparent;
     border: none;
@@ -136,6 +155,6 @@ span.flatpickr-weekday {
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T17:30:00-06:00
+    Build Timestamp: 2025-09-19T17:45:00-06:00
 */
 
