@@ -1,14 +1,14 @@
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Definitive Fix)
+   === COMPONENT: Themed Calendar Datepicker (Nuclear Option)
    ===
-   === Strategy: This version uses high-specificity, chained selectors
-   === to override the component's default layout and theme without
-   === using "!important". This should be the final version needed.
+   === STRATEGY: This version uses attribute selectors (e.g., div[class*="..."])
+   === to achieve the highest possible CSS specificity without resorting to "!important".
+   === This is a final attempt to forcefully override the component's stubborn internal styles.
    =================================================================== */
 
-/* --- 1. Variable & Font Definitions --- */
-/* By attaching this to a specific parent, we ensure variables are ready */
-div.datepicker-container {
+/* --- 1. Variable Definitions --- */
+/* Applied to a known parent to ensure they are available */
+div[class*="datepicker-container"] {
     --datepicker-bg: #2a0000;
     --datepicker-text-color: #f3e8d7;
     --datepicker-accent-color: #fde047;
@@ -20,8 +20,8 @@ div.datepicker-container {
     --font-body: 'Inter', sans-serif;
 }
 
-/* --- 2. Main Calendar Container Theme --- */
-div.datepicker-container > .datepicker {
+/* --- 2. Main Container Theme --- */
+div[class*="datepicker-container"] .datepicker {
     background-color: var(--datepicker-bg);
     border: 1px solid var(--datepicker-border-color);
     border-radius: 0.5rem;
@@ -31,9 +31,9 @@ div.datepicker-container > .datepicker {
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* --- 3. CRITICAL LAYOUT FIX: Header --- */
-/* This structure forces the header into a horizontal row. */
-div.datepicker-container > .datepicker .datepicker-header {
+/* --- 3. CRITICAL LAYOUT OVERRIDE: Header --- */
+/* Forcing Flexbox with maximum specificity */
+div[class*="datepicker-container"] .datepicker-header {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -42,18 +42,18 @@ div.datepicker-container > .datepicker .datepicker-header {
 }
 
 /* --- 4. Header Item Styling --- */
-div.datepicker-container > .datepicker .datepicker-title {
+div[class*="datepicker-container"] .datepicker-title {
     color: var(--datepicker-accent-color);
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.125rem;
-    flex-grow: 1; /* Allows title to push arrows to the edges */
+    flex-grow: 1;
     text-align: center;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 }
 
-div.datepicker-container > .datepicker .prev-btn,
-div.datepicker-container > .datepicker .next-btn {
+div[class*="datepicker-container"] .prev-btn,
+div[class*="datepicker-container"] .next-btn {
     background-color: transparent;
     border: none;
     border-radius: 50%;
@@ -65,26 +65,26 @@ div.datepicker-container > .datepicker .next-btn {
     color: var(--datepicker-accent-color);
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
-    flex-shrink: 0; /* Prevents buttons from being squished */
+    flex-shrink: 0;
 }
 
-div.datepicker-container > .datepicker .prev-btn:hover,
-div.datepicker-container > .datepicker .next-btn:hover {
+div[class*="datepicker-container"] .prev-btn:hover,
+div[class*="datepicker-container"] .next-btn:hover {
     background-color: var(--datepicker-hover-color);
 }
 
-/* --- 5. CRITICAL LAYOUT FIX: Calendar Grid --- */
-/* This structure forces the days of the week and dates into a 7-column grid. */
-div.datepicker-container > .datepicker .datepicker-grid {
+/* --- 5. CRITICAL LAYOUT OVERRIDE: Grid --- */
+/* Forcing Grid with maximum specificity */
+div[class*="datepicker-container"] .datepicker-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.25rem;
 }
 
-/* --- 6. Day Cell Styling (Applies to both "Su, Mo..." and "1, 2...") --- */
-div.datepicker-container > .datepicker .dow,
-div.datepicker-container > .datepicker .day {
-    display: flex; /* Ensures text is centered within the cell */
+/* --- 6. Grid Cell Styling & Theming --- */
+div[class*="datepicker-container"] .dow,
+div[class*="datepicker-container"] .day {
+    display: flex;
     align-items: center;
     justify-content: center;
     height: 2.25rem;
@@ -93,7 +93,7 @@ div.datepicker-container > .datepicker .day {
     border-radius: 50%;
 }
 
-div.datepicker-container > .datepicker .dow {
+div[class*="datepicker-container"] .dow {
     color: var(--datepicker-secondary-text-color);
     font-family: var(--font-heading);
     font-weight: 600;
@@ -101,7 +101,7 @@ div.datepicker-container > .datepicker .dow {
     text-transform: uppercase;
 }
 
-div.datepicker-container > .datepicker .day {
+div[class*="datepicker-container"] .day {
     color: var(--datepicker-text-color);
     font-family: var(--font-body);
     font-weight: 600;
@@ -109,24 +109,23 @@ div.datepicker-container > .datepicker .day {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-/* --- 7. Day State Theming (Hover, Selected, etc.) --- */
-div.datepicker-container > .datepicker .day:hover {
+/* --- 7. Day State Theming --- */
+div[class*="datepicker-container"] .day:hover {
     background-color: var(--datepicker-hover-color);
 }
 
-div.datepicker-container > .datepicker .day.prev,
-div.datepicker-container > .datepicker .day.next {
+div[class*="datepicker-container"] .day[class*="prev"],
+div[class*="datepicker-container"] .day[class*="next"] {
     color: var(--datepicker-secondary-text-color);
     opacity: 0.7;
     font-weight: 400;
 }
 
-div.datepicker-container > .datepicker .day.today {
+div[class*="datepicker-container"] .day[class*="today"] {
     border: 1px solid var(--datepicker-accent-color);
 }
 
-div.datepicker-container > .datepicker .day.selected,
-div.datepicker-container > .datepicker .day.selected:hover {
+div[class*="datepicker-container"] .day[class*="selected"] {
     background-color: var(--datepicker-accent-color);
     color: var(--datepicker-accent-text-color);
     font-weight: 700;
@@ -135,6 +134,6 @@ div.datepicker-container > .datepicker .day.selected:hover {
 }
 
 /* --- 8. Cleanup --- */
-div.datepicker-container > .datepicker .datepicker-footer {
+div[class*="datepicker-container"] .datepicker-footer {
     display: none;
 }
