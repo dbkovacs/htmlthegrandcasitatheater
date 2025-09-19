@@ -17,7 +17,8 @@ const timestampContainer = document.getElementById('build-timestamp');
 async function loadAndDisplayMovies() {
     try {
         const moviesRef = collection(db, 'movies');
-        const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "desc"));
+        // --- LOGIC CHANGE 1: Sort by showDate ASCENDING to make finding the next movie easier ---
+        const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "asc"));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -29,34 +30,39 @@ async function loadAndDisplayMovies() {
         querySnapshot.forEach(doc => allMovies.push({ id: doc.id, ...doc.data() }));
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0); // Normalize to the start of the day
+        now.setHours(0, 0, 0, 0); // Normalize to the start of the day for accurate date comparison
 
-        // --- CORRECTED LOGIC START ---
+        // --- REWRITTEN LOGIC TO FIND THE CORRECT CURRENT MOVIE ---
         
-        // Find the most recent movie that has already passed or is today.
-        let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') <= now);
+        // Find the first movie that is scheduled for today or in the future.
+        let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
 
-        // If no movie is found in the past (i.e., all movies are in the future),
-        // then the "current" movie is the next one coming up.
+        // If no future movies are found (meaning all shows have passed),
+        // set the most recent past movie as the "current" one to display its details.
         if (!currentMovie && allMovies.length > 0) {
-            // Since the list is sorted descending, the last element is the one furthest in the future.
-            // We need to reverse to find the *soonest* future movie.
-            currentMovie = [...allMovies].reverse().find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+            currentMovie = allMovies[allMovies.length - 1]; // The last movie in the ascending list is the most recent.
         }
         
-        // --- CORRECTED LOGIC END ---
+        // --- END REWRITTEN LOGIC ---
 
         if (currentMovie) {
             renderCurrentMovie(currentMovie);
-            // Coming soon are all movies with a date after the current one.
-            const comingSoonMovies = allMovies.filter(movie => new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00'));
-            // History are all movies with a date before the current one.
-            const historyMovies = allMovies.filter(movie => new Date(movie.showDate + 'T00:00:00') < new Date(currentMovie.showDate + 'T00:00:00'));
             
-            renderComingSoon(comingSoonMovies.reverse()); // Reverse to show soonest first
-            renderHistory(historyMovies);
+            // Find the index of the current movie to correctly partition the others.
+            const currentIndex = allMovies.findIndex(movie => movie.id === currentMovie.id);
+
+            // History movies are all movies that came *before* the current one in the sorted list.
+            const historyMovies = allMovies.slice(0, currentIndex);
+            
+            // Coming Soon movies are all movies that come *after* the current one.
+            const comingSoonMovies = allMovies.slice(currentIndex + 1);
+            
+            // We need to reverse history to show the most recent first.
+            renderHistory(historyMovies.reverse()); 
+            renderComingSoon(comingSoonMovies);
+
         } else {
-            // This case now primarily handles when the database is empty or has no approved movies.
+            // This case handles when the database is truly empty.
             mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie is currently scheduled.</h2><p class="text-gray-400">Check back soon for updates!</p></div>`;
             document.getElementById('coming-soon-section').style.display = 'none';
             document.getElementById('history-section').style.display = 'none';
@@ -72,7 +78,7 @@ async function loadAndDisplayMovies() {
     }
 }
 
-// --- Render Functions (No changes needed in these) ---
+// --- Render Functions (No changes needed below this line) ---
 function renderCurrentMovie(movie) {
     document.getElementById('inviter-name').textContent = movie.hostName || 'The Grand Casita Theater';
     document.getElementById('inviter-comment').textContent = movie.greeting || `Invites you to a screening of:`;
@@ -242,5 +248,6 @@ function renderHistory(movies) {
 document.addEventListener('DOMContentLoaded', loadAndDisplayMovies);
 /*
     File: app.js
-    Build Timestamp: 2025-09-19T18:45:00-06:00
+    Build Timestamp: 2025-09-19T19:25:00-06:00
 */
+
