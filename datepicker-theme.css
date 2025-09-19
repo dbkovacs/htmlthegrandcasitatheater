@@ -70,6 +70,7 @@
     background-color: var(--flatpickr-hover);
 }
 
+/* --- THIS IS THE FIX for the month selection color --- */
 .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month.selected {
     background: var(--flatpickr-accent) !important;
     color: var(--flatpickr-accent-text) !important;
@@ -169,6 +170,6 @@ span.flatpickr-weekday {
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T18:05:00-06:00
+    Build Timestamp: 2025-09-19T18:15:00-06:00
 */
 
