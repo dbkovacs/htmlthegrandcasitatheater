@@ -79,7 +79,6 @@ async function loadSubmissions() {
             `;
             submissionsContainer.appendChild(movieCard);
             
-            // Initialize Datepicker on the new input
             const dateInput = movieCard.querySelector('.show-date-input');
             if (dateInput) new Datepicker(dateInput, datepickerOptions);
         });
@@ -171,6 +170,7 @@ async function loadApprovedMovies() {
         approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading movies.</p>`;
     }
 }
+
 function createApprovedCardView(movie, status) {
     return `
         <div class="status-flag status-flag-${status}"></div>
@@ -185,6 +185,7 @@ function createApprovedCardView(movie, status) {
         </div>
     `;
 }
+
 function createEditFormView(movie) {
     return `
         <div class="space-y-4">
@@ -206,12 +207,14 @@ function createEditFormView(movie) {
         </div>
     `;
 }
+
 approvedMoviesContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.approved-movie-card');
     if (!card) return;
     const movieId = card.getAttribute('data-id');
     const movieData = approvedMovies.find(m => m.id === movieId);
     if (!movieData) return;
+
     if (e.target.classList.contains('edit-btn')) {
         card.innerHTML = createEditFormView(movieData);
         const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
@@ -232,14 +235,16 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
             const index = approvedMovies.findIndex(m => m.id === movieId);
             if (index !== -1) approvedMovies[index] = { ...approvedMovies[index], ...updatedData };
-            loadApprovedMovies(); // Reload the whole list to recalculate status
+            // Reload the entire list to ensure status flags are recalculated correctly.
+            loadApprovedMovies(); 
         } catch (error) {
             console.error("Error updating document:", error);
             alert("Failed to save changes.");
         }
     }
     if (e.target.classList.contains('cancel-btn')) {
-        loadApprovedMovies(); // Reload the whole list to be safe
+         // Reload the entire list to ensure the card reverts cleanly.
+        loadApprovedMovies();
     }
 });
 
@@ -279,5 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
+    Lines: 300+
     Build Timestamp: 2025-09-19T11:00:00-06:00
 */
