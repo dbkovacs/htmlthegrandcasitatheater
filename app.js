@@ -29,25 +29,37 @@ async function loadAndDisplayMovies() {
         querySnapshot.forEach(doc => allMovies.push({ id: doc.id, ...doc.data() }));
 
         const now = new Date();
-        let nextCutoff = new Date(now);
-        nextCutoff.setHours(1, 0, 0, 0);
-        const dayOfWeek = nextCutoff.getDay();
-        const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-        nextCutoff.setDate(now.getDate() + daysUntilFriday);
+        now.setHours(0, 0, 0, 0); // Normalize to the start of the day
 
-        let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') < nextCutoff) || null;
+        // --- CORRECTED LOGIC START ---
+        
+        // Find the most recent movie that has already passed or is today.
+        let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') <= now);
+
+        // If no movie is found in the past (i.e., all movies are in the future),
+        // then the "current" movie is the next one coming up.
+        if (!currentMovie && allMovies.length > 0) {
+            // Since the list is sorted descending, the last element is the one furthest in the future.
+            // We need to reverse to find the *soonest* future movie.
+            currentMovie = [...allMovies].reverse().find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+        }
+        
+        // --- CORRECTED LOGIC END ---
 
         if (currentMovie) {
             renderCurrentMovie(currentMovie);
+            // Coming soon are all movies with a date after the current one.
             const comingSoonMovies = allMovies.filter(movie => new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00'));
-            const historyMovies = allMovies.filter(movie => movie.id !== currentMovie.id && new Date(movie.showDate + 'T00:00:00') < new Date(currentMovie.showDate + 'T00:00:00'));
-            renderComingSoon(comingSoonMovies.reverse());
+            // History are all movies with a date before the current one.
+            const historyMovies = allMovies.filter(movie => new Date(movie.showDate + 'T00:00:00') < new Date(currentMovie.showDate + 'T00:00:00'));
+            
+            renderComingSoon(comingSoonMovies.reverse()); // Reverse to show soonest first
             renderHistory(historyMovies);
         } else {
-            mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie scheduled for this week. See what's coming soon!</h2></div>`;
-            const futureMovies = allMovies.filter(movie => new Date(movie.showDate + 'T00:00:00') > now);
-            renderComingSoon(futureMovies.reverse());
-            renderHistory([]); // No history if there's no current movie
+            // This case now primarily handles when the database is empty or has no approved movies.
+            mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie is currently scheduled.</h2><p class="text-gray-400">Check back soon for updates!</p></div>`;
+            document.getElementById('coming-soon-section').style.display = 'none';
+            document.getElementById('history-section').style.display = 'none';
         }
 
     } catch (error) {
@@ -60,23 +72,20 @@ async function loadAndDisplayMovies() {
     }
 }
 
-// --- Render Functions ---
+// --- Render Functions (No changes needed in these) ---
 function renderCurrentMovie(movie) {
-    // Populate main content
     document.getElementById('inviter-name').textContent = movie.hostName || 'The Grand Casita Theater';
     document.getElementById('inviter-comment').textContent = movie.greeting || `Invites you to a screening of:`;
     document.getElementById('movie-title').textContent = movie.movieTitle;
     document.getElementById('movie-poster').src = movie.posterURL;
     document.getElementById('movie-tagline').textContent = movie.movieTagline || '';
     
-    // Populate event details
     const showDate = new Date(movie.showDate + 'T00:00:00');
-    document.getElementById('event-date-display').textContent = showDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('event-date-display').textContent = showDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
     document.getElementById('event-time-display').innerHTML = movie.eventTimeDisplay || 'Doors Open at 6:00 PM<br>Movie Starts 6:30 PM';
     document.getElementById('location-address').textContent = movie.locationAddress || '2392 Old Rosebud Ln, South Jordan, UT 84095';
     document.getElementById('google-maps-link').href = `https://maps.google.com/?q=${encodeURIComponent(movie.locationAddress || '2392 Old Rosebud Ln, South Jordan, UT 84095')}`;
 
-    // Audience section logic
     const audienceSection = document.getElementById('audience-section');
     if (movie.isAdultsOnly) {
         document.getElementById('audience-label').textContent = "Adults Only";
@@ -87,13 +96,16 @@ function renderCurrentMovie(movie) {
         document.getElementById('audience-message').textContent = "This is a family-friendly screening.";
         audienceSection.classList.remove('bg-red-900/30', 'border-red-500/50');
     }
-
+    
     // Reservation State Logic (Countdown Timer or Closed Message)
     const now = new Date();
     const reservationDeadline = new Date(showDate);
-    reservationDeadline.setHours(12, 0, 0, 0); // Deadline is Noon on the day of the show
+    reservationDeadline.setUTCHours(18, 0, 0, 0); // Deadline is Noon in MDT (UTC-6), which is 18:00 UTC.
 
     const actionsContainer = document.getElementById('actions-container');
+    const existingCountdown = document.getElementById('countdown-container');
+    if (existingCountdown) existingCountdown.remove();
+
     if (now > reservationDeadline) {
         actionsContainer.innerHTML = `
             <div class="bg-black/30 p-4 rounded-lg border-l-4 border-yellow-300/50 text-center">
@@ -101,6 +113,22 @@ function renderCurrentMovie(movie) {
                 <p class="text-gray-300">The deadline to reserve a seat has passed.</p>
             </div>`;
     } else {
+         actionsContainer.innerHTML = `
+            <div class="flex">
+                <button id="trailer-link" class="btn-velvet w-full">Watch Trailer</button>
+            </div>
+            <div class="flex gap-2">
+                <a href="reservations.html" id="reserve-seat-button" class="btn-velvet w-1/2">Reserve Seat</a>
+                <a id="order-drink-link" href="swigdrinkorder.html" class="btn-velvet w-1/2">Order a Drink</a>
+            </div>
+            <div class="flex gap-2">
+                <a href="history.html" class="btn-velvet w-1/2 leading-tight">Coming Soon<br>History</a>
+                <a href="signups.html" class="btn-velvet w-1/2">Pick a Movie</a>
+            </div>
+            <div class="flex" id="products-button-container">
+                <a href="products.html" id="products-button" class="btn-velvet w-full">Products</a>
+            </div>
+        `;
         const countdownContainerHTML = `
             <div id="countdown-container" class="my-6 text-center">
                 <p class="font-cinzel text-yellow-300/80 text-sm uppercase tracking-widest">Reservation Deadline</p>
@@ -126,8 +154,7 @@ function renderCurrentMovie(movie) {
         const countdownInterval = setInterval(updateCountdown, 1000);
         updateCountdown();
     }
-
-    // Modal Logic
+    
     const trailerLink = document.getElementById('trailer-link');
     const trailerModal = document.getElementById('trailer-modal');
     const closeTrailerModal = document.getElementById('close-trailer-modal');
@@ -178,7 +205,7 @@ function renderComingSoon(movies) {
             <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover aspect-[2/3]">
             <div class="p-2 text-center">
                 <h3 class="text-sm font-bold font-cinzel">${movie.movieTitle}</h3>
-                <p class="text-xs text-gray-400">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                <p class="text-xs text-gray-400">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</p>
             </div>
         `;
         comingSoonContainer.appendChild(movieCard);
@@ -204,7 +231,7 @@ function renderHistory(movies) {
             <div class="p-4 md:w-3/4">
                 <h3 class="text-xl font-bold font-cinzel">${movie.movieTitle}</h3>
                 <p class="text-sm text-gray-300">Hosted by: ${movie.hostName}</p>
-                <p class="text-sm text-gray-400">Screened on: ${new Date(movie.showDate + 'T00:00:00').toLocaleDateString()}</p>
+                <p class="text-sm text-gray-400">Screened on: ${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { timeZone: 'UTC' })}</p>
             </div>
         `;
         historyContainer.appendChild(movieCard);
@@ -213,8 +240,7 @@ function renderHistory(movies) {
 
 // --- Run on Page Load ---
 document.addEventListener('DOMContentLoaded', loadAndDisplayMovies);
-
 /*
     File: app.js
-    Build Timestamp: 2025-09-18T14:45:00-06:00
+    Build Timestamp: 2025-09-19T18:45:00-06:00
 */
