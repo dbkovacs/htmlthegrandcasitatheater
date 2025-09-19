@@ -242,7 +242,7 @@ body {
     font-size: 0.75rem;
 }
 .datepicker-picker span {
-    color: #d1d5db; /* gray-300 */
+    color: #d1d5db; /* gray-300 - Standard day color */
     border-radius: 50%;
     border: none;
     width: 2.25rem;
@@ -251,21 +251,26 @@ body {
 .datepicker-picker span:hover {
     background-color: #374151 !important; /* gray-700 */
 }
+/* Style for dates NOT in the current month */
+.datepicker-picker span.prev,
+.datepicker-picker span.next {
+    color: #4b5563 !important; /* gray-600 */
+}
+/* Style for today's date */
+.datepicker-picker span.today {
+    border: 1px solid #fde047;
+}
 .datepicker-picker span.focused,
 .datepicker-picker span.selected {
     background-color: #fde047 !important; /* brand-gold */
     color: #111827 !important; /* gray-900 */
     font-weight: bold;
+    border-color: #fde047 !important;
 }
 .datepicker-picker span.disabled,
 .datepicker-picker span.disabled:hover {
     color: #4b5563 !important; /* gray-600 */
     background-color: transparent !important;
-}
-/* THIS IS THE FIX */
-.datepicker-picker span.prev,
-.datepicker-picker span.next {
-    color: #6b7280 !important; /* gray-500, makes out-of-month dates visible */
 }
 .datepicker-footer {
     display: none !important; /* Hide the footer with today/clear buttons */
@@ -273,5 +278,5 @@ body {
 
 /*
     File: layout-styles.css
-    Build Timestamp: 2025-09-19T15:45:00-06:00
+    Build Timestamp: 2025-09-19T15:50:00-06:00
 */
