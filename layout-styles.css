@@ -83,187 +83,34 @@ body {
     opacity: 0.6;
 }
 
-
-/* === Admin Panel Styles === */
+/* === Admin Panel & Signups Page Styles === */
 .submission-card {
-    border: 1px solid #4a5568; /* gray-700 */
+    border: 1px solid #4a5568;
     padding: 16px;
     margin-bottom: 16px;
     border-radius: 8px;
-    background-color: #1f2937; /* gray-800 */
+    background-color: #1f2937;
 }
 .admin-actions > div {
     margin-bottom: 12px;
 }
 .poster-upload-area {
-    border: 2px dashed #4a5568; /* gray-700 */
+    border: 2px dashed #4a5568;
     padding: 20px;
     text-align: center;
     cursor: pointer;
-    background-color: #374151; /* gray-700 */
-    color: #d1d5db; /* gray-300 */
+    background-color: #374151;
+    color: #d1d5db;
     border-radius: 8px;
 }
 .poster-upload-area.drag-over {
-    border-color: #fde047; /* yellow-300 */
-    background-color: #4b5563; /* gray-600 */
+    border-color: #fde047;
+    background-color: #4b5563;
 }
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
-/* === Original Theme Styles (Keep these) === */
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #380000;
-}
-.font-cinzel { font-family: 'Cinzel', serif; }
-.text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
-.bg-brand-dark { background-color: #380000; }
-.bg-brand-card { background-color: #2a0000; }
-.text-brand-gold { color: #fde047; }
-/* ... other existing styles ... */
-.btn-velvet {
-    /* ... existing button styles ... */
-}
-
-
-/* === Admin Panel Styles (Keep these) === */
-.submission-card {
-    /* ... existing admin styles ... */
-}
-
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
-/* === Original Theme Styles (Keep these) === */
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #380000;
-}
-.font-cinzel { font-family: 'Cinzel', serif; }
-.text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
-.bg-brand-dark { background-color: #380000; }
-.bg-brand-card { background-color: #2a0000; }
-.text-brand-gold { color: #fde047; }
-/* ... other existing styles ... */
-.btn-velvet {
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #000;
-    color: #fde047;
-    background-color: #4c0000;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
-    transition: all 0.3s ease;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.btn-velvet.primary {
-    background-color: #fde047;
-    color: #4c0000;
-}
-/* ... other existing button styles ... */
-
-
-/* === Admin Panel Styles (Keep these) === */
-.submission-card {
-    border: 1px solid #4a5568;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    background-color: #1f2937;
-}
-/* ... other existing admin styles ... */
-
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
-/* === Original Theme Styles (Keep these) === */
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #380000;
-}
-/* ... other existing styles ... */
-
-
-/* === Admin Panel Styles (Keep these) === */
-.submission-card {
-    border: 1px solid #4a5568;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    background-color: #1f2937;
-}
-/* ... other existing admin styles ... */
-
-
-/* === NEW HORIZONTAL THERMOSTAT STYLES (Replace all previous thermostat styles) === */
-#thermostat-container {
-    touch-action: pan-y; /* Allows vertical page scroll on mobile */
-}
-.thermostat-track-horizontal {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 100%;
-    height: 12px;
-    background: linear-gradient(to right, #3B82F6, #FBBF24, #EF4444); /* Static Gradient: Blue -> Yellow -> Red */
-    border-radius: 6px;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-}
-.thermostat-thumb-horizontal {
-    position: absolute;
-    top: 50%;
-    width: 32px;
-    height: 32px;
-    background-color: #fff;
-    border-radius: 50%;
-    border: 3px solid #4a5568;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    transform: translate(-50%, -50%); /* Center it on the track */
-    cursor: pointer;
-}
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
-/* === Original Theme Styles (Keep these) === */
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #380000;
-}
-/* ... existing styles ... */
-
-
-/* === Admin Panel Styles (Keep existing) === */
-.submission-card {
-    border: 1px solid #4a5568;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    background-color: #1f2937;
-}
-/* ... existing admin styles ... */
-
-
-/* === NEW STYLES FOR APPROVED MOVIE EDITOR (Add these to the bottom) === */
 .approved-movie-card {
-    background-color: #1f2937; /* A slightly different dark color */
+    position: relative;
+    overflow: hidden;
+    background-color: #1f2937;
     border: 1px solid #4a5568;
     border-radius: 0.5rem;
     padding: 1rem;
@@ -282,14 +129,14 @@ body {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af; /* gray-400 */
+    color: #9ca3af;
     margin-bottom: 0.25rem;
     display: block;
 }
 .edit-form-grid input,
 .edit-form-grid textarea {
     width: 100%;
-    background-color: #111827; /* gray-900 */
+    background-color: #111827;
     border: 1px solid #4a5568;
     color: white;
     border-radius: 0.375rem;
@@ -301,40 +148,9 @@ body {
     height: 1.25rem;
     width: 1.25rem;
     border-radius: 0.25rem;
-    color: #fde047; /* yellow-300 */
-    background-color: #374151; /* gray-700 */
+    color: #fde047;
+    background-color: #374151;
 }
-/*
-    Folder: /
-    File: layout-styles.css
-    Extension: .css
-*/
-
-/* === Original Theme Styles (Keep these) === */
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: #380000;
-}
-/* ... existing styles ... */
-
-
-/* === Admin Panel Styles (Keep existing) === */
-.submission-card {
-    border: 1px solid #4a5568;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    background-color: #1f2937;
-}
-/* ... existing admin styles ... */
-
-
-/* === NEW STYLES FOR APPROVED MOVIE STATUS FLAGS (Add these to the bottom) === */
-.approved-movie-card {
-    position: relative; /* Required for positioning the flag */
-    overflow: hidden; /* Keeps the flag corners neat */
-}
-
 .status-flag {
     position: absolute;
     top: 0;
@@ -342,28 +158,99 @@ body {
     width: 6px;
     height: 100%;
 }
+.status-flag-current { background-color: #fde047; }
+.status-flag-upcoming { background-color: #3b82f6; }
+.status-flag-past { background-color: #6b7280; }
 
-.status-flag-current {
-    background-color: #fde047; /* Gold */
+/* === Custom Thermostat Styles === */
+#thermostat-container {
+    touch-action: pan-y;
+}
+.thermostat-track-horizontal {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 12px;
+    background: linear-gradient(to right, #3B82F6, #FBBF24, #EF4444);
+    border-radius: 6px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+.thermostat-thumb-horizontal {
+    position: absolute;
+    top: 50%;
+    width: 32px;
+    height: 32px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: 3px solid #4a5568;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
 }
 
-.status-flag-upcoming {
-    background-color: #3b82f6; /* Blue */
+/* === Datepicker Theme Styles === */
+.datepicker {
+    background-color: #111827 !important;
+    border-color: #4a5568 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem;
 }
-
-.status-flag-past {
-    background-color: #6b7280; /* Gray */
+.datepicker-header {
+    background-color: transparent !important;
+}
+.datepicker-header .datepicker-title,
+.datepicker-header .prev-btn,
+.datepicker-header .next-btn {
+    color: #fde047 !important;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    text-shadow: none;
+}
+.datepicker-header .prev-btn:hover,
+.datepicker-header .next-btn:hover {
+    background-color: #374151 !important;
+}
+.datepicker-main {
+    padding: 0 !important;
+}
+.datepicker-view .days .dow {
+    color: #9ca3af;
+    font-weight: bold;
+}
+.datepicker-picker span {
+    color: #d1d5db;
+    border-radius: 0.375rem;
+    border: none;
+}
+.datepicker-picker span:hover {
+    background-color: #374151 !important;
+}
+.datepicker-picker span.focused,
+.datepicker-picker span.selected {
+    background-color: #fde047 !important;
+    color: #111827 !important;
+    font-weight: bold;
+}
+.datepicker-picker span.disabled,
+.datepicker-picker span.disabled:hover {
+    color: #4b5563 !important;
+    background-color: transparent !important;
+}
+.datepicker-footer {
+    background-color: transparent !important;
+    border-top: 1px solid #4a5568 !important;
+    padding-top: 0.5rem;
+}
+.datepicker-footer .button {
+    color: #fde047 !important;
+    background-color: #374151 !important;
+    border-radius: 0.375rem !important;
+    border: none;
 }
 
 /*
     File: layout-styles.css
-    Build Timestamp: 2025-09-18T16:30:00-06:00
-*/
-/*
-    File: layout-styles.css
-    Build Timestamp: 2025-09-18T16:25:00-06:00
-*/
-/*
-    File: layout-styles.css
-    Build Timestamp: 2025-09-18T15:55:00-06:00
+    Build Timestamp: 2025-09-19T11:05:00-06:00
 */

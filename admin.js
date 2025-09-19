@@ -33,10 +33,8 @@ const datepickerOptions = {
 async function loadSubmissions() {
     if (!submissionsContainer) return;
     submissionsContainer.innerHTML = '<p class="text-gray-400">Loading submissions...</p>';
-
     try {
-        const moviesRef = collection(db, 'movies');
-        const q = query(moviesRef, where("status", "==", "pending"));
+        const q = query(collection(db, 'movies'), where("status", "==", "pending"));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -80,17 +78,16 @@ async function loadSubmissions() {
                 </div>
             `;
             submissionsContainer.appendChild(movieCard);
-
+            
             // Initialize Datepicker on the new input
             const dateInput = movieCard.querySelector('.show-date-input');
             if (dateInput) new Datepicker(dateInput, datepickerOptions);
         });
     } catch (error) {
         console.error("Error loading submissions:", error);
-        submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions. Check console.</p>';
+        submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions.</p>';
     }
 }
-
 submissionsContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.bg-black\\/40');
     if (!card) return;
@@ -133,12 +130,11 @@ submissionsContainer.addEventListener('dragleave', (e) => { const area = e.targe
 submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
 
 // ===================================================================
-// === APPROVED MOVIES LOGIC (Updated with Status Flags)
+// === APPROVED MOVIES LOGIC
 // ===================================================================
 async function loadApprovedMovies() {
     try {
-        const moviesRef = collection(db, 'movies');
-        const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "desc"));
+        const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(q);
         
         approvedMovies = [];
@@ -161,13 +157,9 @@ async function loadApprovedMovies() {
         approvedMovies.forEach(movie => {
             let status = 'past';
             if (currentMovie) {
-                if (movie.id === currentMovie.id) {
-                    status = 'current';
-                } else if (new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00')) {
-                    status = 'upcoming';
-                }
+                if (movie.id === currentMovie.id) { status = 'current'; } 
+                else if (new Date(movie.showDate + 'T00:00:00') > new Date(currentMovie.showDate + 'T00:00:00')) { status = 'upcoming'; }
             }
-            
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
             card.setAttribute('data-id', movie.id);
@@ -179,7 +171,6 @@ async function loadApprovedMovies() {
         approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading movies.</p>`;
     }
 }
-
 function createApprovedCardView(movie, status) {
     return `
         <div class="status-flag status-flag-${status}"></div>
@@ -194,7 +185,6 @@ function createApprovedCardView(movie, status) {
         </div>
     `;
 }
-
 function createEditFormView(movie) {
     return `
         <div class="space-y-4">
@@ -216,14 +206,12 @@ function createEditFormView(movie) {
         </div>
     `;
 }
-
 approvedMoviesContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.approved-movie-card');
     if (!card) return;
     const movieId = card.getAttribute('data-id');
     const movieData = approvedMovies.find(m => m.id === movieId);
     if (!movieData) return;
-
     if (e.target.classList.contains('edit-btn')) {
         card.innerHTML = createEditFormView(movieData);
         const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
@@ -244,22 +232,16 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
             const index = approvedMovies.findIndex(m => m.id === movieId);
             if (index !== -1) approvedMovies[index] = { ...approvedMovies[index], ...updatedData };
-            // Find the current status to pass back to the view
-            const flagElement = card.querySelector('.status-flag');
-            const status = flagElement ? flagElement.className.split(' ').pop().replace('status-flag-', '') : 'past';
-            card.innerHTML = createApprovedCardView({ id: movieId, ...updatedData }, status);
+            loadApprovedMovies(); // Reload the whole list to recalculate status
         } catch (error) {
             console.error("Error updating document:", error);
             alert("Failed to save changes.");
         }
     }
     if (e.target.classList.contains('cancel-btn')) {
-        const flagElement = card.querySelector('.status-flag');
-        const status = flagElement ? flagElement.className.split(' ').pop().replace('status-flag-', '') : 'past';
-        card.innerHTML = createApprovedCardView(movieData, status);
+        loadApprovedMovies(); // Reload the whole list to be safe
     }
 });
-
 
 // ===================================================================
 // === AUTHENTICATION & INITIALIZATION
@@ -297,5 +279,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-19T10:55:00-06:00
+    Build Timestamp: 2025-09-19T11:00:00-06:00
 */
