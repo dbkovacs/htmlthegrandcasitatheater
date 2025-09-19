@@ -23,8 +23,7 @@
 
 </head>
 <body class="bg-brand-dark text-white">
-<!-- Add this button inside your admin.html, perhaps near the logout button -->
-<button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
+
     <div class="container mx-auto px-4 py-8 md:py-16 max-w-7xl">
 
         <header class="text-center mb-12">
@@ -68,7 +67,10 @@
 
                     <!-- Approved Movies Column -->
                     <section id="approved-section">
-                        <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Approved & Scheduled</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-cinzel text-2xl text-brand-gold text-shadow">Approved & Scheduled</h3>
+                            <button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
+                        </div>
                         <div id="approved-movies-container" class="space-y-6">
                            <!-- Approved movies will be loaded here -->
                         </div>
@@ -93,6 +95,6 @@
 </html>
 <!--
     File: admin.html
-    Build Timestamp: 2025-09-19T17:30:00-06:00
+    Build Timestamp: 2025-09-19T20:45:00-06:00
 -->
 
