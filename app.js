@@ -13,6 +13,21 @@ const comingSoonContainer = document.getElementById('coming-soon-container');
 const historyContainer = document.getElementById('history-container');
 const timestampContainer = document.getElementById('build-timestamp');
 
+/**
+ * Safely parses a date string in YYYY-MM-DD format.
+ * @param {string} dateString The date string to parse.
+ * @returns {Date|null} A valid Date object or null if the string is invalid.
+ */
+function safeParseDate(dateString) {
+    if (!dateString || typeof dateString !== 'string') return null;
+    // The 'T00:00:00' is crucial to ensure the date is parsed in the local timezone, not UTC.
+    const date = new Date(dateString + 'T00:00:00');
+    if (isNaN(date.getTime())) {
+        return null;
+    }
+    return date;
+}
+
 // --- Main Function to Load and Display Movies ---
 async function loadAndDisplayMovies() {
     try {
@@ -25,31 +40,30 @@ async function loadAndDisplayMovies() {
             return;
         }
 
-        // --- NEW: Add data validation step ---
+        // --- ROBUST VALIDATION STEP ---
         const allMovies = [];
         querySnapshot.forEach(doc => {
             const movieData = doc.data();
-            // Validate that showDate exists and is a valid date format
-            if (movieData.showDate && !isNaN(new Date(movieData.showDate))) {
-                allMovies.push({ id: doc.id, ...movieData });
+            const parsedDate = safeParseDate(movieData.showDate);
+            if (parsedDate) {
+                // Store the pre-parsed Date object to prevent re-parsing and errors later.
+                allMovies.push({ id: doc.id, ...movieData, parsedShowDate: parsedDate });
             } else {
-                console.warn(`Skipping movie with invalid or missing date: ${movieData.movieTitle || 'Unknown'} (ID: ${doc.id})`);
+                console.warn(`[Data Quality Warning] Skipping movie with invalid or missing showDate. Title: "${movieData.movieTitle || 'N/A'}", ID: ${doc.id}`);
             }
         });
-        // --- END: Data validation ---
 
         if (allMovies.length === 0) {
-            // This case handles when approved movies exist but all have bad dates.
-            mainContent.innerHTML = '<p class="text-center p-8">No valid movie screenings found. Please check data.</p>';
+            mainContent.innerHTML = '<p class="text-center p-8">No valid movie screenings found. Please check data in the database.</p>';
             return;
         }
 
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
-        let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+        let currentMovie = allMovies.find(movie => movie.parsedShowDate >= now);
 
-        if (!currentMovie && allMovies.length > 0) {
+        if (!currentMovie) {
             currentMovie = allMovies[allMovies.length - 1];
         }
         
@@ -79,7 +93,7 @@ async function loadAndDisplayMovies() {
     }
 }
 
-// --- Render Functions (No changes needed below this line) ---
+// --- Render Functions ---
 function renderCurrentMovie(movie) {
     document.getElementById('inviter-name').textContent = movie.hostName || 'The Grand Casita Theater';
     document.getElementById('inviter-comment').textContent = movie.greeting || `Invites you to a screening of:`;
@@ -87,7 +101,8 @@ function renderCurrentMovie(movie) {
     document.getElementById('movie-poster').src = movie.posterURL;
     document.getElementById('movie-tagline').textContent = movie.movieTagline || '';
     
-    const showDate = new Date(movie.showDate + 'T00:00:00');
+    // Use the pre-parsed and validated date object.
+    const showDate = movie.parsedShowDate;
     document.getElementById('event-date-display').textContent = showDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
     document.getElementById('event-time-display').innerHTML = movie.eventTimeDisplay || 'Doors Open at 6:00 PM<br>Movie Starts 6:30 PM';
     document.getElementById('location-address').textContent = movie.locationAddress || '2392 Old Rosebud Ln, South Jordan, UT 84095';
@@ -104,10 +119,9 @@ function renderCurrentMovie(movie) {
         audienceSection.classList.remove('bg-red-900/30', 'border-red-500/50');
     }
     
-    // Reservation State Logic (Countdown Timer or Closed Message)
     const now = new Date();
     const reservationDeadline = new Date(showDate);
-    reservationDeadline.setUTCHours(18, 0, 0, 0); // Deadline is Noon in MDT (UTC-6), which is 18:00 UTC.
+    reservationDeadline.setUTCHours(18, 0, 0, 0); 
 
     const actionsContainer = document.getElementById('actions-container');
     const existingCountdown = document.getElementById('countdown-container');
@@ -144,7 +158,7 @@ function renderCurrentMovie(movie) {
         actionsContainer.insertAdjacentHTML('beforebegin', countdownContainerHTML);
         
         const countdownElement = document.getElementById('countdown-timer');
-        const updateCountdown = () => {
+        const countdownInterval = setInterval(() => {
             const timeDifference = reservationDeadline - new Date();
             if (timeDifference <= 0) {
                 countdownElement.innerHTML = "Reservation Deadline Passed";
@@ -157,11 +171,10 @@ function renderCurrentMovie(movie) {
             const m = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((timeDifference % (1000 * 60)) / 1000);
             countdownElement.innerHTML = `${d}d : ${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s`;
-        };
-        const countdownInterval = setInterval(updateCountdown, 1000);
-        updateCountdown();
+        }, 1000);
     }
     
+    // Event listeners for modals are re-established here because innerHTML wipes them.
     const trailerLink = document.getElementById('trailer-link');
     const trailerModal = document.getElementById('trailer-modal');
     const closeTrailerModal = document.getElementById('close-trailer-modal');
@@ -212,7 +225,7 @@ function renderComingSoon(movies) {
             <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover aspect-[2/3]">
             <div class="p-2 text-center">
                 <h3 class="text-sm font-bold font-cinzel">${movie.movieTitle}</h3>
-                <p class="text-xs text-gray-400">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</p>
+                <p class="text-xs text-gray-400">${movie.parsedShowDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</p>
             </div>
         `;
         comingSoonContainer.appendChild(movieCard);
@@ -238,7 +251,7 @@ function renderHistory(movies) {
             <div class="p-4 md:w-3/4">
                 <h3 class="text-xl font-bold font-cinzel">${movie.movieTitle}</h3>
                 <p class="text-sm text-gray-300">Hosted by: ${movie.hostName}</p>
-                <p class="text-sm text-gray-400">Screened on: ${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { timeZone: 'UTC' })}</p>
+                <p class="text-sm text-gray-400">Screened on: ${movie.parsedShowDate.toLocaleDateString('en-US', { timeZone: 'UTC' })}</p>
             </div>
         `;
         historyContainer.appendChild(movieCard);
@@ -249,6 +262,6 @@ function renderHistory(movies) {
 document.addEventListener('DOMContentLoaded', loadAndDisplayMovies);
 /*
     File: app.js
-    Build Timestamp: 2025-09-19T20:10:00-06:00
+    Build Timestamp: 2025-09-19T20:25:00-06:00
 */
 
