@@ -1,117 +1,94 @@
-/*
+<!--
     Folder: /
-    File: datepicker-theme.css
-    Extension: .css
-*/
+    File: admin.html
+    Extension: .html
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - The Grand Casita Theater</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- The conflicting datepicker CSS has been REMOVED -->
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="layout-styles.css">
+    
+    <!-- NEW Datepicker Theme Override -->
+    <link rel="stylesheet" href="datepicker-theme.css">
+</head>
+<body class="bg-brand-dark text-white">
 
-/* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Final Version)
-   =================================================================== */
-.datepicker-container {
-    --datepicker-bg: #1f2937;
-    --datepicker-text-color: #d1d5db;
-    --datepicker-accent-color: #fde047;
-    --datepicker-accent-text-color: #111827;
-    --datepicker-secondary-text-color: #6b7280;
-    --datepicker-hover-color: #374151;
-    --datepicker-border-color: #4a5568;
-}
-.datepicker {
-    background-color: var(--datepicker-bg) !important;
-    border: 1px solid var(--datepicker-border-color) !important;
-    border-radius: 0.5rem !important;
-    padding: 0.75rem;
-    width: 300px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
-}
-.datepicker-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 0 0.25rem 0.75rem !important;
-}
-.datepicker-title {
-    color: var(--datepicker-accent-color) !important;
-    font-family: 'Cinzel', serif;
-    font-weight: 700 !important;
-    font-size: 1rem !important;
-    flex-grow: 1;
-    text-align: center;
-    pointer-events: none;
-}
-.prev-btn, .next-btn {
-    background-color: transparent !important;
-    border: none !important;
-    border-radius: 50% !important;
-    width: 2.25rem;
-    height: 2.25rem;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    color: var(--datepicker-accent-color) !important;
-    transition: background-color 0.2s ease-in-out;
-}
-.prev-btn:hover, .next-btn:hover {
-    background-color: var(--datepicker-hover-color) !important;
-}
-.datepicker-main {
-    padding: 0 !important;
-}
-.datepicker-view { 
-    display: block !important; 
-}
-.datepicker-grid {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    width: 100% !important;
-    gap: 0.25rem;
-}
-.dow, .day {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 2.25rem;
-    width: 100%;
-    font-size: 0.875rem;
-    border-radius: 50%;
-}
-.dow {
-    color: var(--datepicker-secondary-text-color);
-    font-weight: 600;
-    font-size: 0.75rem;
-    font-family: 'Inter', sans-serif;
-}
-.day {
-    color: var(--datepicker-text-color);
-    font-weight: 600; /* Bold for current month */
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-}
-.day:hover {
-    background-color: var(--datepicker-hover-color);
-}
-.day.prev, .day.next {
-    color: var(--datepicker-secondary-text-color) !important;
-    font-weight: 400; /* Not bold for other months */
-}
-.day.today {
-    border: 1px solid var(--datepicker-accent-color);
-    color: var(--datepicker-accent-color);
-}
-.day.selected, .day.selected:hover {
-    background-color: var(--datepicker-accent-color) !important;
-    color: var(--datepicker-accent-text-color) !important;
-    font-weight: 700;
-    border-color: var(--datepicker-accent-color) !important;
-}
-.day.today.selected {
-    color: var(--datepicker-accent-text-color) !important;
-}
-.datepicker-footer { 
-    display: none !important; 
-}
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-7xl">
 
-/*
-    File: datepicker-theme.css
+        <header class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Admin Panel</h1>
+        </header>
+
+        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
+            <!-- Login Container -->
+            <div id="login-container">
+                <h2 class="font-cinzel text-3xl text-center text-brand-gold text-shadow mb-6">Login</h2>
+                <form id="login-form" class="max-w-sm mx-auto space-y-6">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Email</label>
+                        <input type="email" id="login-email" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Password</label>
+                        <input type="password" id="login-password" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="btn-velvet primary w-full">Log In</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dashboard (hidden by default) -->
+            <div id="dashboard" style="display:none;">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
+                    <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
+                    <button id="logout-button" class="btn-velvet w-full md:w-auto">Log Out</button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Pending Submissions Column -->
+                    <section id="pending-section">
+                        <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
+                        <div id="submissions-container" class="space-y-6">
+                            <!-- Pending movies will be loaded here -->
+                        </div>
+                    </section>
+
+                    <!-- Approved Movies Column -->
+                    <section id="approved-section">
+                        <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Approved & Scheduled</h3>
+                        <div id="approved-movies-container" class="space-y-6">
+                           <!-- Approved movies will be loaded here -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
+            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+            <p id="build-timestamp" class="mt-2"></p>
+        </footer>
+    </div>
+    
+    <!-- Datepicker JS -->
+    <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+    <script type="module" src="admin.js"></script>
+
+</body>
+</html>
+<!--
+    File: admin.html
     Build Timestamp: 2025-09-19T16:50:00-06:00
-*/
+-->
