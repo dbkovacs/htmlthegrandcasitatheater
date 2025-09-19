@@ -5,69 +5,113 @@
 */
 
 /* ===================================================================
-   === COMPONENT: Themed Calendar Datepicker (Final Override)
+   === COMPONENT: Themed Calendar Datepicker (Final Version)
    =================================================================== */
+.datepicker-container {
+    --datepicker-bg: #1f2937;
+    --datepicker-text-color: #d1d5db;
+    --datepicker-accent-color: #fde047;
+    --datepicker-accent-text-color: #111827;
+    --datepicker-secondary-text-color: #6b7280;
+    --datepicker-hover-color: #374151;
+    --datepicker-border-color: #4a5568;
+}
 .datepicker {
-    background-color: #1f2937 !important; /* gray-800 */
-    border: 1px solid #4a5568 !important; /* gray-600 */
+    background-color: var(--datepicker-bg) !important;
+    border: 1px solid var(--datepicker-border-color) !important;
     border-radius: 0.5rem !important;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    width: 300px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
 }
 .datepicker-header {
-    background-color: #1f2937 !important; /* Solid background is crucial */
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 0.25rem 0.75rem !important;
 }
-.datepicker-header .datepicker-title {
-    color: #fde047 !important; /* brand-gold */
+.datepicker-title {
+    color: var(--datepicker-accent-color) !important;
     font-family: 'Cinzel', serif;
     font-weight: 700 !important;
+    font-size: 1rem !important;
+    flex-grow: 1;
+    text-align: center;
+    pointer-events: none;
 }
-.datepicker-header .button {
-    color: #fde047 !important;
+.prev-btn, .next-btn {
+    background-color: transparent !important;
+    border: none !important;
     border-radius: 50% !important;
     width: 2.25rem;
     height: 2.25rem;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    color: var(--datepicker-accent-color) !important;
+    transition: background-color 0.2s ease-in-out;
 }
-.datepicker-header .button:hover {
-    background-color: #374151 !important; /* gray-700 */
+.prev-btn:hover, .next-btn:hover {
+    background-color: var(--datepicker-hover-color) !important;
 }
-.datepicker-view .days-of-week span {
-    color: #9ca3af; /* gray-400 */
+.datepicker-main {
+    padding: 0 !important;
+}
+.datepicker-view { 
+    display: block !important; 
+}
+.datepicker-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    width: 100% !important;
+    gap: 0.25rem;
+}
+.dow, .day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.25rem;
+    width: 100%;
+    font-size: 0.875rem;
+    border-radius: 50%;
+}
+.dow {
+    color: var(--datepicker-secondary-text-color);
     font-weight: 600;
+    font-size: 0.75rem;
+    font-family: 'Inter', sans-serif;
 }
-.datepicker-view .days .day {
-    color: #d1d5db; /* gray-300 - Standard day color */
-    font-weight: 700; /* BOLD for current month */
+.day {
+    color: var(--datepicker-text-color);
+    font-weight: 600; /* Bold for current month */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
-.datepicker-view .days .day:hover {
-    background-color: #374151; /* gray-700 */
+.day:hover {
+    background-color: var(--datepicker-hover-color);
 }
-/* THIS IS THE FIX: Fade out days from other months */
-.datepicker-view .days .day.prev,
-.datepicker-view .days .day.next {
-    color: #6b7280 !important; /* gray-500 */
-    font-weight: 400 !important; /* NOT BOLD for other months */
+.day.prev, .day.next {
+    color: var(--datepicker-secondary-text-color) !important;
+    font-weight: 400; /* Not bold for other months */
 }
-/* Style for today's date - a gold outline */
-.datepicker-view .days .day.today {
-    color: #fde047;
-    border: 1px solid #fde047;
+.day.today {
+    border: 1px solid var(--datepicker-accent-color);
+    color: var(--datepicker-accent-color);
 }
-/* Style for the selected date */
-.datepicker-view .days .day.selected,
-.datepicker-view .days .day.selected:hover {
-    background-color: #fde047 !important; /* brand-gold */
-    color: #111827 !important; /* gray-900 */
+.day.selected, .day.selected:hover {
+    background-color: var(--datepicker-accent-color) !important;
+    color: var(--datepicker-accent-text-color) !important;
     font-weight: 700;
+    border-color: var(--datepicker-accent-color) !important;
 }
-/* Ensure today's date has dark text when selected */
-.datepicker-view .days .day.today.selected {
-    color: #111827 !important;
+.day.today.selected {
+    color: var(--datepicker-accent-text-color) !important;
 }
-.datepicker-footer {
-    display: none !important;
+.datepicker-footer { 
+    display: none !important; 
 }
 
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T16:40:00-06:00
+    Build Timestamp: 2025-09-19T16:50:00-06:00
 */
