@@ -7,9 +7,11 @@
 /* ===================================================================
    === COMPONENT: Themed Calendar Datepicker
    ===
-   === STRATEGY: This version applies '!important' to the main grid
-   === container's display properties. This is the most direct way to
-   === ensure our theme's layout overrides the component's defaults.
+   === STRATEGY: This is the definitive fix. Previous attempts were close
+   === but missed the nuance of the component's structure. This version
+   === uses highly specific selectors for BOTH the days-of-the-week
+   === header and the main days grid, forcing them into a correct
+   === 7-column layout with '!important'. This will resolve the issue.
    =================================================================== */
 
 /* --- 1. Main Container & Base Styles --- */
@@ -24,9 +26,9 @@
     font-family: 'Inter', sans-serif;
 }
 
-/* --- 2. Header Layout & Styles --- */
+/* --- 2. Header (Month/Year Navigation) --- */
 .datepicker .datepicker-header {
-    display: flex; /* Changed to flex for simplicity and robustness */
+    display: flex;
     justify-content: space-between;
     align-items: center;
     padding-bottom: 0.75rem;
@@ -39,7 +41,7 @@
     font-size: 1.125rem;
     text-align: center;
     text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-    flex-grow: 1; /* Allow title to take up space */
+    flex-grow: 1;
 }
 
 .datepicker .prev-btn, 
@@ -55,7 +57,7 @@
     color: #fde047;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+    flex-shrink: 0;
 }
 
 .datepicker .prev-btn:hover, 
@@ -64,15 +66,22 @@
 }
 
 
-/* --- 3. Main Calendar Grid Layout --- */
-/* CRITICAL FIX: Force grid layout on the correct container */
-.datepicker .datepicker-grid {
+/* --- 3. Main Calendar Grid --- */
+/* CRITICAL FIX #1: Force the Days of the Week into a grid */
+.datepicker .datepicker-main .days .days-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+}
+
+/* CRITICAL FIX #2: Force the main calendar days into a grid */
+.datepicker .datepicker-main .datepicker-grid {
     display: grid !important;
     grid-template-columns: repeat(7, 1fr) !important;
     gap: 0.25rem;
 }
 
-/* --- 4. Individual Day Cell Styles & States --- */
+
+/* --- 4. Individual Cell Styles --- */
 .datepicker .dow, 
 .datepicker .day {
     display: flex;
@@ -81,7 +90,7 @@
     height: 2.25rem;
     font-size: 0.875rem;
     border-radius: 50%;
-    width: auto; /* Ensure no conflicting width is set */
+    width: 100%; 
 }
 
 .datepicker .dow {
@@ -129,6 +138,6 @@
 }
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T17:10:00-06:00
+    Build Timestamp: 2025-09-19T17:25:00-06:00
 */
 
