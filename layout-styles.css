@@ -190,8 +190,8 @@ body {
    === 5. COMPONENT: Themed Calendar Datepicker (Corrected)
    =================================================================== */
 .datepicker {
-    background-color: #111827 !important; /* gray-900 */
-    border: 1px solid #4a5568 !important; /* gray-700 */
+    background-color: #1f2937 !important; /* gray-800 */
+    border: 1px solid #4a5568 !important; /* gray-600 */
     border-radius: 0.5rem !important;
     padding: 0.5rem;
     width: 280px;
@@ -201,7 +201,7 @@ body {
     justify-content: space-between !important;
     align-items: center !important;
     padding: 0.5rem 0.25rem !important;
-    background-color: #1f2937 !important; /* Corrected: Solid background */
+    background-color: #1f2937 !important; /* Solid background */
 }
 .datepicker-header .datepicker-title {
     color: #fde047 !important; /* brand-gold */
@@ -262,11 +262,16 @@ body {
     color: #4b5563 !important; /* gray-600 */
     background-color: transparent !important;
 }
+/* THIS IS THE FIX */
+.datepicker-picker span.prev,
+.datepicker-picker span.next {
+    color: #6b7280 !important; /* gray-500, makes out-of-month dates visible */
+}
 .datepicker-footer {
     display: none !important; /* Hide the footer with today/clear buttons */
 }
 
 /*
     File: layout-styles.css
-    Build Timestamp: 2025-09-19T15:40:00-06:00
+    Build Timestamp: 2025-09-19T15:45:00-06:00
 */
