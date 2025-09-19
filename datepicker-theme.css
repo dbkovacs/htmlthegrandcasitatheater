@@ -13,15 +13,19 @@
     border-radius: 0.5rem !important;
     padding: 0.5rem;
 }
-.datepicker-header, .datepicker-picker {
-    background-color: transparent !important;
+.datepicker-header {
+    background-color: #1f2937 !important; /* Solid background is crucial */
 }
-.datepicker-header .datepicker-title,
-.datepicker-header .button {
+.datepicker-header .datepicker-title {
     color: #fde047 !important; /* brand-gold */
     font-family: 'Cinzel', serif;
     font-weight: 700 !important;
-    text-shadow: none !important;
+}
+.datepicker-header .button {
+    color: #fde047 !important;
+    border-radius: 50% !important;
+    width: 2.25rem;
+    height: 2.25rem;
 }
 .datepicker-header .button:hover {
     background-color: #374151 !important; /* gray-700 */
@@ -32,23 +36,32 @@
 }
 .datepicker-view .days .day {
     color: #d1d5db; /* gray-300 - Standard day color */
+    font-weight: 700; /* BOLD for current month */
 }
 .datepicker-view .days .day:hover {
     background-color: #374151; /* gray-700 */
 }
+/* THIS IS THE FIX: Fade out days from other months */
 .datepicker-view .days .day.prev,
 .datepicker-view .days .day.next {
-    color: #4b5563; /* gray-600 */
+    color: #6b7280 !important; /* gray-500 */
+    font-weight: 400 !important; /* NOT BOLD for other months */
 }
+/* Style for today's date - a gold outline */
 .datepicker-view .days .day.today {
-    border: 1px solid #fde047;
     color: #fde047;
+    border: 1px solid #fde047;
 }
+/* Style for the selected date */
 .datepicker-view .days .day.selected,
 .datepicker-view .days .day.selected:hover {
     background-color: #fde047 !important; /* brand-gold */
     color: #111827 !important; /* gray-900 */
-    font-weight: bold;
+    font-weight: 700;
+}
+/* Ensure today's date has dark text when selected */
+.datepicker-view .days .day.today.selected {
+    color: #111827 !important;
 }
 .datepicker-footer {
     display: none !important;
@@ -56,5 +69,5 @@
 
 /*
     File: datepicker-theme.css
-    Build Timestamp: 2025-09-19T16:20:00-06:00
+    Build Timestamp: 2025-09-19T16:40:00-06:00
 */
