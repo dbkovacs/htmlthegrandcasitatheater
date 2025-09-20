@@ -5,7 +5,7 @@
 */
 
 import { db } from './firebase-config.js';
-import { collection, doc, getDoc, getDocs, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, getDoc, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- DOM References ---
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -18,13 +18,18 @@ const reserverNameInput = document.getElementById('reserver-name');
 const reserveButton = document.getElementById('reserve-button');
 const reservationsListContainer = document.getElementById('reservations-list-container');
 const successModal = document.getElementById('success-modal');
+const premiumFullModal = document.getElementById('premium-full-modal');
+const confirmContinueButton = document.getElementById('confirm-continue-button');
+const cancelContinueButton = document.getElementById('cancel-continue-button');
+
 
 // --- State ---
 let currentMovie = null;
 let seatingLayout = [];
 let reservations = [];
 let selectedSeats = [];
-let unsubscribeReservations = null; // To detach the real-time listener
+let unsubscribeReservations = null;
+let arePremiumSeatsFull = false;
 
 // --- Main Initialization ---
 async function initializePage() {
@@ -33,13 +38,13 @@ async function initializePage() {
         const movieId = urlParams.get('movieId');
 
         if (!movieId) {
-            handleFatalError("No movie specified. Please return to the main page and select a movie.");
+            handleFatalError("No Movie ID Provided", "Please return to the main page and click 'Reserve Seat' again.");
             return;
         }
 
         const movieDoc = await getDoc(doc(db, "movies", movieId));
         if (!movieDoc.exists()) {
-            handleFatalError("The specified movie could not be found.");
+            handleFatalError("Movie Not Found", `The movie with ID "${movieId}" could not be found.`);
             return;
         }
         currentMovie = { id: movieDoc.id, ...movieDoc.data() };
@@ -54,12 +59,19 @@ async function initializePage() {
 
     } catch (error) {
         console.error("Initialization Error:", error);
-        handleFatalError("Could not load reservation data. Please try again later.");
+        handleFatalError("Initialization Error", `A critical error occurred: ${error.message}.`);
     }
 }
 
-function handleFatalError(message) {
-    loadingOverlay.innerHTML = `<p class="text-red-400 font-cinzel text-xl text-center">${message}</p><a href="index.html" class="btn-velvet mt-4">Return to Main Page</a>`;
+function handleFatalError(title, message) {
+    loadingOverlay.innerHTML = `
+        <div class="text-center max-w-lg">
+            <h2 class="font-cinzel text-2xl text-red-400 mb-2">${title}</h2>
+            <p class="text-gray-300">${message}</p>
+            <a href="index.html" class="btn-velvet mt-6 inline-block">Return to Main Page</a>
+        </div>
+    `;
+    loadingOverlay.style.display = 'flex';
 }
 
 // --- Data Fetching ---
@@ -68,24 +80,37 @@ async function fetchSeatingLayout() {
     if (layoutDoc.exists()) {
         seatingLayout = layoutDoc.data().seats;
     } else {
-        throw new Error("Default seating layout not found in the database. Please run the setup script.");
+        throw new Error("The 'default' seating layout was not found. Please run 'setup-firestore.html'.");
     }
 }
 
 function setupRealtimeReservationsListener() {
-    if (unsubscribeReservations) unsubscribeReservations(); // Detach any old listener
+    if (unsubscribeReservations) unsubscribeReservations();
 
     const reservationsRef = collection(db, "movies", currentMovie.id, "reservations");
     const q = query(reservationsRef, orderBy("timestamp", "asc"));
     
     unsubscribeReservations = onSnapshot(q, (snapshot) => {
         reservations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        checkPremiumSeatStatus();
         renderAll();
     }, (error) => {
         console.error("Error listening to reservations:", error);
-        handleFatalError("Lost connection to the reservation server.");
+        handleFatalError("Connection Lost", "Please refresh the page.");
     });
 }
+
+// --- NEW: Check Premium Seat Status ---
+function checkPremiumSeatStatus() {
+    const premiumSeatIds = seatingLayout.filter(s => s.isPremium).map(s => s.id);
+    if (premiumSeatIds.length === 0) {
+        arePremiumSeatsFull = false;
+        return;
+    }
+    const reservedSeatIds = reservations.flatMap(r => r.seats.map(s => s.id));
+    arePremiumSeatsFull = premiumSeatIds.every(id => reservedSeatIds.includes(id));
+}
+
 
 // --- Rendering ---
 function renderAll() {
@@ -98,7 +123,7 @@ function renderSeatingChart() {
     seatingContainer.innerHTML = '';
     const reservedSeatIds = reservations.flatMap(r => r.seats.map(s => s.id));
     
-    const rows = [...new Set(seatingLayout.map(s => s.row))]; // ['A', 'B', 'C', 'D']
+    const rows = [...new Set(seatingLayout.map(s => s.row))].sort();
     rows.forEach(rowLetter => {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'flex justify-center gap-4 items-center';
@@ -131,7 +156,7 @@ function renderSeatingChart() {
 
 function renderGuestList() {
     if (reservations.length === 0) {
-        reservationsListContainer.innerHTML = `<p class="text-gray-400 italic">No one has reserved a seat yet. Be the first!</p>`;
+        reservationsListContainer.innerHTML = `<p class="text-gray-400 italic">Be the first to reserve a seat!</p>`;
         return;
     }
     const list = document.createElement('ul');
@@ -150,7 +175,7 @@ function renderGuestList() {
 }
 
 
-// --- UI Interaction ---
+// --- UI Interaction & State Management ---
 function handleSeatClick(seatId) {
     if (selectedSeats.includes(seatId)) {
         selectedSeats = selectedSeats.filter(id => id !== seatId);
@@ -158,7 +183,7 @@ function handleSeatClick(seatId) {
         selectedSeats.push(seatId);
     }
     updateSelectedSeatsDisplay();
-    renderSeatingChart(); // Re-render to show selection change
+    renderSeatingChart();
 }
 
 function updateSelectedSeatsDisplay() {
@@ -167,7 +192,7 @@ function updateSelectedSeatsDisplay() {
         const seatNames = selectedSeats.map(id => {
             const seat = seatingLayout.find(s => s.id === id);
             return seat ? `${seat.row}${seat.number}` : '';
-        }).join(', ');
+        }).sort().join(', ');
         selectedSeatsList.textContent = seatNames;
     } else {
         selectedSeatsList.textContent = 'None';
@@ -185,12 +210,26 @@ function updateReservationButton() {
 }
 
 // --- Form Submission ---
-async function handleReservationSubmit() {
-    const name = reserverNameInput.value.trim();
-    if (!name || selectedSeats.length === 0) {
-        alert("Please enter your name and select at least one seat.");
-        return;
+function handleReservationClick() {
+    const selectedSeatObjects = selectedSeats.map(id => seatingLayout.find(s => s.id === id));
+    const isSelectingOnlyNonPremium = selectedSeatObjects.every(s => !s.isPremium);
+
+    if (arePremiumSeatsFull && !isSelectingOnlyNonPremium) {
+         // This case should be rare, but prevents selecting premium seats when they are full
+         alert("All premium seats are currently taken. Please select only available bean bag seats.");
+         return;
     }
+    
+    if (arePremiumSeatsFull && isSelectingOnlyNonPremium) {
+        premiumFullModal.classList.remove('hidden');
+    } else {
+        submitReservation();
+    }
+}
+
+async function submitReservation() {
+    const name = reserverNameInput.value.trim();
+    if (!name || selectedSeats.length === 0) return;
 
     reserveButton.disabled = true;
     reserveButton.innerHTML = `<div class="loader"></div>`;
@@ -207,23 +246,28 @@ async function handleReservationSubmit() {
             seats: seatsToReserve,
             timestamp: new Date()
         });
-
         successModal.classList.remove('hidden');
-
     } catch (error) {
         console.error("Error submitting reservation:", error);
-        alert("There was an error saving your reservation. Please try again.");
+        alert("There was an error saving your reservation.");
         reserveButton.disabled = false;
         reserveButton.innerHTML = 'Reserve Seats';
     }
 }
-
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', initializePage);
 reserverNameInput.addEventListener('input', updateReservationButton);
 reserveButton.addEventListener('click', () => {
     if (!reserveButton.classList.contains('disabled')) {
-        handleReservationSubmit();
+        handleReservationClick();
     }
 });
+confirmContinueButton.addEventListener('click', () => {
+    premiumFullModal.classList.add('hidden');
+    submitReservation();
+});
+cancelContinueButton.addEventListener('click', () => {
+    premiumFullModal.classList.add('hidden');
+});
+
