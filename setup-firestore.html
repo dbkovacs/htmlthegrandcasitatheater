@@ -1,0 +1,75 @@
+<!--
+    Folder: /
+    File: setup-firestore.html
+    Extension: .html
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>One-Time Firestore Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="layout-styles.css">
+</head>
+<body class="bg-brand-dark text-white min-h-screen flex items-center justify-center">
+    <div class="bg-brand-card p-8 rounded-lg text-center max-w-lg">
+        <h1 class="font-cinzel text-3xl text-brand-gold mb-4">Theater Layout Setup</h1>
+        <p class="text-gray-300 mb-6">
+            Click the button below to initialize the default seating layout in your Firestore database.
+            <strong>You only need to do this one time.</strong> Running it again will overwrite the existing layout.
+        </p>
+        <button id="setup-button" class="btn-velvet primary text-lg">Initialize Seating Layout</button>
+        <p id="response" class="mt-4 h-6"></p>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const setupButton = document.getElementById('setup-button');
+        const responseMessage = document.getElementById('response');
+
+        const defaultLayout = {
+            name: "Default Theater Layout",
+            seats: [
+                { id: "A1", row: 'A', number: 1, type: 'beanbag', isPremium: false },
+                { id: "A2", row: 'A', number: 2, type: 'beanbag', isPremium: false },
+                { id: "A3", row: 'A', number: 3, type: 'beanbag', isPremium: false },
+                { id: "A4", row: 'A', number: 4, type: 'beanbag', isPremium: false },
+                { id: "B1", row: 'B', number: 1, type: 'chair', isPremium: true },
+                { id: "B2", row: 'B', number: 2, type: 'chair', isPremium: true },
+                { id: "B3", row: 'B', number: 3, type: 'chair', isPremium: true },
+                { id: "B4", row: 'B', number: 4, type: 'chair', isPremium: true },
+                { id: "C1", row: 'C', number: 1, type: 'chair', isPremium: true },
+                { id: "C2", row: 'C', number: 2, type: 'chair', isPremium: true },
+                { id: "C3", row: 'C', number: 3, type: 'chair', isPremium: true },
+                { id: "D1", row: 'D', number: 1, type: 'chair', isPremium: true },
+                { id: "D2", row: 'D', number: 2, type: 'chair', isPremium: true },
+                { id: "D3", row: 'D', number: 3, type: 'chair', isPremium: true },
+                { id: "D4", row: 'D', number: 4, type: 'chair', isPremium: true },
+            ]
+        };
+
+        setupButton.addEventListener('click', async () => {
+            setupButton.disabled = true;
+            responseMessage.textContent = "Working...";
+            try {
+                // We will save the layout under a specific, predictable ID 'default'
+                await setDoc(doc(db, "layouts", "default"), defaultLayout);
+                responseMessage.classList.add('text-green-400');
+                responseMessage.textContent = "Success! Layout has been saved to Firestore.";
+            } catch (error) {
+                console.error("Error setting up layout:", error);
+                responseMessage.classList.add('text-red-400');
+                responseMessage.textContent = "Error. Check the console for details.";
+            } finally {
+                setupButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
+<!--
+    File: setup-firestore.html
+    Build Timestamp: 2025-09-19T21:00:00-06:00
+-->

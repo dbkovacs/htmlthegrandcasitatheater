@@ -1,0 +1,110 @@
+<!--
+    Folder: /
+    File: system-check.html
+    Extension: .html
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Health Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="layout-styles.css">
+</head>
+<body class="bg-brand-dark text-white min-h-screen flex items-center justify-center">
+    <div class="bg-brand-card p-8 rounded-lg text-center max-w-2xl w-full">
+        <h1 class="font-cinzel text-3xl text-brand-gold mb-4">System Health Check</h1>
+        <p class="text-gray-300 mb-6">
+            This tool checks critical dependencies for the reservation system.
+        </p>
+        <button id="run-check-button" class="btn-velvet primary text-lg">Run Check</button>
+        <div id="results-container" class="mt-6 text-left space-y-4"></div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const runCheckButton = document.getElementById('run-check-button');
+        const resultsContainer = document.getElementById('results-container');
+
+        const renderResult = (title, success, message) => {
+            const color = success ? 'text-green-400' : 'text-red-400';
+            const icon = success ? '&#10004;' : '&#10008;';
+            resultsContainer.innerHTML += `
+                <div class="p-4 bg-black/20 rounded-lg border-l-4 ${success ? 'border-green-500' : 'border-red-500'}">
+                    <h3 class="font-bold ${color} flex items-center gap-2"><span class="text-xl">${icon}</span> ${title}</h3>
+                    <p class="text-gray-300 pl-8">${message}</p>
+                </div>
+            `;
+        };
+
+        const checkLayout = async () => {
+            try {
+                const layoutDoc = await getDoc(doc(db, "layouts", "default"));
+                if (layoutDoc.exists()) {
+                    renderResult("Seating Layout Check", true, "The 'default' seating layout was found successfully in the database.");
+                } else {
+                    renderResult("Seating Layout Check", false, "<strong>CRITICAL:</strong> The 'default' seating layout was NOT found. Please run the <strong>setup-firestore.html</strong> page to create it.");
+                }
+            } catch (error) {
+                renderResult("Seating Layout Check", false, `An error occurred while checking the layout: ${error.message}`);
+            }
+        };
+
+        const checkCurrentMovie = async () => {
+             try {
+                const moviesRef = collection(db, 'movies');
+                const q = query(moviesRef, where("status", "==", "Approved"), orderBy("showDate", "asc"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                     renderResult("Current Movie Check", false, "No 'Approved' movies were found in the database.");
+                     return;
+                }
+
+                const allMovies = [];
+                querySnapshot.forEach(doc => {
+                    const movieData = doc.data();
+                    if (movieData.showDate && !isNaN(new Date(movieData.showDate))) {
+                         allMovies.push({ id: doc.id, ...movieData });
+                    }
+                });
+
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                let currentMovie = allMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+                 if (!currentMovie && allMovies.length > 0) {
+                    currentMovie = allMovies[allMovies.length - 1];
+                }
+
+                if (currentMovie) {
+                    renderResult("Current Movie Check", true, `Successfully identified the current movie: <strong>${currentMovie.movieTitle}</strong> (ID: ${currentMovie.id}).`);
+                } else {
+                    renderResult("Current Movie Check", false, "Could not determine the current movie from the approved list. Check movie dates.");
+                }
+
+            } catch (error) {
+                renderResult("Current Movie Check", false, `An error occurred while checking for the current movie: ${error.message}`);
+            }
+        };
+
+        runCheckButton.addEventListener('click', async () => {
+            runCheckButton.disabled = true;
+            runCheckButton.textContent = "Checking...";
+            resultsContainer.innerHTML = '';
+            
+            await checkLayout();
+            await checkCurrentMovie();
+
+            runCheckButton.disabled = false;
+            runCheckButton.textContent = "Run Check Again";
+        });
+    </script>
+</body>
+</html>
+<!--
+    File: system-check.html
+    Build Timestamp: 2025-09-20T10:00:00-06:00
+-->
+
