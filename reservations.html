@@ -1,91 +1,45 @@
+<!--
+    Folder: /
+    File: reservations.html
+    Extension: .html
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Grand Caista Theater - Reservations</title>
+    <title>The Grand Casita Theater - Reservations</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-cinzel {
-            font-family: 'Cinzel', serif;
-        }
-        .text-shadow {
-            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-        }
-        .bg-brand-dark {
-             background-color: #380000;
-        }
-        .bg-brand-card {
-            background-color: #2a0000;
-        }
-        .text-brand-gold {
-            color: #fde047; /* Tailwind's yellow-300 */
-        }
-        .bg-brand-gold {
-            background-color: #fde047; /* Tailwind's yellow-300 */
-        }
-        .hover\:bg-brand-gold-dark:hover {
-            background-color: #facc15; /* Tailwind's yellow-400 */
-        }
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fde047;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="layout-styles.css">
 </head>
 <body class="bg-brand-dark text-white min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-brand-card shadow-2xl rounded-2xl w-full max-w-5xl flex flex-col md:flex-row gap-8 border-2 border-yellow-300/20 p-8">
-        
+    <div id="loading-overlay" class="fixed inset-0 bg-brand-dark flex flex-col items-center justify-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 font-cinzel text-brand-gold">Loading Movie Night...</p>
+    </div>
+
+    <div id="reservation-content" class="bg-brand-card shadow-2xl rounded-2xl w-full max-w-5xl hidden flex-col md:flex-row gap-8 border-2 border-yellow-300/20 p-8">
         <!-- Left Side: Seating Chart & Reservation Form -->
         <div class="flex-1 text-center">
-            <h1 class="text-4xl font-bold mb-6 text-brand-gold font-cinzel text-shadow">Theater Seating</h1>
+            <h1 class="text-4xl font-bold mb-2 text-brand-gold font-cinzel text-shadow">Reserve Your Seat</h1>
+            <p id="movie-title-display" class="text-xl text-gray-300 mb-6"></p>
             
-            <div class="bg-gray-900 text-white rounded-t-lg p-1 mb-4 text-center text-base font-mono tracking-widest shadow-lg">
-                SCREEN
-            </div>
+            <div class="bg-gray-900 text-white rounded-t-lg p-1 mb-4 text-center text-base font-mono tracking-widest shadow-lg">SCREEN</div>
             
             <div class="space-y-2 mb-8 text-sm text-gray-300">
-                <div class="flex justify-center gap-4">
+                <div class="flex flex-wrap justify-center gap-x-4 gap-y-1">
                     <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md bg-gray-400 border border-gray-500"></span> Available</div>
                     <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md bg-blue-500 border-blue-400"></span> Selected</div>
-                    <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md bg-red-700 border-red-600"></span> Reserved</div>
-                </div>
-                <div class="flex justify-center gap-4 text-gray-400">
-                      <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-gray-400 border border-gray-500"></span> Bean Bag</div>
-                      <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md bg-gray-400 border border-gray-500"></span> Chair</div>
+                    <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md bg-red-800 border-red-600"></span> Reserved</div>
+                    <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-gray-400 border border-gray-500"></span> Bean Bag</div>
                 </div>
             </div>
 
-            <!-- Seating Area with Stairs -->
             <div class="flex justify-center items-start gap-4">
-                <div id="seating-container" class="space-y-6">
-                    <div class="flex justify-center items-center h-48"><div class="loader"></div></div>
+                <div id="seating-container" class="space-y-4">
+                    <!-- Dynamic seating chart will be rendered here -->
                 </div>
-                <!-- Stairs Element -->
-                <div class="flex flex-col h-full pt-10">
-                    <div class="bg-gray-800/50 text-gray-400 font-cinzel tracking-widest rounded-lg flex items-center justify-center w-16" style="writing-mode: vertical-rl; text-orientation: mixed; height: 280px;">
-                        STAIRS
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-gray-900 text-white rounded-b-lg p-1 mt-4 text-center text-base font-mono tracking-widest shadow-lg">
-                BAR CHAIRS
             </div>
 
             <div class="mt-10 pt-6 border-t-2 border-yellow-300/20 flex flex-col items-center">
@@ -93,348 +47,35 @@
                     Selected Seats (<span id="selected-seats-count">0</span>):
                     <span id="selected-seats-list" class="font-normal text-gray-300">None</span>
                 </p>
-                <input
-                    type="text"
-                    id="reserver-name"
-                    placeholder="Enter your name"
-                    class="mb-4 p-2 w-full max-w-xs text-center border-2 bg-gray-900 border-yellow-300/20 rounded-lg focus:outline-none focus:border-yellow-400 text-white"
-                />
+                <input type="text" id="reserver-name" placeholder="Enter your name" class="mb-4 p-2 w-full max-w-xs text-center border-2 bg-gray-900 border-yellow-300/20 rounded-lg focus:outline-none focus:border-yellow-400 text-white">
 
-                <!-- SMS Opt-in Section -->
-                <div class="w-full max-w-md my-4 p-4 border-2 border-yellow-300/10 rounded-lg bg-black/20 text-center">
-                    <h3 class="font-cinzel text-brand-gold text-lg">Get Text Updates (Optional)</h3>
-                    <p class="text-xs text-gray-400 mt-1 mb-4">Volunteer your number to get event updates and exclusive offers for this movie night.</p>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input
-                            type="tel"
-                            id="phone-number"
-                            placeholder="10-digit phone number"
-                            class="p-2 flex-grow text-center border-2 bg-gray-900 border-yellow-300/20 rounded-lg focus:outline-none focus:border-yellow-400 text-white"
-                        />
-                        <select id="carrier-select" class="p-2 text-center border-2 bg-gray-900 border-yellow-300/20 rounded-lg focus:outline-none focus:border-yellow-400 text-white">
-                            <option value="">Select Carrier</option>
-                        </select>
-                    </div>
-                    <div id="sms-address-display" class="mt-2 text-gray-500 text-sm h-5 font-mono"></div>
-                </div>
-
-                <button
-                    id="reserve-button"
-                    class="px-8 py-3 rounded-lg font-bold text-lg transition-all duration-200 ease-in-out bg-gray-600 text-gray-400 cursor-not-allowed flex items-center justify-center w-48 h-12 font-cinzel"
-                    disabled
-                >
-                    Reserve Seats
-                </button>
+                <button id="reserve-button" class="btn-velvet disabled w-64 h-12 text-lg">Reserve Seats</button>
             </div>
         </div>
 
         <!-- Right Side: Reservation Log -->
         <div class="flex-1 bg-black/20 p-6 rounded-xl shadow-inner overflow-y-auto max-h-[700px]">
-            <h2 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel text-shadow border-b-2 border-yellow-300/20 pb-2">Reservation Log</h2>
-            <div id="reservation-log-container">
-                <p id="no-reservations-message" class="text-gray-400 italic">No reservations yet.</p>
-                <ul id="reservations-list" class="space-y-4 hidden">
-                    <!-- Log entries will be rendered here -->
-                </ul>
+            <h2 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel text-shadow border-b-2 border-yellow-300/20 pb-2">Guest List</h2>
+            <div id="reservations-list-container">
+                <!-- Guest list will be rendered here -->
             </div>
         </div>
     </div>
 
-    <a href="index.html" class="fixed bottom-4 left-4 text-sm font-cinzel text-yellow-300/50 hover:text-brand-gold transition-colors flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Return to Main Page
-    </a>
-
-    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-brand-card p-6 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-yellow-300/50">
-            <h3 class="text-xl font-bold mb-4 text-brand-gold font-cinzel">Confirm Deletion</h3>
-            <p class="text-gray-200 mb-6">Are you sure you want to delete seat <span id="seat-to-delete-display" class="font-bold"></span>?</p>
-            <div class="flex justify-center gap-4">
-                <button id="confirm-delete-button" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors font-cinzel">
-                    Confirm
-                </button>
-                <button id="cancel-delete-button" class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors font-cinzel">
-                    Cancel
-                </button>
-            </div>
+    <a href="index.html" class="fixed bottom-4 left-4 text-sm font-cinzel text-yellow-300/50 hover:text-brand-gold transition-colors">Return to Main Page</a>
+    
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-yellow-300/50">
+            <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">Success!</h3>
+            <p class="text-gray-200 mb-6">Your seats have been reserved.</p>
+            <a href="index.html" class="btn-velvet primary w-full">Back to Main Page</a>
         </div>
     </div>
     
-    <!-- Reservation Success Modal -->
-    <div id="reservation-success-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-xs w-full border-2 border-yellow-300/50">
-            <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">Success!</h3>
-            <p class="text-gray-200 mb-6">Your seats have been reserved.</p>
-            <button id="close-success-modal-button" class="w-full px-6 py-3 bg-brand-gold hover:bg-brand-gold-dark text-stone-900 font-bold rounded-lg transition-colors font-cinzel">
-                OK
-            </button>
-        </div>
-    </div>
-
-
-    <script>
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgcspU4XtMsslxxV8nQl9-sY7A7wRhAf9CqPV72ybzuG-Qh7aZ5U384IiUvUkpjUgJZw/exec';
-        
-        const carriers = [
-            { name: "Verizon", sms: "vtext.com" },
-            { name: "AT&T", sms: "txt.att.net" },
-            { name: "T-Mobile", sms: "tmomail.net" },
-            { name: "Cricket", sms: "sms.cricketwireless.net" },
-            { name: "Boost Mobile", sms: "myboostmobile.com" },
-            { name: "Mint Mobile", sms: "tmomail.net" },
-            { name: "US Cellular", sms: "email.uscc.net" },
-            { name: "Google Fi", sms: "msg.fi.google.com" },
-            { name: "Xfinity Mobile", sms: "vtext.com" },
-            { name: "Spectrum Mobile", sms: "vtext.com" }
-        ];
-
-        const defaultSeats = [
-            { id: 1, row: 'A', number: 4, status: 'available', type: 'beanbag', size: 'small' }, { id: 2, row: 'A', number: 3, status: 'available', type: 'beanbag', size: 'large' }, { id: 3, row: 'A', number: 2, status: 'available', type: 'beanbag', size: 'large' }, { id: 4, row: 'A', number: 1, status: 'available', type: 'beanbag', size: 'small' },
-            { id: 5, row: 'B', number: 4, status: 'available', type: 'chair' }, { id: 6, row: 'B', number: 3, status: 'available', type: 'chair' }, { id: 7, row: 'B', number: 2, status: 'available', type: 'chair' }, { id: 8, row: 'B', number: 1, status: 'available', type: 'chair' },
-            { id: 9, row: 'C', number: 3, status: 'available', type: 'chair' }, { id: 10, row: 'C', number: 2, status: 'available', type: 'chair' }, { id: 11, row: 'C', number: 1, status: 'available', type: 'chair' },
-            { id: 12, row: 'D', number: 4, status: 'available', type: 'chair' }, { id: 13, row: 'D', number: 3, status: 'available', type: 'chair' }, { id: 14, row: 'D', number: 2, status: 'available', type: 'chair' }, { id: 15, row: 'D', number: 1, status: 'available', type: 'chair' },
-        ];
-
-        let seats, reservations, seatToDelete = null;
-
-        const seatingContainer = document.getElementById('seating-container');
-        const selectedSeatsCount = document.getElementById('selected-seats-count');
-        const selectedSeatsList = document.getElementById('selected-seats-list');
-        const reserverNameInput = document.getElementById('reserver-name');
-        const reserveButton = document.getElementById('reserve-button');
-        const noReservationsMessage = document.getElementById('no-reservations-message');
-        const reservationsList = document.getElementById('reservations-list');
-        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-        const seatToDeleteDisplay = document.getElementById('seat-to-delete-display');
-        const confirmDeleteButton = document.getElementById('confirm-delete-button');
-        const cancelDeleteButton = document.getElementById('cancel-delete-button');
-        const phoneNumberInput = document.getElementById('phone-number');
-        const carrierSelect = document.getElementById('carrier-select');
-        const smsAddressDisplay = document.getElementById('sms-address-display');
-        const reservationSuccessModal = document.getElementById('reservation-success-modal');
-        const closeSuccessModalButton = document.getElementById('close-success-modal-button');
-
-        const populateCarriers = () => {
-            carriers.sort((a,b) => a.name.localeCompare(b.name)).forEach(carrier => {
-                const option = document.createElement('option');
-                option.value = carrier.sms;
-                option.textContent = carrier.name;
-                carrierSelect.appendChild(option);
-            });
-        };
-
-        const updateSmsAddress = () => {
-            const phone = phoneNumberInput.value.replace(/\D/g, ''); // Remove non-digits
-            const gateway = carrierSelect.value;
-            if (phone.length === 10 && gateway) {
-                smsAddressDisplay.textContent = `${phone}@${gateway}`;
-            } else {
-                smsAddressDisplay.textContent = '';
-            }
-        };
-
-        const getSeatClasses = (status) => {
-            switch (status) {
-                case 'available': return 'bg-gray-400 hover:bg-gray-500 cursor-pointer';
-                case 'selected': return 'bg-blue-500 text-white cursor-pointer ring-2 ring-offset-2 ring-offset-brand-card ring-blue-400';
-                case 'reserved': return 'bg-red-800 text-white cursor-not-allowed opacity-60';
-                default: return '';
-            }
-        };
-
-        const renderSeats = () => {
-            seatingContainer.innerHTML = '';
-            const rowOrder = ['A', 'B', 'C', 'D'];
-            rowOrder.forEach(rowLetter => {
-                const rowSeats = seats.filter(seat => seat.row === rowLetter).sort((a, b) => b.number - a.number);
-                if (rowSeats.length === 0) return;
-
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'flex justify-center gap-4 items-center';
-                
-                rowDiv.innerHTML = `<div class="text-lg font-semibold w-10 flex items-center justify-center font-cinzel text-yellow-300/50">${rowLetter}</div>`;
-                
-                const seatsDiv = document.createElement('div');
-                seatsDiv.className = 'flex gap-4';
-
-                rowSeats.forEach(seat => {
-                    const seatDiv = document.createElement('div');
-                    const shapeClass = seat.type === 'beanbag' ? 'rounded-full' : 'rounded-lg';
-                    seatDiv.className = `w-12 h-12 flex items-center justify-center shadow-md transition-all duration-200 ease-in-out font-bold text-sm ${getSeatClasses(seat.status)} ${shapeClass}`;
-                    seatDiv.textContent = seat.number;
-                    if (seat.status !== 'reserved') {
-                        seatDiv.addEventListener('click', () => handleSeatClick(seat.id));
-                    }
-                    seatsDiv.appendChild(seatDiv);
-                });
-                
-                rowDiv.appendChild(seatsDiv);
-                seatingContainer.appendChild(rowDiv);
-            });
-        };
-
-        const renderReservations = () => {
-            reservationsList.innerHTML = '';
-            if (!reservations || reservations.length === 0) {
-                noReservationsMessage.classList.remove('hidden');
-                reservationsList.classList.add('hidden');
-            } else {
-                noReservationsMessage.classList.add('hidden');
-                reservationsList.classList.remove('hidden');
-                reservations.forEach(res => {
-                    const li = document.createElement('li');
-                    li.className = 'bg-brand-dark/50 p-4 rounded-lg shadow-md';
-                    li.innerHTML = `
-                        <p class="font-semibold text-lg text-brand-gold">${res.name}</p>
-                        <p class="text-gray-300">
-                            Seats: ${res.seats.map(seat => `
-                                <span 
-                                     data-reservation-id="${res.id}" data-seat-id="${seat.id}" data-seat-display="${seat.row}${seat.number}"
-                                     class="inline-block mx-1 p-1 rounded-md transition-colors duration-200 ease-in-out font-bold ${seat.status === 'deleted' ? 'text-gray-500 line-through cursor-not-allowed' : 'text-gray-200 hover:bg-gray-700 cursor-pointer'}"
-                                >${seat.row}${seat.number}</span>`).join('')}
-                        </p>
-                        <p class="text-gray-500 text-sm mt-1">${res.timestamp}</p>`;
-                    reservationsList.appendChild(li);
-                });
-            }
-            document.querySelectorAll('#reservations-list span:not(.cursor-not-allowed)').forEach(span => {
-                span.addEventListener('click', (e) => {
-                    const { reservationId, seatId, seatDisplay } = e.target.dataset;
-                    handlePrepDelete(parseInt(reservationId), parseInt(seatId), seatDisplay);
-                });
-            });
-        };
-
-        const updateUI = () => {
-            const selected = seats.filter(seat => seat.status === 'selected');
-            selectedSeatsCount.textContent = selected.length;
-            selectedSeatsList.textContent = selected.map(s => `${s.row}${s.number}`).join(', ') || 'None';
-
-            const isReadyToReserve = selected.length > 0 && reserverNameInput.value.trim() !== '';
-            reserveButton.disabled = !isReadyToReserve;
-            reserveButton.className = `px-8 py-3 rounded-lg font-bold text-lg transition-all duration-200 ease-in-out flex items-center justify-center w-48 h-12 font-cinzel ${isReadyToReserve ? 'bg-brand-gold hover:bg-brand-gold-dark text-stone-900 shadow-lg' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`;
-
-            renderSeats();
-            renderReservations();
-        };
-
-        const fetchData = async () => {
-            try {
-                const response = await fetch(WEB_APP_URL);
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-                const data = await response.json();
-                
-                seats = JSON.parse(JSON.stringify(defaultSeats)); 
-                reservations = data.reservations || [];
-                
-                reservations.forEach(res => {
-                    res.seats.forEach(resSeat => {
-                        const seat = seats.find(s => s.id === resSeat.id);
-                        if (seat && resSeat.status !== 'deleted') seat.status = 'reserved';
-                    });
-                });
-            } catch (error) {
-                console.error('Error loading data:', error);
-                alert('Could not load reservation data. Please check the console for errors.');
-                seats = JSON.parse(JSON.stringify(defaultSeats));
-                reservations = [];
-            }
-            updateUI();
-        };
-
-        const sendData = async (payload) => {
-            const formData = new FormData();
-            formData.append('data', JSON.stringify(payload));
-
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                   const errorText = await response.text();
-                   throw new Error(`Network error: ${response.statusText}. Server says: ${errorText}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error sending data:', error);
-                alert(`Failed to save reservation. Error: ${error.message}`);
-                return { success: false, error: error.message };
-            }
-        };
-
-        const handleSeatClick = (seatId) => {
-            seats = seats.map(seat => seat.id === seatId ? { ...seat, status: seat.status === 'available' ? 'selected' : 'available' } : seat);
-            updateUI();
-        };
-        
-        const handleReserve = async () => {
-            const seatsToReserve = seats.filter(seat => seat.status === 'selected');
-            if (seatsToReserve.length === 0) return;
-
-            reserveButton.innerHTML = '<div class="loader"></div>';
-            reserveButton.disabled = true;
-
-            const newReservation = {
-                id: Date.now(),
-                name: reserverNameInput.value.trim(),
-                seats: seatsToReserve.map(s => ({ id: s.id, row: s.row, number: s.number, status: 'reserved' })),
-                timestamp: new Date().toLocaleString(),
-                smsAddress: smsAddressDisplay.textContent || "" // Add the generated address
-            };
-
-            const result = await sendData({ type: 'reserve', reservation: newReservation });
-            
-            reserveButton.innerHTML = 'Reserve Seats';
-            
-            if (result.success) {
-                reservationSuccessModal.classList.remove('hidden');
-                reserverNameInput.value = '';
-                phoneNumberInput.value = '';
-                carrierSelect.value = '';
-                updateSmsAddress();
-                await fetchData();
-            } else {
-                updateUI(); // Re-enable button if something went wrong
-            }
-        };
-        
-        const handlePrepDelete = (reservationId, seatId, seatDisplay) => {
-            seatToDelete = { reservationId, seatId, seatDisplay };
-            seatToDeleteDisplay.textContent = seatDisplay;
-            deleteConfirmModal.classList.remove('hidden');
-        };
-
-        const handleDeleteConfirm = async () => {
-            if (!seatToDelete) return;
-            const result = await sendData({ type: 'delete', ...seatToDelete });
-            deleteConfirmModal.classList.add('hidden');
-            seatToDelete = null;
-            if (result.success) await fetchData();
-        };
-
-        const handleDeleteCancel = () => {
-            deleteConfirmModal.classList.add('hidden');
-            seatToDelete = null;
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            populateCarriers();
-            fetchData();
-            reserveButton.addEventListener('click', handleReserve);
-            reserverNameInput.addEventListener('input', updateUI);
-            confirmDeleteButton.addEventListener('click', handleDeleteConfirm);
-            cancelDeleteButton.addEventListener('click', handleDeleteCancel);
-            phoneNumberInput.addEventListener('input', updateSmsAddress);
-            carrierSelect.addEventListener('change', updateSmsAddress);
-            closeSuccessModalButton.addEventListener('click', () => {
-                reservationSuccessModal.classList.add('hidden');
-            });
-        });
-    </script>
+    <script type="module" src="reservations.js"></script>
 </body>
 </html>
-
+<!--
+    File: reservations.html
+    Build Timestamp: 2025-09-19T21:00:00-06:00
+-->
