@@ -24,7 +24,7 @@ function safeParseDate(dateString) {
     return isNaN(date.getTime()) ? null : date;
 }
 
-// --- Main Function to Load and Display Movies ---
+// --- Main Function ---
 async function loadAndDisplayMovies() {
     try {
         const moviesRef = collection(db, 'movies');
@@ -32,7 +32,7 @@ async function loadAndDisplayMovies() {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-            mainContent.innerHTML = '<p class="text-center p-8">No movies found. Check back soon!</p>';
+            mainContent.innerHTML = '<p class="text-center p-8">No movies found.</p>';
             return;
         }
 
@@ -43,7 +43,7 @@ async function loadAndDisplayMovies() {
             if (parsedDate) {
                 allMovies.push({ id: doc.id, ...movieData, parsedShowDate: parsedDate });
             } else {
-                console.warn(`[Data Quality Warning] Skipping movie: "${movieData.movieTitle || 'N/A'}". Invalid showDate.`);
+                console.warn(`[Data Warning] Skipping movie: "${movieData.movieTitle || 'N/A'}" due to invalid showDate.`);
             }
         });
 
@@ -57,13 +57,12 @@ async function loadAndDisplayMovies() {
 
         let currentMovie = allMovies.find(movie => movie.parsedShowDate >= now);
         if (!currentMovie) {
-            currentMovie = allMovies[allMovies.length - 1];
+            currentMovie = allMovies[allMovies.length - 1]; 
         }
         
         if (currentMovie) {
-            // Asynchronously load reservations and update the UI
-            loadReservationsForCurrentMovie(currentMovie); 
             renderCurrentMovie(currentMovie);
+            loadReservationsForCurrentMovie(currentMovie); 
             
             const currentIndex = allMovies.findIndex(movie => movie.id === currentMovie.id);
             const historyMovies = allMovies.slice(0, currentIndex);
@@ -71,7 +70,6 @@ async function loadAndDisplayMovies() {
             
             renderHistory(historyMovies.reverse()); 
             renderComingSoon(comingSoonMovies);
-
         } else {
             mainContent.innerHTML = `<div class="p-8 text-center"><h2 class="text-3xl font-bold">No movie is currently scheduled.</h2></div>`;
         }
@@ -86,13 +84,12 @@ async function loadAndDisplayMovies() {
     }
 }
 
-// --- NEW: Functions to handle reservation data on the main page ---
+// --- Real-time Reservation Handling ---
 let unsubscribeReservations = null;
 
 function loadReservationsForCurrentMovie(movie) {
-    if (unsubscribeReservations) {
-        unsubscribeReservations(); // Stop listening to old movie's reservations
-    }
+    if (unsubscribeReservations) unsubscribeReservations();
+
     const reservationsRef = collection(db, 'movies', movie.id, 'reservations');
     const q = query(reservationsRef, orderBy("timestamp", "asc"));
     unsubscribeReservations = onSnapshot(q, (snapshot) => {
@@ -116,37 +113,29 @@ function renderGuestList(reservations) {
 }
 
 async function checkPremiumSeating(reservations) {
-    const premiumSeatsFullBanner = document.getElementById('premium-seats-full-banner');
-    if (!premiumSeatsFullBanner) return;
+    const sashBannerContainer = document.getElementById('sash-banner-container');
+    if (!sashBannerContainer) return;
 
-    const layoutDoc = await getDoc(doc(db, "layouts", "default"));
-    if (!layoutDoc.exists()) return;
-    
-    const allSeats = layoutDoc.data().seats;
-    const premiumSeatIds = allSeats.filter(s => s.isPremium).map(s => s.id);
-    const reservedSeatIds = reservations.flatMap(r => r.seats.map(s => s.id));
+    try {
+        const layoutDoc = await getDoc(doc(db, "layouts", "default"));
+        if (!layoutDoc.exists()) return;
+        
+        const allSeats = layoutDoc.data().seats;
+        const premiumSeatIds = allSeats.filter(s => s.isPremium).map(s => s.id);
+        if(premiumSeatIds.length === 0) return;
 
-    const allPremiumReserved = premiumSeatIds.every(id => reservedSeatIds.includes(id));
+        const reservedSeatIds = reservations.flatMap(r => r.seats.map(s => s.id));
+        const allPremiumReserved = premiumSeatIds.every(id => reservedSeatIds.includes(id));
 
-    if (allPremiumReserved) {
-        premiumSeatsFullBanner.classList.remove('hidden');
-    } else {
-        premiumSeatsFullBanner.classList.add('hidden');
+        sashBannerContainer.classList.toggle('hidden', !allPremiumReserved);
+    } catch (error) {
+        console.error("Error checking premium seating:", error);
     }
 }
 
 
-// --- Render Functions ---
+// --- Main Render Functions ---
 function renderCurrentMovie(movie) {
-    const posterContainer = document.getElementById('poster-container');
-    if (posterContainer && !document.getElementById('premium-seats-full-banner')) {
-        posterContainer.insertAdjacentHTML('beforeend', `
-            <div id="premium-seats-full-banner" class="absolute inset-0 bg-black/70 flex items-center justify-center hidden">
-                <p class="text-2xl font-black text-white text-center transform -rotate-12 border-4 border-white p-4 font-cinzel">PREMIUM SEATING<br>FULL</p>
-            </div>
-        `);
-    }
-
     const invitationDetails = document.getElementById('invitation-details');
     if (invitationDetails && !document.getElementById('guest-list-container')) {
         const audienceSection = document.getElementById('audience-section');
@@ -168,64 +157,62 @@ function renderCurrentMovie(movie) {
     document.getElementById('location-address').textContent = movie.locationAddress || '2392 Old Rosebud Ln, South Jordan, UT 84095';
     document.getElementById('google-maps-link').href = `https://maps.google.com/?q=${encodeURIComponent(movie.locationAddress || '2392 Old Rosebud Ln, South Jordan, UT 84095')}`;
     
-    const reserveSeatButton = document.getElementById('reserve-seat-button');
-    if(reserveSeatButton) {
-        reserveSeatButton.href = `reservations.html?movieId=${movie.id}`;
-    }
-
     const audienceSection = document.getElementById('audience-section');
-    if (movie.isAdultsOnly) {
-        document.getElementById('audience-label').textContent = "Adults Only";
-        document.getElementById('audience-message').textContent = "This screening is for adults only (21+).";
-        audienceSection.classList.add('bg-red-900/30', 'border-red-500/50');
-    } else {
-        document.getElementById('audience-label').textContent = "Kids Welcome";
-        document.getElementById('audience-message').textContent = "This is a family-friendly screening.";
-        audienceSection.classList.remove('bg-red-900/30', 'border-red-500/50');
-    }
-    
+    audienceSection.innerHTML = `
+        <span id="audience-label" class="font-cinzel text-brand-gold text-xl font-bold">${movie.isAdultsOnly ? "Adults Only" : "Kids Welcome"}</span>
+        <p id="audience-message" class="text-gray-300 mt-1 text-sm h-4">${movie.isAdultsOnly ? "This screening is for adults only (21+)." : "This is a family-friendly screening."}</p>
+    `;
+    audienceSection.className = `my-4 text-center p-3 rounded-lg border-2 ${movie.isAdultsOnly ? 'bg-red-900/30 border-red-500/50' : 'border-transparent'}`;
+
     const now = new Date();
     const reservationDeadline = new Date(movie.parsedShowDate);
-    reservationDeadline.setUTCHours(18, 0, 0, 0); 
+    reservationDeadline.setUTCHours(18, 0, 0, 0);
 
     const actionsContainer = document.getElementById('actions-container');
+    const reservationsClosedContainer = document.getElementById('reservations-closed-container');
     const existingCountdown = document.getElementById('countdown-container');
-    if (existingCountdown) existingCountdown.remove();
-
+    if(existingCountdown) existingCountdown.remove();
+    
     if (now > reservationDeadline) {
-        actionsContainer.innerHTML = `
-            <div class="bg-black/30 p-4 rounded-lg border-l-4 border-yellow-300/50 text-center">
-                <h3 class="text-2xl font-bold mb-2 text-shadow font-cinzel text-brand-gold">Reservations Closed</h3>
-                <p class="text-gray-300">The deadline to reserve a seat has passed.</p>
-            </div>`;
+        actionsContainer.style.display = 'none';
+        reservationsClosedContainer.style.display = 'block';
     } else {
-        const countdownContainerHTML = `
-            <div id="countdown-container" class="my-6 text-center">
-                <p class="font-cinzel text-yellow-300/80 text-sm uppercase tracking-widest">Reservation Deadline</p>
-                <div id="countdown-timer" class="text-2xl font-mono text-white mt-1"></div>
-            </div>`;
+        actionsContainer.style.display = 'grid';
+        reservationsClosedContainer.style.display = 'none';
+
+        actionsContainer.innerHTML = `
+            <div class="flex"><button id="trailer-link" class="btn-velvet w-full">Watch Trailer</button></div>
+            <div class="flex gap-2">
+                <a href="reservations.html?movieId=${movie.id}" id="reserve-seat-button" class="btn-velvet w-1/2">Reserve Seat</a>
+                <a href="swigdrinkorder.html" class="btn-velvet w-1/2">Order a Drink</a>
+            </div>
+            <div class="flex gap-2">
+                <a href="history.html" class="btn-velvet w-1/2 leading-tight">Coming Soon<br>History</a>
+                <a href="signups.html" class="btn-velvet w-1/2">Pick a Movie</a>
+            </div>
+            <div class="flex"><a href="products.html" class="btn-velvet w-full">Products</a></div>
+        `;
+
+        const countdownContainerHTML = `<div id="countdown-container" class="my-6 text-center"><p class="font-cinzel text-yellow-300/80 text-sm uppercase">Reservation Deadline</p><div id="countdown-timer" class="text-2xl font-mono mt-1"></div></div>`;
         actionsContainer.insertAdjacentHTML('beforebegin', countdownContainerHTML);
         
         const countdownElement = document.getElementById('countdown-timer');
         const countdownInterval = setInterval(() => {
             const timeDifference = reservationDeadline - new Date();
             if (timeDifference <= 0) {
-                countdownElement.innerHTML = "Reservation Deadline Passed";
                 clearInterval(countdownInterval);
-                setTimeout(() => window.location.reload(), 2000);
+                window.location.reload();
             } else {
-                const d = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-                const h = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((timeDifference % (1000 * 60)) / 1000);
+                const d = Math.floor(timeDifference / 86400000);
+                const h = Math.floor((timeDifference % 86400000) / 3600000);
+                const m = Math.floor((timeDifference % 3600000) / 60000);
+                const s = Math.floor((timeDifference % 60000) / 1000);
                 countdownElement.innerHTML = `${d}d : ${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s`;
             }
         }, 1000);
     }
     
     const trailerLink = document.getElementById('trailer-link');
-    const adultsOnlyModal = document.getElementById('adults-only-modal');
-
     if (trailerLink && movie.trailerLink) {
         trailerLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -234,85 +221,54 @@ function renderCurrentMovie(movie) {
         });
     }
 
+    const reserveSeatButton = document.getElementById('reserve-seat-button');
     if (reserveSeatButton && movie.isAdultsOnly) {
         reserveSeatButton.addEventListener('click', (e) => {
             e.preventDefault();
-            adultsOnlyModal.classList.remove('hidden');
+            document.getElementById('adults-only-modal').classList.remove('hidden');
         });
-        document.getElementById('confirm-age-button').addEventListener('click', () => { window.location.href = `reservations.html?movieId=${movie.id}`; });
-        document.getElementById('cancel-age-button').addEventListener('click', () => { adultsOnlyModal.classList.add('hidden'); });
+        document.getElementById('confirm-age-button').onclick = () => { window.location.href = `reservations.html?movieId=${movie.id}`; };
+        document.getElementById('cancel-age-button').onclick = () => { document.getElementById('adults-only-modal').classList.add('hidden'); };
     }
 }
 
 function renderComingSoon(movies) {
-    if (!comingSoonContainer || !document.getElementById('coming-soon-section')) return;
-    if (movies.length === 0) {
-        document.getElementById('coming-soon-section').style.display = 'none';
-        return;
-    }
-    document.getElementById('coming-soon-section').style.display = 'block';
-    comingSoonContainer.innerHTML = '';
-    movies.forEach(movie => {
-        const movieCard = document.createElement('div');
-        movieCard.className = 'bg-brand-card rounded-lg overflow-hidden shadow-lg';
-        movieCard.innerHTML = `
+    document.getElementById('coming-soon-section').style.display = movies.length > 0 ? 'block' : 'none';
+    comingSoonContainer.innerHTML = movies.map(movie => `
+        <div class="bg-brand-card rounded-lg overflow-hidden shadow-lg">
             <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover aspect-[2/3]">
             <div class="p-2 text-center">
                 <h3 class="text-sm font-bold font-cinzel">${movie.movieTitle}</h3>
                 <p class="text-xs text-gray-400">${movie.parsedShowDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</p>
             </div>
-        `;
-        comingSoonContainer.appendChild(movieCard);
-    });
+        </div>
+    `).join('');
 }
 
 function renderHistory(movies) {
-    if (!historyContainer || !document.getElementById('history-section')) return;
-     if (movies.length === 0) {
-        document.getElementById('history-section').style.display = 'none';
-        return;
-    }
-    document.getElementById('history-section').style.display = 'block';
-    historyContainer.innerHTML = '';
-    movies.forEach((movie, index) => {
-        const movieCard = document.createElement('div');
-        const isReversed = index % 2 !== 0;
-        movieCard.className = `flex flex-col md:flex-row ${isReversed ? 'md:flex-row-reverse' : ''} bg-brand-card rounded-lg overflow-hidden shadow-lg items-center`;
-        movieCard.innerHTML = `
-            <div class="md:w-1/4 w-1/2">
-                <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover">
-            </div>
+    document.getElementById('history-section').style.display = movies.length > 0 ? 'block' : 'none';
+    historyContainer.innerHTML = movies.map((movie, index) => `
+        <div class="flex flex-col md:flex-row ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''} bg-brand-card rounded-lg overflow-hidden shadow-lg items-center">
+            <div class="md:w-1/4 w-1/2"><img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto object-cover"></div>
             <div class="p-4 md:w-3/4">
                 <h3 class="text-xl font-bold font-cinzel">${movie.movieTitle}</h3>
                 <p class="text-sm text-gray-300">Hosted by: ${movie.hostName}</p>
                 <p class="text-sm text-gray-400">Screened on: ${movie.parsedShowDate.toLocaleDateString('en-US', { timeZone: 'UTC' })}</p>
             </div>
-        `;
-        historyContainer.appendChild(movieCard);
-    });
+        </div>`).join('');
 }
 
-// --- Run on Page Load ---
+// --- Initializer ---
 document.addEventListener('DOMContentLoaded', () => {
     loadAndDisplayMovies();
-    // Close trailer modal logic
     const trailerModal = document.getElementById('trailer-modal');
     if (trailerModal) {
-        document.getElementById('close-trailer-modal').addEventListener('click', () => {
+        const closeTrailer = () => {
             trailerModal.classList.add('hidden');
             document.getElementById('youtube-player').src = '';
-        });
-        trailerModal.addEventListener('click', (e) => { 
-            if (e.target === trailerModal) {
-                trailerModal.classList.add('hidden');
-                document.getElementById('youtube-player').src = '';
-            }
-        });
+        };
+        document.getElementById('close-trailer-modal').addEventListener('click', closeTrailer);
+        trailerModal.addEventListener('click', (e) => { if (e.target === trailerModal) closeTrailer(); });
     }
 });
-
-/*
-    File: app.js
-    Build Timestamp: 2025-09-19T21:00:00-06:00
-*/
 

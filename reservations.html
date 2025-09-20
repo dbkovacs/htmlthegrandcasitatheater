@@ -64,6 +64,7 @@
 
     <a href="index.html" class="fixed bottom-4 left-4 text-sm font-cinzel text-yellow-300/50 hover:text-brand-gold transition-colors">Return to Main Page</a>
     
+    <!-- Modals -->
     <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-sm w-full border-2 border-yellow-300/50">
             <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">Success!</h3>
@@ -72,10 +73,23 @@
         </div>
     </div>
     
+    <!-- NEW: Premium Seating Full Modal -->
+    <div id="premium-full-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-md w-full border-2 border-yellow-300/50">
+            <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">Premium Seating Is Full</h3>
+            <p class="text-gray-200 mb-6">All premium chair seats have been reserved. Only non-premium bean bag seats are available. Do you still wish to proceed with your reservation?</p>
+            <div class="flex justify-center gap-4">
+                 <button id="confirm-continue-button" class="btn-velvet primary">Yes, Continue</button>
+                 <button id="cancel-continue-button" class="btn-velvet">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <script type="module" src="reservations.js"></script>
 </body>
 </html>
 <!--
     File: reservations.html
-    Build Timestamp: 2025-09-19T21:00:00-06:00
+    Build Timestamp: 2025-09-20T11:00:00-06:00
 -->
+
