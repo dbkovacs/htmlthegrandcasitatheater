@@ -206,18 +206,22 @@ function createApprovedCardView(movie, status) {
 
 function createReservationRowHtml(reservation) {
     let seatDisplay = '';
-    if (Array.isArray(reservation.seats)) {
-        // Assume reservation.seats is an array where each item is either a string
-        // (e.g., "A1") or an object with a 'seat' property (e.g., { seat: "A1" }).
-        seatDisplay = reservation.seats.map(seatItem => {
-            // Check if seatItem is an object and has a 'seat' property
+    const seatsData = reservation.seats; // Get the raw seats data
+
+    if (Array.isArray(seatsData)) {
+        // Handles formats like ["A1", "B2"] or [{ seat: "A1" }, { seat: "B2" }]
+        seatDisplay = seatsData.map(seatItem => {
             if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
-                return seatItem.seat; // Return the value of the 'seat' property
+                return seatItem.seat;
             } else if (typeof seatItem === 'string') {
-                return seatItem; // If it's already a string, return it directly
+                return seatItem;
             }
-            return ''; // For any other unexpected type, return an empty string
-        }).filter(s => s !== '').join(', '); // Filter out empty strings and join
+            return '';
+        }).filter(s => s !== '').join(', ');
+    } else if (typeof seatsData === 'object' && seatsData !== null) {
+        // Handles formats like { "A1": true, "B2": true } or { "A1": { status: "reserved" }, "B2": { status: "reserved" } }
+        // Extracts the keys (seat identifiers) for display
+        seatDisplay = Object.keys(seatsData).join(', ');
     }
     
     return `
@@ -425,16 +429,22 @@ async function exportMoviesToCSV() {
 
             if (reservations.length > 0) {
                 reservations.forEach(reservation => {
-                    const seatsForCsv = Array.isArray(reservation.seats) ? 
-                                        reservation.seats.map(seatItem => {
-                                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
-                                                return seatItem.seat;
-                                            } else if (typeof seatItem === 'string') {
-                                                return seatItem;
-                                            }
-                                            return '';
-                                        }).filter(s => s !== '').join(', ')
-                                        : '';
+                    // Correctly handle seat data for CSV export
+                    let seatsForCsv = '';
+                    const seatsData = reservation.seats;
+                    if (Array.isArray(seatsData)) {
+                        seatsForCsv = seatsData.map(seatItem => {
+                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
+                                return seatItem.seat;
+                            } else if (typeof seatItem === 'string') {
+                                return seatItem;
+                            }
+                            return '';
+                        }).filter(s => s !== '').join(', ');
+                    } else if (typeof seatsData === 'object' && seatsData !== null) {
+                        seatsForCsv = Object.keys(seatsData).join(', ');
+                    }
+
                     const rowData = [
                         ...baseMovieData,
                         reservation.id || '', reservation.name || '', reservation.email || '', 
