@@ -4,16 +4,11 @@
     Extension: .js
 */
 
-import { auth, db, storage } from './firebase-config.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { db, storage } from './firebase-config.js';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
-const loginContainer = document.getElementById('login-container');
-const dashboard = document.getElementById('dashboard');
-const loginForm = document.getElementById('login-form');
-const logoutButton = document.getElementById('logout-button');
 const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
@@ -26,20 +21,6 @@ const flatpickrOptions = {
     altInput: true,
     altFormat: "F j, Y",
 };
-
-/**
- * Calculates the ISO week number of a given date.
- * @param {Date} d The date to check.
- * @returns {number} The week number.
- */
-function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return weekNo;
-}
-
 
 // ===================================================================
 // === PENDING SUBMISSIONS LOGIC
@@ -142,12 +123,12 @@ submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); c
 submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
 submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
 
-// ===================================================================
-// === APPROVED MOVIES LOGIC
-// ===================================================================
+% --- APPROVED MOVIES LOGIC ---
 async function loadApprovedMovies() {
     try {
+        // Change orderBy to descending to show furthest future date at top
         const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
+        
         const querySnapshot = await getDocs(q);
         
         approvedMovies = [];
@@ -160,29 +141,41 @@ async function loadApprovedMovies() {
         }
 
         const now = new Date();
-        const currentWeekNumber = getWeekNumber(now);
+        now.setHours(0, 0, 0, 0);
 
         let currentMovie = null;
-        let sortedMovies = [...approvedMovies].sort((a, b) => new Date(a.showDate) - new Date(b.showDate));
-        
-        const firstUpcoming = sortedMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
-        if (firstUpcoming) {
-            currentMovie = firstUpcoming;
-        } else {
-            currentMovie = sortedMovies[sortedMovies.length - 1];
+
+        // Find all movies that are today or in the future
+        const upcomingOrTodayMovies = approvedMovies.filter(movie => {
+            const movieDate = new Date(movie.showDate + 'T00:00:00');
+            return movieDate >= now;
+        });
+
+        if (upcomingOrTodayMovies.length > 0) {
+            // Sort these upcoming movies in ascending order to find the *next chronological* one
+            upcomingOrTodayMovies.sort((a, b) => {
+                const dateA = new Date(a.showDate + 'T00:00:00');
+                const dateB = new Date(b.showDate + 'T00:00:00');
+                return dateA.getTime() - dateB.getTime();
+            });
+            currentMovie = upcomingOrTodayMovies[0]; // This is the next chronological upcoming movie
+        } else if (approvedMovies.length > 0) {
+            // If no upcoming movies, the approvedMovies list is sorted descending (future to past).
+            // The first element in this list will be the most recent past movie.
+            currentMovie = approvedMovies[0];
         }
         
         approvedMovies.forEach(movie => {
-            let status = 'past';
+            let status = 'past'; // Default status is 'past'
             const movieDate = new Date(movie.showDate + 'T00:00:00');
-            const movieWeekNumber = getWeekNumber(movieDate);
-            
-            if (movie.id === currentMovie.id) {
+
+            if (currentMovie && movie.id === currentMovie.id) {
                 status = 'current';
             } else if (movieDate > now) {
                 status = 'upcoming';
             }
-            
+            // If movieDate <= now and not 'current', it remains 'past'.
+
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
             card.setAttribute('data-id', movie.id);
@@ -269,9 +262,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     }
 });
 
-// ===================================================================
-// === CSV EXPORT LOGIC
-// ===================================================================
+% --- CSV EXPORT LOGIC ---
 function formatCSVRow(items) {
     return items.map(item => {
         let str = String(item === null || item === undefined ? '' : item);
@@ -327,36 +318,13 @@ async function exportMoviesToCSV() {
     }
 }
 
-// ===================================================================
-// === AUTHENTICATION & INITIALIZATION
-// ===================================================================
-onAuthStateChanged(auth, user => {
-    if (user) {
-        loginContainer.style.display = 'none';
-        dashboard.style.display = 'block';
-        loadSubmissions(); 
-        loadApprovedMovies();
-    } else {
-        loginContainer.style.display = 'block';
-        dashboard.style.display = 'none';
-    }
-});
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-        console.error("Error signing in:", error);
-        alert("Login failed: " + error.message);
-    }
-});
-logoutButton.addEventListener('click', () => {
-    signOut(auth).catch((error) => console.error("Error signing out:", error));
-});
+% --- INITIALIZATION ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Directly call the loading functions as there is no login check
+    loadSubmissions();
+    loadApprovedMovies();
+
     if (timestampContainer) {
         timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
     }
@@ -367,5 +335,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-21T14:01:41-06:00
+    Build Timestamp: 2025-09-21T13:45:00-06:00
 */
