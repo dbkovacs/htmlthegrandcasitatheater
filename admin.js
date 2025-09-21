@@ -99,7 +99,7 @@ submissionsContainer.addEventListener('click', async (e) => {
             const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
             await uploadBytes(posterRef, posterFile);
             const posterURL = await getDownloadURL(posterRef);
-            await updateDoc(doc(db, 'movies', movieId), { status: 'Approved', showDate, trailerLink, posterURL });
+            await updateDoc(doc(db, 'movies', movieId), { status: 'Approved', showDate, trailerLink, posterURL, reservations: [] }); // Initialize reservations
             alert('Movie approved successfully!');
             loadSubmissions();
             loadApprovedMovies();
@@ -195,13 +195,14 @@ async function loadApprovedMovies() {
 }
 
 function createApprovedCardView(movie, status) {
+    const reservationCount = (movie.reservations && movie.reservations.length > 0) ? `(${movie.reservations.length} reservations)` : '';
     return `
         <div class="status-flag status-flag-${status}"></div>
         <div class="pl-4">
              <div class="flex justify-between items-start">
                 <div>
                     <h4 class="font-cinzel text-xl text-brand-gold">${movie.movieTitle}</h4>
-                    <p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate}</p>
+                    <p class="text-sm text-gray-400">Hosted by ${movie.hostName} on ${movie.showDate} ${reservationCount}</p>
                 </div>
                 <button class="btn-velvet text-xs edit-btn">Edit</button>
             </div>
@@ -209,7 +210,26 @@ function createApprovedCardView(movie, status) {
     `;
 }
 
+function createReservationItemHtml(reservation, index) {
+    return `
+        <div class="reservation-item" data-res-index="${index}">
+            <div>
+                <p class="text-sm text-brand-gold">${reservation.name} - ${reservation.seats} seats</p>
+                <p class="text-xs text-gray-400">${reservation.email}</p>
+            </div>
+            <div class="actions">
+                <button class="btn-velvet text-xs edit-reservation-btn">Edit</button>
+                <button class="btn-velvet decline-btn text-xs delete-reservation-btn">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
 function createEditFormView(movie) {
+    const reservationsHtml = (movie.reservations && movie.reservations.length > 0)
+        ? movie.reservations.map((res, index) => createReservationItemHtml(res, index)).join('')
+        : '<p class="text-gray-400 text-sm">No reservations yet.</p>';
+
     return `
         <div class="space-y-4">
             <h4 class="font-cinzel text-xl text-brand-gold">Editing: ${movie.movieTitle}</h4>
@@ -223,12 +243,36 @@ function createEditFormView(movie) {
                 <div class="col-span-2"><label for="edit-posterURL-${movie.id}">Poster Image URL</label><input type="url" id="edit-posterURL-${movie.id}" value="${movie.posterURL || ''}"></div>
                 <div class="flex items-center gap-2"><input type="checkbox" id="edit-isAdultsOnly-${movie.id}" ${movie.isAdultsOnly ? 'checked' : ''}><label for="edit-isAdultsOnly-${movie.id}" class="mb-0">Is Adults Only?</label></div>
             </div>
+
+            <div class="pt-4 border-t border-yellow-300/10 mt-4 space-y-3">
+                <h5 class="font-cinzel text-lg text-brand-gold">Reservations</h5>
+                <div id="reservations-list-${movie.id}" class="reservation-list">
+                    ${reservationsHtml}
+                </div>
+                <button class="btn-velvet text-sm add-reservation-btn w-full">Add New Reservation</button>
+                <div id="add-edit-reservation-form-${movie.id}" class="hidden bg-black/30 p-4 rounded-lg space-y-3 mt-4 border border-yellow-300/10">
+                    <h6 class="font-cinzel text-md text-brand-gold" id="reservation-form-title-${movie.id}">Add Reservation</h6>
+                    <div><label for="res-name-${movie.id}">Name</label><input type="text" id="res-name-${movie.id}" placeholder="Full Name"></div>
+                    <div><label for="res-email-${movie.id}">Email</label><input type="email" id="res-email-${movie.id}" placeholder="email@example.com"></div>
+                    <div><label for="res-seats-${movie.id}">Seats</label><input type="number" id="res-seats-${movie.id}" min="1" value="1"></div>
+                    <div class="flex gap-2">
+                        <button class="btn-velvet primary save-reservation-btn flex-1">Save Reservation</button>
+                        <button class="btn-velvet cancel-reservation-btn flex-1">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
-                <button class="btn-velvet primary save-btn flex-1">Save Changes</button>
+                <button class="btn-velvet primary save-btn flex-1">Save All Changes</button>
                 <button class="btn-velvet cancel-btn flex-1">Cancel</button>
             </div>
         </div>
     `;
+}
+
+// Function to generate a simple unique ID for reservations (client-side)
+function generateReservationId() {
+    return 'res_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 approvedMoviesContainer.addEventListener('click', async (e) => {
@@ -238,6 +282,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     const movieData = approvedMovies.find(m => m.id === movieId);
     if (!movieData) return;
 
+    // --- Movie Card Actions ---
     if (e.target.classList.contains('edit-btn')) {
         card.innerHTML = createEditFormView(movieData);
         const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
@@ -253,6 +298,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
             trailerLink: card.querySelector(`#edit-trailerLink-${movieId}`).value,
             posterURL: card.querySelector(`#edit-posterURL-${movieId}`).value,
             isAdultsOnly: card.querySelector(`#edit-isAdultsOnly-${movieId}`).checked,
+            // Reservations are already handled directly in movieData.reservations array
         };
         try {
             await updateDoc(doc(db, 'movies', movieId), updatedData);
@@ -266,6 +312,84 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     if (e.target.classList.contains('cancel-btn')) {
         loadApprovedMovies();
     }
+
+    // --- Reservation Actions ---
+    const reservationForm = card.querySelector(`#add-edit-reservation-form-${movieId}`);
+    const reservationFormTitle = card.querySelector(`#reservation-form-title-${movieId}`);
+    const resNameInput = card.querySelector(`#res-name-${movieId}`);
+    const resEmailInput = card.querySelector(`#res-email-${movieId}`);
+    const resSeatsInput = card.querySelector(`#res-seats-${movieId}`);
+    let editingReservationIndex = null; // To keep track if we are editing or adding
+
+    if (e.target.classList.contains('add-reservation-btn')) {
+        reservationForm.classList.remove('hidden');
+        reservationFormTitle.textContent = 'Add Reservation';
+        resNameInput.value = '';
+        resEmailInput.value = '';
+        resSeatsInput.value = '1';
+        editingReservationIndex = null;
+    }
+    if (e.target.classList.contains('edit-reservation-btn')) {
+        const resItem = e.target.closest('.reservation-item');
+        editingReservationIndex = parseInt(resItem.getAttribute('data-res-index'));
+        const reservationToEdit = movieData.reservations[editingReservationIndex];
+
+        reservationForm.classList.remove('hidden');
+        reservationFormTitle.textContent = 'Edit Reservation';
+        resNameInput.value = reservationToEdit.name;
+        resEmailInput.value = reservationToEdit.email;
+        resSeatsInput.value = reservationToEdit.seats;
+    }
+    if (e.target.classList.contains('save-reservation-btn')) {
+        const name = resNameInput.value.trim();
+        const email = resEmailInput.value.trim();
+        const seats = parseInt(resSeatsInput.value);
+
+        if (!name || !email || isNaN(seats) || seats <= 0) {
+            alert('Please fill in all reservation fields correctly.');
+            return;
+        }
+
+        const newReservation = { name, email, seats, timestamp: new Date().toISOString() };
+
+        if (editingReservationIndex !== null) {
+            // Editing existing reservation
+            movieData.reservations[editingReservationIndex] = { ...movieData.reservations[editingReservationIndex], ...newReservation };
+        } else {
+            // Adding new reservation
+            newReservation.id = generateReservationId(); // Assign a unique ID for new reservations
+            movieData.reservations = [...(movieData.reservations || []), newReservation];
+        }
+
+        try {
+            await updateDoc(doc(db, 'movies', movieId), { reservations: movieData.reservations });
+            alert("Reservation saved!");
+            reservationForm.classList.add('hidden');
+            loadApprovedMovies(); // Reload to update the card view
+        } catch (error) {
+            console.error("Error saving reservation:", error);
+            alert("Failed to save reservation.");
+        }
+    }
+    if (e.target.classList.contains('cancel-reservation-btn')) {
+        reservationForm.classList.add('hidden');
+        editingReservationIndex = null;
+    }
+    if (e.target.classList.contains('delete-reservation-btn')) {
+        if (confirm('Are you sure you want to delete this reservation?')) {
+            const resItem = e.target.closest('.reservation-item');
+            const indexToDelete = parseInt(resItem.getAttribute('data-res-index'));
+            movieData.reservations.splice(indexToDelete, 1); // Remove from array
+            try {
+                await updateDoc(doc(db, 'movies', movieId), { reservations: movieData.reservations });
+                alert("Reservation deleted!");
+                loadApprovedMovies(); // Reload to update the card view
+            } catch (error) {
+                console.error("Error deleting reservation:", error);
+                alert("Failed to delete reservation.");
+            }
+        }
+    }
 });
 
 // ===================================================================
@@ -274,7 +398,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 function formatCSVRow(items) {
     return items.map(item => {
         let str = String(item === null || item === undefined ? '' : item);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
             str = `"${str.replace(/"/g, '""')}"`;
         }
         return str;
@@ -293,18 +417,40 @@ async function exportMoviesToCSV() {
             return;
         }
 
-        const headers = ['id', 'showDate', 'status', 'movieTitle', 'hostName', 'greeting', 'noteToDavid', 'posterURL', 'trailerLink', 'movieTagline', 'isAdultsOnly', 'submittedAt'];
+        const headers = [
+            'Movie_ID', 'Movie_ShowDate', 'Movie_Status', 'Movie_Title', 'Movie_HostName', 
+            'Movie_Greeting', 'Movie_NoteToDavid', 'Movie_PosterURL', 'Movie_TrailerLink', 
+            'Movie_Tagline', 'Movie_IsAdultsOnly', 'Movie_SubmittedAt',
+            'Reservation_ID', 'Reservation_Name', 'Reservation_Email', 'Reservation_Seats', 'Reservation_Timestamp'
+        ];
         let csvContent = formatCSVRow(headers) + "\r\n";
 
         querySnapshot.forEach(doc => {
             const movie = doc.data();
             const submittedAt = movie.submittedAt?.toDate ? movie.submittedAt.toDate().toISOString() : '';
-            const rowData = [
+            const baseMovieData = [
                 doc.id, movie.showDate || '', movie.status || '', movie.movieTitle || '', movie.hostName || '',
                 movie.greeting || '', movie.noteToDavid || '', movie.posterURL || '', movie.trailerLink || '',
                 movie.isAdultsOnly ? 'true' : 'false', submittedAt
             ];
-            csvContent += formatCSVRow(rowData) + "\r\n";
+
+            if (movie.reservations && movie.reservations.length > 0) {
+                movie.reservations.forEach(reservation => {
+                    const rowData = [
+                        ...baseMovieData,
+                        reservation.id || '', reservation.name || '', reservation.email || '', 
+                        reservation.seats || '', reservation.timestamp || ''
+                    ];
+                    csvContent += formatCSVRow(rowData) + "\r\n";
+                });
+            } else {
+                // If no reservations, still export movie data with empty reservation fields
+                const rowData = [
+                    ...baseMovieData,
+                    '', '', '', '', '' // Empty fields for reservation data
+                ];
+                csvContent += formatCSVRow(rowData) + "\r\n";
+            }
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -312,11 +458,12 @@ async function exportMoviesToCSV() {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         const timestamp = new Date().toISOString().slice(0, 10);
-        link.setAttribute("download", `movies_export_${timestamp}.csv`);
+        link.setAttribute("download", `all_movies_and_reservations_export_${timestamp}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        alert("All movies and reservations exported to CSV successfully!");
     } catch (error) {
         console.error("Error exporting to CSV:", error);
         alert("An error occurred during the export. Check the console for details.");

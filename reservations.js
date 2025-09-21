@@ -278,4 +278,4 @@ confirmContinueButton.addEventListener('click', () => {
 });
 cancelContinueButton.addEventListener('click', () => {
     premiumFullModal.classList.add('hidden');
-});
+});s
