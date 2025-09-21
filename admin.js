@@ -99,7 +99,6 @@ submissionsContainer.addEventListener('click', async (e) => {
             const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
             await uploadBytes(posterRef, posterFile);
             const posterURL = await getDownloadURL(posterRef);
-            // Initialize the movie document without a 'reservations' array field
             await updateDoc(doc(db, 'movies', movieId), { status: 'Approved', showDate, trailerLink, posterURL }); 
             alert('Movie approved successfully!');
             loadSubmissions();
@@ -132,10 +131,8 @@ async function loadApprovedMovies() {
         const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(q);
         
-        approvedMovies = [];
         const moviesPromises = querySnapshot.docs.map(async (movieDoc) => {
             const movieData = { id: movieDoc.id, ...movieDoc.data() };
-            // Fetch reservations from the subcollection
             const reservationsRef = collection(db, 'movies', movieDoc.id, 'reservations');
             const reservationsSnapshot = await getDocs(reservationsRef);
             movieData.reservations = reservationsSnapshot.docs.map(resDoc => ({ id: resDoc.id, ...resDoc.data() }));
@@ -161,14 +158,10 @@ async function loadApprovedMovies() {
         });
 
         if (upcomingOrTodayMovies.length > 0) {
-            upcomingOrTodayMovies.sort((a, b) => {
-                const dateA = new Date(a.showDate + 'T00:00:00');
-                const dateB = new Date(b.showDate + 'T00:00:00');
-                return dateA.getTime() - dateB.getTime();
-            });
+            upcomingOrTodayMovies.sort((a, b) => new Date(a.showDate) - new Date(b.showDate));
             currentMovie = upcomingOrTodayMovies[0];
         } else if (approvedMovies.length > 0) {
-            currentMovie = approvedMovies[0];
+            currentMovie = approvedMovies[0]; // Already sorted descending, so [0] is the most recent past one
         }
         
         const currentMovieDateObject = currentMovie ? new Date(currentMovie.showDate + 'T00:00:00') : null;
@@ -196,7 +189,7 @@ async function loadApprovedMovies() {
 }
 
 function createApprovedCardView(movie, status) {
-    const reservationCount = (movie.reservations && movie.reservations.length > 0) ? `(${movie.reservations.length} reservations)` : '';
+    const reservationCount = (movie.reservations && movie.reservations.length > 0) ? `(${movie.reservations.length} reservations)` : '(No reservations)';
     return `
         <div class="status-flag status-flag-${status}"></div>
         <div class="pl-4">
@@ -211,27 +204,23 @@ function createApprovedCardView(movie, status) {
     `;
 }
 
-function createReservationRowHtml(reservation, index, movieId) {
-    // reservation.id is the document ID for the reservation in the subcollection
-    const resId = reservation.id || `new-res-${index}`; // Use document ID or a temporary ID for new unsaved rows
+function createReservationRowHtml(reservation) {
     return `
-        <tr class="reservation-row" data-res-id="${resId}" data-res-index="${index}">
+        <tr class="reservation-row" data-res-id="${reservation.id}">
             <td><input type="text" value="${reservation.name || ''}" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
-            <td><input type="email" value="${reservation.email || ''}" class="res-input-email w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
-            <td><input type="number" value="${reservation.seats || '1'}" min="1" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
+            <td><input type="number" value="${reservation.seats || ''}" min="1" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
             <td class="text-right">
-                <button class="btn-velvet text-xs save-reservation-btn primary mr-1" data-res-id="${resId}">Save</button>
-                <button class="btn-velvet text-xs delete-reservation-btn" data-res-id="${resId}">Delete</button>
+                <button class="btn-velvet text-xs save-reservation-btn primary mr-1" data-res-id="${reservation.id}">Save</button>
+                <button class="btn-velvet text-xs delete-reservation-btn" data-res-id="${reservation.id}">Delete</button>
             </td>
         </tr>
     `;
 }
 
-
 function createEditFormView(movie) {
     const reservationsTableRows = (movie.reservations && movie.reservations.length > 0)
-        ? movie.reservations.map((res, index) => createReservationRowHtml(res, index, movie.id)).join('')
-        : ''; // No 'No reservations yet' message here, table headers will always show
+        ? movie.reservations.map(res => createReservationRowHtml(res)).join('')
+        : '<tr><td colspan="3" class="text-center text-gray-400 py-3">No reservations found.</td></tr>';
 
     return `
         <div class="space-y-4">
@@ -254,7 +243,6 @@ function createEditFormView(movie) {
                         <thead>
                             <tr class="text-xs text-gray-300 uppercase bg-black/20">
                                 <th class="py-2 px-3">Name</th>
-                                <th class="py-2 px-3">Email</th>
                                 <th class="py-2 px-3">Seats</th>
                                 <th class="py-2 px-3 text-right">Actions</th>
                             </tr>
@@ -264,7 +252,6 @@ function createEditFormView(movie) {
                         </tbody>
                     </table>
                 </div>
-                <button class="btn-velvet text-sm add-reservation-row-btn w-full mt-4">Add New Reservation</button>
             </div>
 
             <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
@@ -275,22 +262,15 @@ function createEditFormView(movie) {
     `;
 }
 
-// Function to generate a simple unique ID for *unsaved* reservations (client-side)
-// The actual Firebase document ID will be used once saved
-let newReservationCounter = 0;
-function generateClientReservationId() {
-    return `client_res_${Date.now()}_${newReservationCounter++}`;
-}
-
 approvedMoviesContainer.addEventListener('click', async (e) => {
     const card = e.target.closest('.approved-movie-card');
     if (!card) return;
     const movieId = card.getAttribute('data-id');
-    const movieData = approvedMovies.find(m => m.id === movieId);
-    if (!movieData) return;
 
     // --- Movie Card Actions ---
     if (e.target.classList.contains('edit-btn')) {
+        const movieData = approvedMovies.find(m => m.id === movieId);
+        if (!movieData) return;
         card.innerHTML = createEditFormView(movieData);
         const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
         if (dateInput) flatpickr(dateInput, flatpickrOptions);
@@ -320,22 +300,6 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     }
 
     // --- Reservation Table Actions ---
-    const reservationsTableBody = card.querySelector(`#reservations-table-body-${movieId}`);
-
-    if (e.target.classList.contains('add-reservation-row-btn')) {
-        const newTempReservation = {
-            id: generateClientReservationId(), // Temporary client-side ID
-            name: '',
-            email: '',
-            seats: 1,
-            isNew: true // Flag to indicate it's a new unsaved reservation
-        };
-        // Add to movieData.reservations array to keep in-sync for re-rendering if needed
-        movieData.reservations = [...(movieData.reservations || []), newTempReservation];
-        const newRowHtml = createReservationRowHtml(newTempReservation, movieData.reservations.length - 1, movieId);
-        reservationsTableBody.insertAdjacentHTML('beforeend', newRowHtml);
-    }
-
     if (e.target.classList.contains('save-reservation-btn')) {
         const button = e.target;
         button.textContent = 'Saving...';
@@ -346,32 +310,23 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
         const resId = row.getAttribute('data-res-id');
         const name = row.querySelector('.res-input-name').value.trim();
-        const email = row.querySelector('.res-input-email').value.trim();
         const seats = parseInt(row.querySelector('.res-input-seats').value);
 
-        if (!name || !email || isNaN(seats) || seats <= 0) {
+        if (!name || isNaN(seats) || seats <= 0) {
             alert('Please fill in all reservation fields correctly.');
             button.textContent = 'Save';
             button.disabled = false;
             return;
         }
 
-        const reservationData = { name, email, seats, timestamp: new Date().toISOString() };
-
         try {
-            if (resId && !resId.startsWith('client_res_')) { // Existing reservation with Firebase ID
-                const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
-                await updateDoc(reservationDocRef, reservationData);
-                alert("Reservation updated successfully!");
-            } else { // New reservation
-                const reservationsCollectionRef = collection(db, 'movies', movieId, 'reservations');
-                await addDoc(reservationsCollectionRef, reservationData);
-                alert("Reservation added successfully!");
-            }
-            loadApprovedMovies(); // Reload all movies to refresh the view with accurate data
+            const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
+            await updateDoc(reservationDocRef, { name, seats });
+            alert("Reservation updated successfully!");
+            loadApprovedMovies();
         } catch (error) {
-            console.error("Error saving reservation:", error);
-            alert("Failed to save reservation.");
+            console.error("Error updating reservation:", error);
+            alert("Failed to update reservation.");
             button.textContent = 'Save';
             button.disabled = false;
         }
@@ -389,18 +344,10 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
             const resId = row.getAttribute('data-res-id');
 
             try {
-                if (resId.startsWith('client_res_')) {
-                    // It's a newly added row that hasn't been saved to Firebase yet
-                    row.remove();
-                    // Also remove from movieData.reservations if it was added there
-                    movieData.reservations = movieData.reservations.filter(res => res.id !== resId);
-                    alert("Unsaved reservation row removed.");
-                } else {
-                    const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
-                    await deleteDoc(reservationDocRef);
-                    alert("Reservation deleted successfully!");
-                    loadApprovedMovies(); // Reload all movies to refresh the view
-                }
+                const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
+                await deleteDoc(reservationDocRef);
+                alert("Reservation deleted successfully!");
+                loadApprovedMovies();
             } catch (error) {
                 console.error("Error deleting reservation:", error);
                 alert("Failed to delete reservation.");
@@ -450,7 +397,7 @@ async function exportMoviesToCSV() {
             const baseMovieData = [
                 movieDoc.id, movie.showDate || '', movie.status || '', movie.movieTitle || '', movie.hostName || '',
                 movie.greeting || '', movie.noteToDavid || '', movie.posterURL || '', movie.trailerLink || '',
-                movie.movieTagline || '', // Added movieTagline here
+                movie.movieTagline || '',
                 movie.isAdultsOnly ? 'true' : 'false', submittedAt
             ];
 
@@ -468,11 +415,7 @@ async function exportMoviesToCSV() {
                     csvContent += formatCSVRow(rowData) + "\r\n";
                 });
             } else {
-                // If no reservations, still export movie data with empty reservation fields
-                const rowData = [
-                    ...baseMovieData,
-                    '', '', '', '', '' // Empty fields for reservation data
-                ];
+                const rowData = [ ...baseMovieData, '', '', '', '', '' ];
                 csvContent += formatCSVRow(rowData) + "\r\n";
             }
         }
