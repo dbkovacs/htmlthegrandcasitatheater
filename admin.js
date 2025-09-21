@@ -205,8 +205,20 @@ function createApprovedCardView(movie, status) {
 }
 
 function createReservationRowHtml(reservation) {
-    // Assuming reservation.seats is an array of seat strings, join them for display.
-    const seatDisplay = Array.isArray(reservation.seats) ? reservation.seats.join(', ') : '';
+    let seatDisplay = '';
+    if (Array.isArray(reservation.seats)) {
+        // Assuming each item in reservation.seats is either a string (e.g., "A1")
+        // or an object with a 'seat' property (e.g., { seat: "A1" }).
+        seatDisplay = reservation.seats.map(seatItem => {
+            if (typeof seatItem === 'object' && seatItem !== null && seatItem.seat) {
+                return seatItem.seat; // If it's an object with a 'seat' property
+            } else if (typeof seatItem === 'string') {
+                return seatItem; // If it's already a string
+            }
+            return ''; // Fallback for unexpected types
+        }).filter(s => s !== '').join(', ');
+    }
+    
     return `
         <tr class="reservation-row" data-res-id="${reservation.id}">
             <td><input type="text" value="${reservation.name || ''}" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
@@ -412,7 +424,16 @@ async function exportMoviesToCSV() {
 
             if (reservations.length > 0) {
                 reservations.forEach(reservation => {
-                    const seatsForCsv = Array.isArray(reservation.seats) ? reservation.seats.join(', ') : '';
+                    const seatsForCsv = Array.isArray(reservation.seats) ? 
+                                        reservation.seats.map(seatItem => {
+                                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.seat) {
+                                                return seatItem.seat;
+                                            } else if (typeof seatItem === 'string') {
+                                                return seatItem;
+                                            }
+                                            return '';
+                                        }).filter(s => s !== '').join(', ')
+                                        : '';
                     const rowData = [
                         ...baseMovieData,
                         reservation.id || '', reservation.name || '', reservation.email || '', 
