@@ -207,16 +207,17 @@ function createApprovedCardView(movie, status) {
 function createReservationRowHtml(reservation) {
     let seatDisplay = '';
     if (Array.isArray(reservation.seats)) {
-        // Assuming each item in reservation.seats is either a string (e.g., "A1")
-        // or an object with a 'seat' property (e.g., { seat: "A1" }).
+        // Assume reservation.seats is an array where each item is either a string
+        // (e.g., "A1") or an object with a 'seat' property (e.g., { seat: "A1" }).
         seatDisplay = reservation.seats.map(seatItem => {
-            if (typeof seatItem === 'object' && seatItem !== null && seatItem.seat) {
-                return seatItem.seat; // If it's an object with a 'seat' property
+            // Check if seatItem is an object and has a 'seat' property
+            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
+                return seatItem.seat; // Return the value of the 'seat' property
             } else if (typeof seatItem === 'string') {
-                return seatItem; // If it's already a string
+                return seatItem; // If it's already a string, return it directly
             }
-            return ''; // Fallback for unexpected types
-        }).filter(s => s !== '').join(', ');
+            return ''; // For any other unexpected type, return an empty string
+        }).filter(s => s !== '').join(', '); // Filter out empty strings and join
     }
     
     return `
@@ -426,7 +427,7 @@ async function exportMoviesToCSV() {
                 reservations.forEach(reservation => {
                     const seatsForCsv = Array.isArray(reservation.seats) ? 
                                         reservation.seats.map(seatItem => {
-                                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.seat) {
+                                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
                                                 return seatItem.seat;
                                             } else if (typeof seatItem === 'string') {
                                                 return seatItem;
