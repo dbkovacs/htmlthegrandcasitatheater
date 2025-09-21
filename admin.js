@@ -208,7 +208,7 @@ function createReservationRowHtml(reservation) {
     return `
         <tr class="reservation-row" data-res-id="${reservation.id}">
             <td><input type="text" value="${reservation.name || ''}" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
-            <td><input type="number" value="${reservation.seats || ''}" min="1" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
+            <td><input type="number" value="${reservation.seats ?? ''}" min="1" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
             <td class="text-right">
                 <button class="btn-velvet text-xs save-reservation-btn primary mr-1" data-res-id="${reservation.id}">Save</button>
                 <button class="btn-velvet text-xs delete-reservation-btn" data-res-id="${reservation.id}">Delete</button>
@@ -455,3 +455,4 @@ document.addEventListener('DOMContentLoaded', () => {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
 });
+
