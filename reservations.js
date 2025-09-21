@@ -4,8 +4,9 @@
     Extension: .js
 */
 
+// FIX 1: Import serverTimestamp to ensure reliable timekeeping.
 import { db } from './firebase-config.js';
-import { collection, doc, getDoc, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, getDoc, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- DOM References ---
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -87,11 +88,19 @@ async function fetchSeatingLayout() {
 function setupRealtimeReservationsListener() {
     if (unsubscribeReservations) unsubscribeReservations();
 
+    // FIX 2: Remove orderBy from the query to fetch all documents, even if they lack a timestamp field.
     const reservationsRef = collection(db, "movies", currentMovie.id, "reservations");
-    const q = query(reservationsRef, orderBy("timestamp", "asc"));
     
-    unsubscribeReservations = onSnapshot(q, (snapshot) => {
+    unsubscribeReservations = onSnapshot(reservationsRef, (snapshot) => {
         reservations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort on the client-side to handle documents with or without timestamps gracefully.
+        reservations.sort((a, b) => {
+            const timeA = a.timestamp?.toDate()?.getTime() || 0;
+            const timeB = b.timestamp?.toDate()?.getTime() || 0;
+            return timeA - timeB;
+        });
+
         checkPremiumSeatStatus();
         renderAll();
     }, (error) => {
@@ -100,7 +109,7 @@ function setupRealtimeReservationsListener() {
     });
 }
 
-// --- NEW: Check Premium Seat Status ---
+// --- Check Premium Seat Status ---
 function checkPremiumSeatStatus() {
     const premiumSeatIds = seatingLayout.filter(s => s.isPremium).map(s => s.id);
     if (premiumSeatIds.length === 0) {
@@ -215,7 +224,6 @@ function handleReservationClick() {
     const isSelectingOnlyNonPremium = selectedSeatObjects.every(s => !s.isPremium);
 
     if (arePremiumSeatsFull && !isSelectingOnlyNonPremium) {
-         // This case should be rare, but prevents selecting premium seats when they are full
          alert("All premium seats are currently taken. Please select only available bean bag seats.");
          return;
     }
@@ -244,7 +252,8 @@ async function submitReservation() {
         await addDoc(reservationsRef, {
             name: name,
             seats: seatsToReserve,
-            timestamp: new Date()
+            // FIX 3: Use serverTimestamp() for all new reservations for reliability.
+            timestamp: serverTimestamp()
         });
         successModal.classList.remove('hidden');
     } catch (error) {
@@ -270,4 +279,3 @@ confirmContinueButton.addEventListener('click', () => {
 cancelContinueButton.addEventListener('click', () => {
     premiumFullModal.classList.add('hidden');
 });
-
