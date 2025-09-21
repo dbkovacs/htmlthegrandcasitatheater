@@ -4,16 +4,12 @@
     Extension: .js
 */
 
-import { auth, db, storage } from './firebase-config.js';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { db, storage } from './firebase-config.js';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
-const loginContainer = document.getElementById('login-container');
 const dashboard = document.getElementById('dashboard');
-const loginForm = document.getElementById('login-form');
-const logoutButton = document.getElementById('logout-button');
 const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
@@ -285,7 +281,7 @@ async function exportMoviesToCSV() {
             const rowData = [
                 doc.id, movie.showDate || '', movie.status || '', movie.movieTitle || '', movie.hostName || '',
                 movie.greeting || '', movie.noteToDavid || '', movie.posterURL || '', movie.trailerLink || '',
-                movie.movieTagline || '', movie.isAdultsOnly ? 'true' : 'false', submittedAt
+                movie.isAdultsOnly ? 'true' : 'false', submittedAt
             ];
             csvContent += formatCSVRow(rowData) + "\r\n";
         });
@@ -310,33 +306,8 @@ async function exportMoviesToCSV() {
 }
 
 // ===================================================================
-// === AUTHENTICATION & INITIALIZATION
+// === INITIALIZATION
 // ===================================================================
-onAuthStateChanged(auth, user => {
-    if (user) {
-        loginContainer.style.display = 'none';
-        dashboard.style.display = 'block';
-        loadSubmissions(); 
-        loadApprovedMovies();
-    } else {
-        loginContainer.style.display = 'block';
-        dashboard.style.display = 'none';
-    }
-});
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-        console.error("Error signing in:", error);
-        alert("Login failed: " + error.message);
-    }
-});
-logoutButton.addEventListener('click', () => {
-    signOut(auth).catch((error) => console.error("Error signing out:", error));
-});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (timestampContainer) {
@@ -345,10 +316,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportCsvButton) {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
+
+    // Call initial load functions directly since there is no auth check
+    loadSubmissions(); 
+    loadApprovedMovies();
 });
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-19T20:45:00-06:00
+    Build Timestamp: 2025-09-21T13:33:00-06:00
 */
-
