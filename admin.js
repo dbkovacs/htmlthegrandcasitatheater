@@ -123,7 +123,9 @@ submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); c
 submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
 submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
 
-% --- APPROVED MOVIES LOGIC ---
+// ===================================================================
+// === APPROVED MOVIES LOGIC
+// ===================================================================
 async function loadApprovedMovies() {
     try {
         // Change orderBy to descending to show furthest future date at top
@@ -165,16 +167,20 @@ async function loadApprovedMovies() {
             currentMovie = approvedMovies[0];
         }
         
+        // --- NEW: Get the date object for the identified currentMovie for comparison ---
+        const currentMovieDateObject = currentMovie ? new Date(currentMovie.showDate + 'T00:00:00') : null;
+
         approvedMovies.forEach(movie => {
             let status = 'past'; // Default status is 'past'
             const movieDate = new Date(movie.showDate + 'T00:00:00');
 
             if (currentMovie && movie.id === currentMovie.id) {
-                status = 'current';
-            } else if (movieDate > now) {
-                status = 'upcoming';
+                status = 'current'; // This is the designated 'current' movie (yellow)
+            } else if (currentMovieDateObject && movieDate > currentMovieDateObject) {
+                status = 'upcoming'; // Movies after the current movie (blue)
             }
-            // If movieDate <= now and not 'current', it remains 'past'.
+            // All other movies (i.e., those with dates <= currentMovieDateObject and not the currentMovie itself)
+            // will correctly remain 'past' (gray) due to the default `status = 'past'` assignment.
 
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
@@ -184,7 +190,7 @@ async function loadApprovedMovies() {
         });
     } catch (error) {
         console.error("Error loading approved movies:", error);
-        approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading movies.</p>`;
+        approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading movies. Check the console for details.</p>`;
     }
 }
 
@@ -262,7 +268,9 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
     }
 });
 
-% --- CSV EXPORT LOGIC ---
+// ===================================================================
+// === CSV EXPORT LOGIC
+// ===================================================================
 function formatCSVRow(items) {
     return items.map(item => {
         let str = String(item === null || item === undefined ? '' : item);
@@ -318,7 +326,9 @@ async function exportMoviesToCSV() {
     }
 }
 
-% --- INITIALIZATION ---
+// ===================================================================
+// === INITIALIZATION
+// ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // Directly call the loading functions as there is no login check
