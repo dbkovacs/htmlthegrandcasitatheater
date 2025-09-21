@@ -211,8 +211,8 @@ function createReservationRowHtml(reservation) {
     if (Array.isArray(seatsData)) {
         // Handles formats like ["A1", "B2"] or [{ seat: "A1" }, { seat: "B2" }]
         seatDisplay = seatsData.map(seatItem => {
-            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
-                return seatItem.seat;
+            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('id')) { // Changed 'seat' to 'id'
+                return seatItem.id; // Changed 'seat' to 'id'
             } else if (typeof seatItem === 'string') {
                 return seatItem;
             }
@@ -331,7 +331,13 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
         const name = row.querySelector('.res-input-name').value.trim();
         // Parse the comma-separated string back into an array for seat numbers
         const seatsInput = row.querySelector('.res-input-seats').value.trim();
-        const seats = seatsInput ? seatsInput.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+        const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+        // Convert strings back to the required object format
+        const seats = seatStrings.map(seatId => {
+            const row = seatId.charAt(0);
+            const number = parseInt(seatId.slice(1), 10);
+            return { id: seatId, row, number };
+        });
 
 
         if (!name || seats.length === 0) {
