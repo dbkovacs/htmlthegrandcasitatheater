@@ -205,10 +205,12 @@ function createApprovedCardView(movie, status) {
 }
 
 function createReservationRowHtml(reservation) {
+    // Assuming reservation.seats is an array of seat strings, join them for display.
+    const seatDisplay = Array.isArray(reservation.seats) ? reservation.seats.join(', ') : '';
     return `
         <tr class="reservation-row" data-res-id="${reservation.id}">
             <td><input type="text" value="${reservation.name || ''}" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
-            <td><input type="number" value="${reservation.seats ?? ''}" min="1" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
+            <td><input type="text" value="${seatDisplay}" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm" placeholder="e.g. A1, B2, C3"></td>
             <td class="text-right">
                 <button class="btn-velvet text-xs save-reservation-btn primary mr-1" data-res-id="${reservation.id}">Save</button>
                 <button class="btn-velvet text-xs delete-reservation-btn" data-res-id="${reservation.id}">Delete</button>
@@ -310,10 +312,13 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
         const resId = row.getAttribute('data-res-id');
         const name = row.querySelector('.res-input-name').value.trim();
-        const seats = parseInt(row.querySelector('.res-input-seats').value);
+        // Parse the comma-separated string back into an array for seat numbers
+        const seatsInput = row.querySelector('.res-input-seats').value.trim();
+        const seats = seatsInput ? seatsInput.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 
-        if (!name || isNaN(seats) || seats <= 0) {
-            alert('Please fill in all reservation fields correctly.');
+
+        if (!name || seats.length === 0) {
+            alert('Please fill in all reservation fields correctly, including at least one seat number.');
             button.textContent = 'Save';
             button.disabled = false;
             return;
@@ -407,10 +412,11 @@ async function exportMoviesToCSV() {
 
             if (reservations.length > 0) {
                 reservations.forEach(reservation => {
+                    const seatsForCsv = Array.isArray(reservation.seats) ? reservation.seats.join(', ') : '';
                     const rowData = [
                         ...baseMovieData,
                         reservation.id || '', reservation.name || '', reservation.email || '', 
-                        reservation.seats || '', reservation.timestamp || ''
+                        seatsForCsv, reservation.timestamp || ''
                     ];
                     csvContent += formatCSVRow(rowData) + "\r\n";
                 });
@@ -455,4 +461,3 @@ document.addEventListener('DOMContentLoaded', () => {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
 });
-
