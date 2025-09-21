@@ -4,12 +4,16 @@
     Extension: .js
 */
 
-import { db, storage } from './firebase-config.js';
+import { auth, db, storage } from './firebase-config.js';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
+const loginContainer = document.getElementById('login-container');
 const dashboard = document.getElementById('dashboard');
+const loginForm = document.getElementById('login-form');
+const logoutButton = document.getElementById('logout-button');
 const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
@@ -22,6 +26,20 @@ const flatpickrOptions = {
     altInput: true,
     altFormat: "F j, Y",
 };
+
+/**
+ * Calculates the ISO week number of a given date.
+ * @param {Date} d The date to check.
+ * @returns {number} The week number.
+ */
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return weekNo;
+}
+
 
 // ===================================================================
 // === PENDING SUBMISSIONS LOGIC
@@ -142,25 +160,29 @@ async function loadApprovedMovies() {
         }
 
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        const firstUpcomingIndex = approvedMovies.findIndex(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+        const currentWeekNumber = getWeekNumber(now);
 
         let currentMovie = null;
-        if (firstUpcomingIndex !== -1) {
-            currentMovie = approvedMovies[firstUpcomingIndex];
-        } else if (approvedMovies.length > 0) {
-            currentMovie = approvedMovies[0];
+        let sortedMovies = [...approvedMovies].sort((a, b) => new Date(a.showDate) - new Date(b.showDate));
+        
+        const firstUpcoming = sortedMovies.find(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+        if (firstUpcoming) {
+            currentMovie = firstUpcoming;
+        } else {
+            currentMovie = sortedMovies[sortedMovies.length - 1];
         }
         
         approvedMovies.forEach(movie => {
             let status = 'past';
             const movieDate = new Date(movie.showDate + 'T00:00:00');
-            if (currentMovie && movie.id === currentMovie.id) {
+            const movieWeekNumber = getWeekNumber(movieDate);
+            
+            if (movie.id === currentMovie.id) {
                 status = 'current';
             } else if (movieDate > now) {
                 status = 'upcoming';
             }
+            
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
             card.setAttribute('data-id', movie.id);
@@ -306,8 +328,33 @@ async function exportMoviesToCSV() {
 }
 
 // ===================================================================
-// === INITIALIZATION
+// === AUTHENTICATION & INITIALIZATION
 // ===================================================================
+onAuthStateChanged(auth, user => {
+    if (user) {
+        loginContainer.style.display = 'none';
+        dashboard.style.display = 'block';
+        loadSubmissions(); 
+        loadApprovedMovies();
+    } else {
+        loginContainer.style.display = 'block';
+        dashboard.style.display = 'none';
+    }
+});
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        console.error("Error signing in:", error);
+        alert("Login failed: " + error.message);
+    }
+});
+logoutButton.addEventListener('click', () => {
+    signOut(auth).catch((error) => console.error("Error signing out:", error));
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (timestampContainer) {
@@ -316,13 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportCsvButton) {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
-
-    // Call initial load functions directly since there is no auth check
-    loadSubmissions(); 
-    loadApprovedMovies();
 });
 
 /*
     File: admin.js
-    Build Timestamp: 2025-09-21T13:33:00-06:00
+    Build Timestamp: 2025-09-21T14:01:41-06:00
 */
