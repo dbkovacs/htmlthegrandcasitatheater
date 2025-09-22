@@ -199,29 +199,31 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
     `).join('');
 
     const pendingHtml = pendingMovies.map(movie => `
-        <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70 relative overflow-hidden">
-            
-            <div class="w-full aspect-[2/3] rounded-md bg-black/30 flex flex-col justify-between items-center p-6">
-                <div class="flex flex-col items-center justify-center">
-                    <svg class="w-10 h-10 text-yellow-300/80 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" />
-                    </svg>
-                    <p class="text-sm font-bold text-yellow-300/80 mt-2">Pending Scheduling</p>
+        <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
+            <div class="w-full aspect-[2/3] rounded-md bg-black/30 flex overflow-hidden">
+                
+                <div class="w-16 flex-shrink-0 bg-gradient-to-b from-yellow-400 to-amber-500 flex items-center justify-center p-2 shadow-inner">
+                    <h3 class="font-cinzel text-xl font-bold text-gray-800 [writing-mode:vertical-rl] transform rotate-180 whitespace-nowrap tracking-wider" style="text-shadow: 0 1px 1px rgba(255,255,255,0.2);">
+                        ${movie.movieTitle}
+                    </h3>
                 </div>
-                <div>
-                    <p class="text-xs text-gray-400">Submitted by</p>
-                    <p class="text-base text-gray-300 font-semibold">${movie.hostName}</p>
-                </div>
-            </div>
 
-            <div class="absolute top-1/2 left-1/2 w-[150%] h-16 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
-                <span class="font-cinzel text-xl font-bold text-gray-800 text-center px-4 leading-tight break-words" style="text-shadow: 0 1px 1px rgba(255,255,255,0.2);">
-                    ${movie.movieTitle}
-                </span>
+                <div class="flex-1 flex flex-col justify-between items-center p-4 text-center">
+                    <div class="flex flex-col items-center justify-center">
+                        <svg class="w-10 h-10 text-yellow-300/80 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <p class="text-sm font-bold text-yellow-300/80 mt-2">Pending Scheduling</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Submitted by</p>
+                        <p class="text-base text-gray-300 font-semibold">${movie.hostName}</p>
+                    </div>
+                </div>
             </div>
         </div>
     `).join('');
-    
+
     const pickMovieHtml = `
         <a href="signups.html" class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center hover:border-yellow-300/50 transition-colors flex flex-col items-center justify-center aspect-[2/3]">
             <div class="flex flex-col items-center justify-center text-center p-4 border-4 border-dashed border-yellow-300/20 rounded-lg h-full w-full hover:border-yellow-300/50 transition-colors">
@@ -333,5 +335,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: 9/22/2025, 3:08:26 PM MDT
+ * Build Timestamp: 9/22/2025, 3:11:01 PM MDT
  */
