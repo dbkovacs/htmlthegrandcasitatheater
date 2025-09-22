@@ -57,7 +57,7 @@ async function initializePage() {
     try {
         // Fetch approved and pending movies concurrently
         const approvedQuery = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "asc"));
-        const pendingQuery = query(collection(db, 'movies'), where("status", "==", "pending"), orderBy("submittedAt", "desc"));
+        const pendingQuery = query(collection(db, 'movies'), where("status", "==", "pending"), orderBy("submittedAt", "asc"));
 
         const [approvedSnapshot, pendingSnapshot] = await Promise.all([
             getDocs(approvedQuery),
@@ -314,5 +314,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: Mon Sep 22 2025 14:12:52 GMT-0600 (Mountain Daylight Time)
+ * Build Timestamp: Mon Sep 22 2025 14:15:57 GMT-0600 (Mountain Daylight Time)
  */
