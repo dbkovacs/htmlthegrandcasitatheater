@@ -116,6 +116,7 @@ const errorContainer = document.getElementById('error-container');
 const errorMessage = document.getElementById('error-message');
 const contentWrapper = document.getElementById('content-wrapper');
 const mainContent = document.getElementById('main-content');
+const buildTimestampElement = document.getElementById('build-timestamp');
 
 // Main Invitation Elements
 const moviePoster = document.getElementById('movie-poster');
@@ -158,13 +159,13 @@ async function initializePage() {
         }
 
         const allMovies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
+
         categorizeAndRenderMovies(allMovies);
 
         contentWrapper.style.opacity = '1';
 
     } catch (error) {
-        console.error("Error loading movie data:", error); 
+        console.error("Error loading movie data:", error);
 
         if (error.code === 'failed-precondition' && error.message.includes('index')) {
             const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
@@ -201,10 +202,11 @@ function categorizeAndRenderMovies(allMovies) {
         upcomingMovies = allMovies.slice(firstUpcomingIndex + 1);
         pastMovies = allMovies.slice(0, firstUpcomingIndex);
     } else if (allMovies.length > 0) {
+        // If all movies are in the past, show the most recent one as current.
         currentMovie = allMovies[allMovies.length - 1];
         pastMovies = allMovies.slice(0, allMovies.length - 1);
     }
-    
+
     if (currentMovie) {
         renderCurrentMovie(currentMovie);
     }
@@ -229,7 +231,7 @@ function renderCurrentMovie(movie) {
 
     const date = new Date(movie.showDate + 'T19:00:00');
     eventDateDisplay.textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
+
     if (movie.isAdultsOnly) {
         audienceSection.textContent = 'Adults Only (21+)';
         audienceSection.className = 'my-4 text-center p-3 rounded-lg border-2 border-red-500 text-red-400 bg-red-900/30';
@@ -251,7 +253,7 @@ function renderCurrentMovie(movie) {
     reserveButton.className = 'btn-velvet w-full text-center block';
     reserveButton.textContent = 'Reserve Your Seat';
     reserveButton.href = `reservations.html?movieId=${movie.id}`;
-    
+
     if (movie.isAdultsOnly) {
         reserveButton.onclick = (e) => {
             e.preventDefault();
@@ -285,18 +287,30 @@ function renderHistory(movies) {
 }
 
 function showError(msg) {
-    errorMessage.innerHTML = msg; 
+    errorMessage.innerHTML = msg;
     errorContainer.classList.remove('hidden');
     contentWrapper.remove();
 }
 
+// --- Utility Functions ---
+function getYoutubeVideoId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+
 // --- Event Handlers for Modals ---
 
 function openTrailerModal(trailerLink) {
-    const videoId = trailerLink.split('v=')[1]?.split('&')[0];
+    const videoId = getYoutubeVideoId(trailerLink);
     if (videoId) {
-        youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
         trailerModal.classList.remove('hidden');
+    } else {
+        console.error("Could not extract a valid YouTube Video ID from the link:", trailerLink);
+        // In a real-world scenario, you might want to show a user-friendly error here.
     }
 }
 
@@ -340,4 +354,23 @@ bugReportModal.addEventListener('click', (e) => {
 
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', initializePage);
+function setBuildTimestamp() {
+    const buildDate = new Date();
+    const options = {
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZoneName: 'short'
+    };
+    if (buildTimestampElement) {
+        buildTimestampElement.textContent = `Build: ${buildDate.toLocaleString(undefined, options)}`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setBuildTimestamp();
+    initializePage();
+});
+
+/*
+    Build Timestamp: Mon Sep 22 2025 08:58:00 GMT-0600 (Mountain Daylight Time)
+*/
