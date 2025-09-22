@@ -199,30 +199,25 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
     `).join('');
 
     const pendingHtml = pendingMovies.map(movie => `
-        <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
-            <div class="relative w-full aspect-[2/3] rounded-md overflow-hidden bg-black/30">
-                
-                <div class="absolute top-1/2 left-1/2 w-[200%] py-4 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center z-10" style="box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 3px 0 rgba(0,0,0,0.2), inset 0 -2px 2px 0 rgba(255,255,255,0.1);">
-                    <svg viewBox="0 0 500 60" preserveAspectRatio="xMidYMid meet" class="w-full h-full">
-                        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" lengthAdjust="spacingAndGlyphs" textLength="440" class="font-cinzel font-bold text-gray-800 uppercase" style="font-size: 36px;">
-                            ${movie.movieTitle}
-                        </text>
+        <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70 relative overflow-hidden">
+            
+            <div class="w-full aspect-[2/3] rounded-md bg-black/30 flex flex-col justify-between items-center p-6">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-10 h-10 text-yellow-300/80 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" />
                     </svg>
+                    <p class="text-sm font-bold text-yellow-300/80 mt-2">Pending Scheduling</p>
                 </div>
-
-                <div class="relative z-20 h-full flex flex-col justify-between items-center p-6">
-                    <div class="flex flex-col items-center justify-center">
-                        <svg class="w-10 h-10 text-yellow-300/80 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" />
-                        </svg>
-                        <p class="text-sm font-bold text-yellow-300/80 mt-2">Pending Scheduling</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-400">Submitted by</p>
-                        <p class="text-base text-gray-300 font-semibold">${movie.hostName}</p>
-                    </div>
+                <div>
+                    <p class="text-xs text-gray-400">Submitted by</p>
+                    <p class="text-base text-gray-300 font-semibold">${movie.hostName}</p>
                 </div>
+            </div>
 
+            <div class="absolute top-1/2 left-1/2 w-[150%] h-16 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center" style="box-shadow: 0 8px 25px rgba(0,0,0,0.5);">
+                <span class="font-cinzel text-xl font-bold text-gray-800 text-center px-4 leading-tight break-words" style="text-shadow: 0 1px 1px rgba(255,255,255,0.2);">
+                    ${movie.movieTitle}
+                </span>
             </div>
         </div>
     `).join('');
@@ -338,5 +333,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: 9/22/2025, 3:04:05 PM MDT
+ * Build Timestamp: 9/22/2025, 3:08:26 PM MDT
  */
