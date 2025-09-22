@@ -206,21 +206,18 @@ function createApprovedCardView(movie, status) {
 
 function createReservationRowHtml(reservation) {
     let seatDisplay = '';
-    const seatsData = reservation.seats; // Get the raw seats data
+    const seatsData = reservation.seats; 
 
     if (Array.isArray(seatsData)) {
-        // Handles formats like ["A1", "B2"] or [{ seat: "A1" }, { seat: "B2" }]
         seatDisplay = seatsData.map(seatItem => {
-            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('id')) { // Changed 'seat' to 'id'
-                return seatItem.id; // Changed 'seat' to 'id'
+            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('id')) {
+                return seatItem.id;
             } else if (typeof seatItem === 'string') {
                 return seatItem;
             }
             return '';
         }).filter(s => s !== '').join(', ');
     } else if (typeof seatsData === 'object' && seatsData !== null) {
-        // Handles formats like { "A1": true, "B2": true } or { "A1": { status: "reserved" }, "B2": { status: "reserved" } }
-        // Extracts the keys (seat identifiers) for display
         seatDisplay = Object.keys(seatsData).join(', ');
     }
     
@@ -329,7 +326,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 
         const resId = row.getAttribute('data-res-id');
         const name = row.querySelector('.res-input-name').value.trim();
-        // Parse the comma-separated string back into an array for seat numbers
+        // Parse the comma-separated string back into an array of seat numbers
         const seatsInput = row.querySelector('.res-input-seats').value.trim();
         const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
         // Convert strings back to the required object format
@@ -387,7 +384,7 @@ approvedMoviesContainer.addEventListener('click', async (e) => {
 });
 
 // ===================================================================
-// === CSV EXPORT LOGIC
+// === CSV EXPORT LOGIC (NEW IMPLEMENTATION)
 // ===================================================================
 function formatCSVRow(items) {
     return items.map(item => {
@@ -403,7 +400,25 @@ async function exportMoviesToCSV() {
     exportCsvButton.disabled = true;
     exportCsvButton.textContent = 'Exporting...';
     try {
-        const moviesQuery = query(collection(db, 'movies'), orderBy("showDate", "desc"));
+        // Step 1: Get the complete seating layout from Firestore
+        const layoutDoc = await getDoc(doc(db, "layouts", "default"));
+        if (!layoutDoc.exists()) {
+            alert("Default seating layout not found. Cannot generate export.");
+            return;
+        }
+        // Get all seat IDs and sort them consistently (e.g., A1, A2, B1, B2...)
+        const allSeatIds = layoutDoc.data().seats.map(s => s.id).sort((a, b) => {
+            const rowA = a.charAt(0);
+            const numA = parseInt(a.slice(1));
+            const rowB = b.charAt(0);
+            const numB = parseInt(b.slice(1));
+            if (rowA < rowB) return -1;
+            if (rowA > rowB) return 1;
+            return numA - numB;
+        });
+
+        // Step 2: Fetch all approved movies
+        const moviesQuery = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(moviesQuery);
 
         if (querySnapshot.empty) {
@@ -411,70 +426,59 @@ async function exportMoviesToCSV() {
             return;
         }
 
-        const headers = [
-            'Movie_ID', 'Movie_ShowDate', 'Movie_Status', 'Movie_Title', 'Movie_HostName', 
-            'Movie_Greeting', 'Movie_NoteToDavid', 'Movie_PosterURL', 'Movie_TrailerLink', 
-            'Movie_Tagline', 'Movie_IsAdultsOnly', 'Movie_SubmittedAt',
-            'Reservation_ID', 'Reservation_Name', 'Reservation_Email', 'Reservation_Seats', 'Reservation_Timestamp'
-        ];
+        // Step 3: Create dynamic headers with base movie info + all seat IDs
+        const baseHeaders = ['Movie_ID', 'ShowDate', 'Movie_Title', 'HostName'];
+        const headers = [...baseHeaders, ...allSeatIds];
         let csvContent = formatCSVRow(headers) + "\r\n";
 
+        // Step 4: Process each movie to create its row
         for (const movieDoc of querySnapshot.docs) {
             const movie = movieDoc.data();
-            const submittedAt = movie.submittedAt?.toDate ? movie.submittedAt.toDate().toISOString() : '';
             const baseMovieData = [
-                movieDoc.id, movie.showDate || '', movie.status || '', movie.movieTitle || '', movie.hostName || '',
-                movie.greeting || '', movie.noteToDavid || '', movie.posterURL || '', movie.trailerLink || '',
-                movie.movieTagline || '',
-                movie.isAdultsOnly ? 'true' : 'false', submittedAt
+                movieDoc.id,
+                movie.showDate || '',
+                movie.movieTitle || '',
+                movie.hostName || ''
             ];
 
+            // Fetch all reservations for this specific movie
             const reservationsRef = collection(db, 'movies', movieDoc.id, 'reservations');
             const reservationsSnapshot = await getDocs(reservationsRef);
-            const reservations = reservationsSnapshot.docs.map(resDoc => ({ id: resDoc.id, ...resDoc.data() }));
+            const reservations = reservationsSnapshot.docs.map(resDoc => resDoc.data());
 
-            if (reservations.length > 0) {
-                reservations.forEach(reservation => {
-                    // Correctly handle seat data for CSV export
-                    let seatsForCsv = '';
-                    const seatsData = reservation.seats;
-                    if (Array.isArray(seatsData)) {
-                        seatsForCsv = seatsData.map(seatItem => {
-                            if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('seat')) {
-                                return seatItem.seat;
-                            } else if (typeof seatItem === 'string') {
-                                return seatItem;
-                            }
-                            return '';
-                        }).filter(s => s !== '').join(', ');
-                    } else if (typeof seatsData === 'object' && seatsData !== null) {
-                        seatsForCsv = Object.keys(seatsData).join(', ');
-                    }
+            // Create a map of { SeatID: "Reserver Name" } for this movie
+            const seatReservationMap = {};
+            reservations.forEach(res => {
+                if (res.seats && Array.isArray(res.seats)) {
+                    res.seats.forEach(seat => {
+                        if (seat && seat.id) {
+                            seatReservationMap[seat.id] = res.name;
+                        }
+                    });
+                }
+            });
 
-                    const rowData = [
-                        ...baseMovieData,
-                        reservation.id || '', reservation.name || '', reservation.email || '', 
-                        seatsForCsv, reservation.timestamp || ''
-                    ];
-                    csvContent += formatCSVRow(rowData) + "\r\n";
-                });
-            } else {
-                const rowData = [ ...baseMovieData, '', '', '', '', '' ];
-                csvContent += formatCSVRow(rowData) + "\r\n";
-            }
+            // For each possible seat, find the reserver's name or leave it blank
+            const seatRowData = allSeatIds.map(seatId => seatReservationMap[seatId] || '');
+            
+            // Combine movie data with the seat data to form a complete row
+            const rowData = [...baseMovieData, ...seatRowData];
+            csvContent += formatCSVRow(rowData) + "\r\n";
         }
 
+        // Step 5: Create and download the CSV file
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         const timestamp = new Date().toISOString().slice(0, 10);
-        link.setAttribute("download", `all_movies_and_reservations_export_${timestamp}.csv`);
+        link.setAttribute("download", `theater_seating_export_${timestamp}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        alert("All movies and reservations exported to CSV successfully!");
+        alert("Seating map exported to CSV successfully!");
+
     } catch (error) {
         console.error("Error exporting to CSV:", error);
         alert("An error occurred during the export. Check the console for details.");
@@ -483,6 +487,7 @@ async function exportMoviesToCSV() {
         exportCsvButton.textContent = 'Export All to CSV';
     }
 }
+
 
 // ===================================================================
 // === INITIALIZATION
