@@ -70,7 +70,7 @@ async function initializePage() {
         if (approvedMovies.length === 0 && pendingMovies.length === 0) {
             showError("No movies are currently scheduled or pending. Why not suggest one?");
             // Still show the coming soon section with the 'pick movie' card
-            renderComingSoon([], []); 
+            renderComingSoon([], []);
             return;
         }
 
@@ -125,10 +125,10 @@ function categorizeAndRenderMovies(approvedMovies, pendingMovies) {
         // If no current movie, but there are pending/upcoming, hide the main section
         mainContent.classList.add('hidden');
     }
-    
+
     // Always render the coming soon section if there are upcoming or pending movies
     renderComingSoon(upcomingMovies, pendingMovies);
-    
+
     if (pastMovies.length > 0) {
         renderHistory(pastMovies.reverse());
     }
@@ -147,7 +147,7 @@ function renderCurrentMovie(movie) {
 
     const date = new Date(movie.showDate + 'T19:00:00');
     eventDateDisplay.textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
+
     eventTimeDoors.textContent = "Doors Open 6:00pm";
     eventTimeMovie.textContent = "Movie Starts 6:30pm";
 
@@ -198,13 +198,16 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
         </div>
     `).join('');
 
-    // --- NEW PENDING MOVIE CARD DESIGN ---
     const pendingHtml = pendingMovies.map(movie => `
         <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
-            <div class="relative w-full h-auto rounded-md aspect-[2/3] overflow-hidden bg-black/30">
+            <div class="relative w-full aspect-[2/3] rounded-md overflow-hidden bg-black/30">
                 
-                <div class="absolute top-1/2 left-1/2 w-[200%] py-4 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 z-10" style="box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 3px 0 rgba(0,0,0,0.2), inset 0 -2px 2px 0 rgba(255,255,255,0.1);">
-                    <h3 class="font-cinzel text-2xl font-bold text-gray-800 text-center truncate px-4">${movie.movieTitle}</h3>
+                <div class="absolute top-1/2 left-1/2 w-[150%] h-16 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center z-10" style="box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 3px 0 rgba(0,0,0,0.2), inset 0 -2px 2px 0 rgba(255,255,255,0.1);">
+                    <svg viewBox="0 0 500 60" preserveAspectRatio="xMidYMid meet" class="w-full h-full">
+                        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" lengthAdjust="spacingAndGlyphs" textLength="480" class="font-cinzel font-bold text-gray-800 uppercase" style="font-size: 36px;">
+                            ${movie.movieTitle}
+                        </text>
+                    </svg>
                 </div>
 
                 <div class="relative z-20 h-full flex flex-col justify-between items-center p-6">
@@ -215,7 +218,7 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
                         <p class="text-sm font-bold text-yellow-300/80 mt-2">Pending Scheduling</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500">Submitted by</p>
+                        <p class="text-xs text-gray-400">Submitted by</p>
                         <p class="text-base text-gray-300 font-semibold">${movie.hostName}</p>
                     </div>
                 </div>
@@ -316,8 +319,12 @@ bugReportModal.addEventListener('click', (e) => {
 function setBuildTimestamp() {
     const buildDate = new Date();
     const options = {
-        year: 'numeric', month: 'numeric', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
         timeZoneName: 'short'
     };
     if (buildTimestampElement) {
@@ -331,5 +338,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: 9/22/2025, 2:47:09 PM MDT
+ * Build Timestamp: 9/22/2025, 2:58:42 PM MDT
  */
