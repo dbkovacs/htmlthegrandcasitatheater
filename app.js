@@ -133,8 +133,6 @@ const audienceSection = document.getElementById('audience-section');
 // Sections
 const comingSoonSection = document.getElementById('coming-soon-section');
 const comingSoonContainer = document.getElementById('coming-soon-container');
-const pendingSection = document.getElementById('pending-section');
-const pendingContainer = document.getElementById('pending-container');
 const historySection = document.getElementById('history-section');
 const historyContainer = document.getElementById('history-container');
 
@@ -152,7 +150,9 @@ const closeBugReportModalBtn = document.getElementById('close-bug-modal');
 
 // --- Global Scope Function for Coming Soon Cards ---
 window.playTrailer = function(trailerLink) {
-    openTrailerModal(trailerLink);
+    if (trailerLink && trailerLink !== 'null' && trailerLink !== 'undefined') {
+        openTrailerModal(trailerLink);
+    }
 }
 
 // --- Main Function ---
@@ -167,30 +167,22 @@ async function initializePage() {
             getDocs(pendingQuery)
         ]);
 
-        if (approvedSnapshot.empty && pendingSnapshot.empty) {
+        const approvedMovies = approvedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const pendingMovies = pendingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (approvedMovies.length === 0 && pendingMovies.length === 0) {
             showError("No movies are currently scheduled or pending. Why not suggest one?");
+            // Still show the coming soon section with the 'pick movie' card
+            renderComingSoon([], []); 
             return;
         }
 
-        // Process and render approved movies
-        const approvedMovies = approvedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (approvedMovies.length > 0) {
-            categorizeAndRenderMovies(approvedMovies);
-        } else {
-             showError("No movies are currently scheduled. Please check back soon!");
-        }
-        
-        // Process and render pending movies
-        const pendingMovies = pendingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (pendingMovies.length > 0) {
-            renderPending(pendingMovies);
-        }
+        categorizeAndRenderMovies(approvedMovies, pendingMovies);
 
         contentWrapper.style.opacity = '1';
 
     } catch (error) {
         console.error("Error loading movie data:", error);
-
         if (error.code === 'failed-precondition' && error.message.includes('index')) {
             const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
             if (urlMatch && urlMatch[0]) {
@@ -211,7 +203,7 @@ async function initializePage() {
     }
 }
 
-function categorizeAndRenderMovies(approvedMovies) {
+function categorizeAndRenderMovies(approvedMovies, pendingMovies) {
     let currentMovie = null;
     let upcomingMovies = [];
     let pastMovies = [];
@@ -232,10 +224,14 @@ function categorizeAndRenderMovies(approvedMovies) {
 
     if (currentMovie) {
         renderCurrentMovie(currentMovie);
+    } else {
+        // If no current movie, but there are pending/upcoming, show the coming soon section
+        mainContent.classList.add('hidden');
     }
-    if (upcomingMovies.length > 0) {
-        renderComingSoon(upcomingMovies);
-    }
+    
+    // Always render the coming soon section if there are upcoming or pending movies
+    renderComingSoon(upcomingMovies, pendingMovies);
+    
     if (pastMovies.length > 0) {
         renderHistory(pastMovies.reverse());
     }
@@ -291,9 +287,10 @@ function renderCurrentMovie(movie) {
     actionsContainer.appendChild(reserveButton);
 }
 
-function renderComingSoon(movies) {
+function renderComingSoon(upcomingMovies, pendingMovies) {
     comingSoonSection.classList.remove('hidden');
-    comingSoonContainer.innerHTML = movies.map(movie => `
+
+    const approvedHtml = upcomingMovies.map(movie => `
         <div 
             class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center cursor-pointer hover:border-yellow-300/50 transition-colors"
             onclick="playTrailer('${movie.trailerLink}')"
@@ -303,11 +300,8 @@ function renderComingSoon(movies) {
             <p class="text-xs text-gray-400 pointer-events-none">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
         </div>
     `).join('');
-}
 
-function renderPending(movies) {
-    pendingSection.classList.remove('hidden');
-    pendingContainer.innerHTML = movies.map(movie => `
+    const pendingHtml = pendingMovies.map(movie => `
         <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
             <img src="${movie.posterURL || `https://placehold.co/600x900/1a0000/ffca28?text=${encodeURIComponent(movie.movieTitle)}`}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover filter grayscale">
             <h3 class="font-cinzel text-lg font-bold text-gray-400 truncate">${movie.movieTitle}</h3>
@@ -315,6 +309,18 @@ function renderPending(movies) {
             <p class="text-xs font-bold text-yellow-400/50 mt-2">Pending Approval</p>
         </div>
     `).join('');
+    
+    const pickMovieHtml = `
+        <a href="signups.html" class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center hover:border-yellow-300/50 transition-colors flex flex-col items-center justify-center aspect-[2/3]">
+            <div class="flex flex-col items-center justify-center text-center p-4 border-4 border-dashed border-yellow-300/20 rounded-lg h-full w-full hover:border-yellow-300/50 transition-colors">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-yellow-300/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                <h3 class="font-cinzel text-lg font-bold text-brand-gold">Pick A Movie</h3>
+                <p class="text-xs text-gray-400 mt-1">Have a suggestion? <br>Submit it here!</p>
+            </div>
+        </a>
+    `;
+
+    comingSoonContainer.innerHTML = approvedHtml + pendingHtml + pickMovieHtml;
 }
 
 function renderHistory(movies) {
@@ -331,7 +337,8 @@ function renderHistory(movies) {
 function showError(msg) {
     errorMessage.innerHTML = msg;
     errorContainer.classList.remove('hidden');
-    mainContent.remove(); // Only remove the main invite, not the whole wrapper
+    contentWrapper.style.opacity = '1'; // Show content wrapper even on error to display 'pick movie'
+    mainContent.remove();
 }
 
 // --- Utility Functions ---
@@ -410,5 +417,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
-    Build Timestamp: Mon Sep 22 2025 13:40:54 GMT-0600 (Mountain Daylight Time)
+    Build Timestamp: Mon Sep 22 2025 13:51:20 GMT-0600 (Mountain Daylight Time)
 */
