@@ -75,9 +75,22 @@
                 </div>
             </div>
         </div>
+        
+        <div id="bug-report-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-4">
+            <div class="bg-brand-card p-8 rounded-lg shadow-xl text-center max-w-md w-full border-2 border-yellow-300/50 relative">
+                <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">A Note From Management</h3>
+                <p id="bug-report-response" class="text-gray-200 mb-6 italic"></p>
+                <button id="close-bug-modal" class="btn-velvet primary w-full">Very Well</button>
+            </div>
+        </div>
     </div>
 
-    <footer class="text-center p-4 text-xs text-gray-500"><a href="admin.html">&copy;</a> 2025 The Grand Casita Theater<p id="build-timestamp" class="mt-1"></p></footer>
+    <footer class="text-center p-4 text-xs text-gray-500">
+        <div><a href="admin.html">&copy;</a> 2025 The Grand Casita Theater</div>
+        <button id="bug-report-button" class="mt-2 text-gray-400 hover:text-brand-gold underline text-xs">Submit Feature Request / Bug Report</button>
+        <p id="build-timestamp" class="mt-1"></p>
+    </footer>
+
     <script type="module" src="app.js"></script>
 </body>
 </html>
