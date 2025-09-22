@@ -3,10 +3,8 @@
     File: reservations.js
     Extension: .js
 */
-
-// FIX 1: Import serverTimestamp to ensure reliable timekeeping.
 import { db } from './firebase-config.js';
-import { collection, doc, getDoc, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, getDoc, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- DOM References ---
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -17,12 +15,12 @@ const selectedSeatsCount = document.getElementById('selected-seats-count');
 const selectedSeatsList = document.getElementById('selected-seats-list');
 const reserverNameInput = document.getElementById('reserver-name');
 const reserveButton = document.getElementById('reserve-button');
+const addAnotherButton = document.getElementById('add-another-button'); // NEW
 const reservationsListContainer = document.getElementById('reservations-list-container');
 const successModal = document.getElementById('success-modal');
 const premiumFullModal = document.getElementById('premium-full-modal');
 const confirmContinueButton = document.getElementById('confirm-continue-button');
 const cancelContinueButton = document.getElementById('cancel-continue-button');
-
 
 // --- State ---
 let currentMovie = null;
@@ -88,13 +86,11 @@ async function fetchSeatingLayout() {
 function setupRealtimeReservationsListener() {
     if (unsubscribeReservations) unsubscribeReservations();
 
-    // FIX 2: Remove orderBy from the query to fetch all documents, even if they lack a timestamp field.
     const reservationsRef = collection(db, "movies", currentMovie.id, "reservations");
     
     unsubscribeReservations = onSnapshot(reservationsRef, (snapshot) => {
         reservations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        // Sort on the client-side to handle documents with or without timestamps gracefully.
         reservations.sort((a, b) => {
             const timeA = a.timestamp?.toDate()?.getTime() || 0;
             const timeB = b.timestamp?.toDate()?.getTime() || 0;
@@ -120,12 +116,11 @@ function checkPremiumSeatStatus() {
     arePremiumSeatsFull = premiumSeatIds.every(id => reservedSeatIds.includes(id));
 }
 
-
 // --- Rendering ---
 function renderAll() {
     renderSeatingChart();
     renderGuestList();
-    updateReservationButton();
+    updateReservationButtons();
 }
 
 function renderSeatingChart() {
@@ -175,14 +170,13 @@ function renderGuestList() {
         li.className = 'bg-brand-dark/50 p-3 rounded-lg';
         li.innerHTML = `
             <p class="font-semibold text-lg text-brand-gold">${res.name}</p>
-            <p class="text-gray-300 text-sm">Seats: ${res.seats.map(s => `${s.row}${s.number}`).join(', ')}</p>
+            <p class="text-gray-300 text-sm">Seats: ${res.seats.map(s => s.id).sort().join(', ')}</p>
         `;
         list.appendChild(li);
     });
     reservationsListContainer.innerHTML = '';
     reservationsListContainer.appendChild(list);
 }
-
 
 // --- UI Interaction & State Management ---
 function handleSeatClick(seatId) {
@@ -206,41 +200,55 @@ function updateSelectedSeatsDisplay() {
     } else {
         selectedSeatsList.textContent = 'None';
     }
-    updateReservationButton();
+    updateReservationButtons();
 }
 
-function updateReservationButton() {
+function updateReservationButtons() {
     const name = reserverNameInput.value.trim();
     if (name && selectedSeats.length > 0) {
         reserveButton.classList.remove('disabled');
+        addAnotherButton.classList.remove('disabled');
     } else {
         reserveButton.classList.add('disabled');
+        addAnotherButton.classList.add('disabled');
     }
 }
 
-// --- Form Submission ---
-function handleReservationClick() {
+// --- NEW: Function to reset the form after a reservation ---
+function resetFormForNewReservation() {
+    reserverNameInput.value = ''; // Clear name input
+    selectedSeats = []; // Clear selected seats array
+    updateSelectedSeatsDisplay(); // This will reset the count/list and call updateReservationButtons
+}
+
+// --- Form Submission Logic ---
+function handleReservationClick(andFinish) {
     const selectedSeatObjects = selectedSeats.map(id => seatingLayout.find(s => s.id === id));
     const isSelectingOnlyNonPremium = selectedSeatObjects.every(s => !s.isPremium);
 
     if (arePremiumSeatsFull && !isSelectingOnlyNonPremium) {
-         alert("All premium seats are currently taken. Please select only available bean bag seats.");
-         return;
+       alert("All premium seats are currently taken. Please select only available bean bag seats.");
+       return;
     }
     
     if (arePremiumSeatsFull && isSelectingOnlyNonPremium) {
+        confirmContinueButton.dataset.andFinish = andFinish;
         premiumFullModal.classList.remove('hidden');
     } else {
-        submitReservation();
+        submitReservation(andFinish);
     }
 }
 
-async function submitReservation() {
+async function submitReservation(andFinish = true) {
     const name = reserverNameInput.value.trim();
     if (!name || selectedSeats.length === 0) return;
 
     reserveButton.disabled = true;
-    reserveButton.innerHTML = `<div class="loader"></div>`;
+    addAnotherButton.disabled = true;
+    const originalReserveText = reserveButton.textContent;
+    const originalAddAnotherText = addAnotherButton.textContent;
+    reserveButton.textContent = 'Reserving...';
+    addAnotherButton.textContent = 'Reserving...';
 
     const seatsToReserve = selectedSeats.map(id => {
         const seat = seatingLayout.find(s => s.id === id);
@@ -252,30 +260,48 @@ async function submitReservation() {
         await addDoc(reservationsRef, {
             name: name,
             seats: seatsToReserve,
-            // FIX 3: Use serverTimestamp() for all new reservations for reliability.
             timestamp: serverTimestamp()
         });
-        successModal.classList.remove('hidden');
+
+        if (andFinish) {
+            successModal.classList.remove('hidden');
+        } else {
+            resetFormForNewReservation();
+        }
     } catch (error) {
         console.error("Error submitting reservation:", error);
         alert("There was an error saving your reservation.");
+    } finally {
         reserveButton.disabled = false;
-        reserveButton.innerHTML = 'Reserve Seats';
+        addAnotherButton.disabled = false;
+        reserveButton.textContent = originalReserveText;
+        addAnotherButton.textContent = originalAddAnotherText;
+        updateReservationButtons(); 
     }
 }
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', initializePage);
-reserverNameInput.addEventListener('input', updateReservationButton);
+reserverNameInput.addEventListener('input', updateReservationButtons);
+
 reserveButton.addEventListener('click', () => {
     if (!reserveButton.classList.contains('disabled')) {
-        handleReservationClick();
+        handleReservationClick(true); // true = Reserve & Finish
     }
 });
+
+addAnotherButton.addEventListener('click', () => {
+    if (!addAnotherButton.classList.contains('disabled')) {
+        handleReservationClick(false); // false = Reserve & Add Another
+    }
+});
+
 confirmContinueButton.addEventListener('click', () => {
     premiumFullModal.classList.add('hidden');
-    submitReservation();
+    const andFinish = confirmContinueButton.dataset.andFinish === 'true';
+    submitReservation(andFinish);
 });
+
 cancelContinueButton.addEventListener('click', () => {
     premiumFullModal.classList.add('hidden');
-});s
+});
