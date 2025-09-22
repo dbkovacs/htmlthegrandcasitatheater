@@ -202,9 +202,9 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
         <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
             <div class="relative w-full aspect-[2/3] rounded-md overflow-hidden bg-black/30">
                 
-                <div class="absolute top-1/2 left-1/2 w-[150%] h-16 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center z-10" style="box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 3px 0 rgba(0,0,0,0.2), inset 0 -2px 2px 0 rgba(255,255,255,0.1);">
+                <div class="absolute top-1/2 left-1/2 w-[200%] py-4 bg-gradient-to-br from-yellow-400 to-amber-500 transform -translate-x-1/2 -translate-y-1/2 -rotate-45 flex items-center justify-center z-10" style="box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 2px 3px 0 rgba(0,0,0,0.2), inset 0 -2px 2px 0 rgba(255,255,255,0.1);">
                     <svg viewBox="0 0 500 60" preserveAspectRatio="xMidYMid meet" class="w-full h-full">
-                        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" lengthAdjust="spacingAndGlyphs" textLength="480" class="font-cinzel font-bold text-gray-800 uppercase" style="font-size: 36px;">
+                        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" lengthAdjust="spacingAndGlyphs" textLength="440" class="font-cinzel font-bold text-gray-800 uppercase" style="font-size: 36px;">
                             ${movie.movieTitle}
                         </text>
                     </svg>
@@ -338,5 +338,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: 9/22/2025, 2:58:42 PM MDT
+ * Build Timestamp: 9/22/2025, 3:04:05 PM MDT
  */
