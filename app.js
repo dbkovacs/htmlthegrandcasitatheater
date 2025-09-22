@@ -202,8 +202,8 @@ function renderComingSoon(upcomingMovies, pendingMovies) {
         <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
             <div class="w-full aspect-[2/3] rounded-md bg-black/30 flex overflow-hidden">
                 
-                <div class="w-16 flex-shrink-0 bg-gradient-to-b from-yellow-400 to-amber-500 flex items-center justify-center p-2 shadow-inner">
-                    <h3 class="font-cinzel text-xl font-bold text-gray-800 [writing-mode:vertical-rl] transform rotate-180 whitespace-nowrap tracking-wider" style="text-shadow: 0 1px 1px rgba(255,255,255,0.2);">
+                <div class="w-11 flex-shrink-0 bg-gradient-to-b from-yellow-400 to-amber-500 flex items-center justify-center p-2 shadow-inner overflow-hidden">
+                    <h3 class="font-cinzel text-lg font-bold text-gray-800 [writing-mode:vertical-rl] transform rotate-180 whitespace-nowrap tracking-wider" style="text-shadow: 0 1px 1px rgba(255,255,255,0.2);">
                         ${movie.movieTitle}
                     </h3>
                 </div>
@@ -335,5 +335,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
- * Build Timestamp: 9/22/2025, 3:11:01 PM MDT
+ * Build Timestamp: 9/22/2025, 3:13:58 PM MDT
  */
