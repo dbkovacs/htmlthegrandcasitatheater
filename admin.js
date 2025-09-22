@@ -5,7 +5,7 @@
 */
 
 import { db, storage } from './firebase-config.js';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
