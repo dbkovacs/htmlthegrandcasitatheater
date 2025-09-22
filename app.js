@@ -196,10 +196,10 @@ async function initializePage() {
             if (urlMatch && urlMatch[0]) {
                 const indexUrl = urlMatch[0];
                 const friendlyMessage = `
-                    <p class="font-bold mb-2 text-lg">Configuration Required: Database Index Missing</p>
-                    <p class="text-sm">This is a one-time setup. The current query needs a composite index to work efficiently.</p>
-                    <p class="text-sm mt-2">Click the button below to create it automatically in your Firebase console:</p>
-                    <a href="${indexUrl}" target="_blank" class="inline-block mt-4 px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors">Create Index Now</a>
+                        <p class="font-bold mb-2 text-lg">Configuration Required: Database Index Missing</p>
+                        <p class="text-sm">This is a one-time setup. The current query needs a composite index to work efficiently.</p>
+                        <p class="text-sm mt-2">Click the button below to create it automatically in your Firebase console:</p>
+                        <a href="${indexUrl}" target="_blank" class="inline-block mt-4 px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors">Create Index Now</a>
                 `;
                 showError(friendlyMessage);
             } else {
@@ -410,5 +410,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
-    Build Timestamp: Mon Sep 22 2025 11:29:18 GMT-0600 (Mountain Daylight Time)
+    Build Timestamp: Mon Sep 22 2025 13:32:40 GMT-0600 (Mountain Daylight Time)
 */
