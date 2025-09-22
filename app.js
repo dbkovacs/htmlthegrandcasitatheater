@@ -133,6 +133,8 @@ const audienceSection = document.getElementById('audience-section');
 // Sections
 const comingSoonSection = document.getElementById('coming-soon-section');
 const comingSoonContainer = document.getElementById('coming-soon-container');
+const pendingSection = document.getElementById('pending-section');
+const pendingContainer = document.getElementById('pending-container');
 const historySection = document.getElementById('history-section');
 const historyContainer = document.getElementById('history-container');
 
@@ -156,17 +158,33 @@ window.playTrailer = function(trailerLink) {
 // --- Main Function ---
 async function initializePage() {
     try {
-        const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "asc"));
-        const querySnapshot = await getDocs(q);
+        // Fetch approved and pending movies concurrently
+        const approvedQuery = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "asc"));
+        const pendingQuery = query(collection(db, 'movies'), where("status", "==", "Pending"), orderBy("submittedAt", "desc"));
 
-        if (querySnapshot.empty) {
-            showError("No movies are currently scheduled. Please check back soon!");
+        const [approvedSnapshot, pendingSnapshot] = await Promise.all([
+            getDocs(approvedQuery),
+            getDocs(pendingQuery)
+        ]);
+
+        if (approvedSnapshot.empty && pendingSnapshot.empty) {
+            showError("No movies are currently scheduled or pending. Why not suggest one?");
             return;
         }
 
-        const allMovies = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        categorizeAndRenderMovies(allMovies);
+        // Process and render approved movies
+        const approvedMovies = approvedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (approvedMovies.length > 0) {
+            categorizeAndRenderMovies(approvedMovies);
+        } else {
+             showError("No movies are currently scheduled. Please check back soon!");
+        }
+        
+        // Process and render pending movies
+        const pendingMovies = pendingSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (pendingMovies.length > 0) {
+            renderPending(pendingMovies);
+        }
 
         contentWrapper.style.opacity = '1';
 
@@ -193,7 +211,7 @@ async function initializePage() {
     }
 }
 
-function categorizeAndRenderMovies(allMovies) {
+function categorizeAndRenderMovies(approvedMovies) {
     let currentMovie = null;
     let upcomingMovies = [];
     let pastMovies = [];
@@ -201,15 +219,15 @@ function categorizeAndRenderMovies(allMovies) {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    const firstUpcomingIndex = allMovies.findIndex(movie => new Date(movie.showDate + 'T00:00:00') >= now);
+    const firstUpcomingIndex = approvedMovies.findIndex(movie => new Date(movie.showDate + 'T00:00:00') >= now);
 
     if (firstUpcomingIndex !== -1) {
-        currentMovie = allMovies[firstUpcomingIndex];
-        upcomingMovies = allMovies.slice(firstUpcomingIndex + 1);
-        pastMovies = allMovies.slice(0, firstUpcomingIndex);
-    } else if (allMovies.length > 0) {
-        currentMovie = allMovies[allMovies.length - 1];
-        pastMovies = allMovies.slice(0, allMovies.length - 1);
+        currentMovie = approvedMovies[firstUpcomingIndex];
+        upcomingMovies = approvedMovies.slice(firstUpcomingIndex + 1);
+        pastMovies = approvedMovies.slice(0, firstUpcomingIndex);
+    } else if (approvedMovies.length > 0) {
+        currentMovie = approvedMovies[approvedMovies.length - 1];
+        pastMovies = approvedMovies.slice(0, approvedMovies.length - 1);
     }
 
     if (currentMovie) {
@@ -227,7 +245,7 @@ function categorizeAndRenderMovies(allMovies) {
 
 function renderCurrentMovie(movie) {
     mainContent.classList.remove('hidden');
-    moviePoster.src = movie.posterURL || 'path/to/default/poster.jpg';
+    moviePoster.src = movie.posterURL || `https://placehold.co/600x900/1a0000/ffca28?text=${encodeURIComponent(movie.movieTitle)}`;
     moviePoster.alt = movie.movieTitle || 'Movie Poster';
     inviterName.textContent = movie.hostName || 'Your Host';
     inviterComment.textContent = movie.greeting || 'Enjoy the show!';
@@ -280,9 +298,21 @@ function renderComingSoon(movies) {
             class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center cursor-pointer hover:border-yellow-300/50 transition-colors"
             onclick="playTrailer('${movie.trailerLink}')"
             >
-            <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover pointer-events-none">
+            <img src="${movie.posterURL || `https://placehold.co/600x900/1a0000/ffca28?text=${encodeURIComponent(movie.movieTitle)}`}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover pointer-events-none">
             <h3 class="font-cinzel text-lg font-bold text-brand-gold truncate pointer-events-none">${movie.movieTitle}</h3>
             <p class="text-xs text-gray-400 pointer-events-none">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
+        </div>
+    `).join('');
+}
+
+function renderPending(movies) {
+    pendingSection.classList.remove('hidden');
+    pendingContainer.innerHTML = movies.map(movie => `
+        <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-dashed border-gray-500/30 text-center opacity-70">
+            <img src="${movie.posterURL || `https://placehold.co/600x900/1a0000/ffca28?text=${encodeURIComponent(movie.movieTitle)}`}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover filter grayscale">
+            <h3 class="font-cinzel text-lg font-bold text-gray-400 truncate">${movie.movieTitle}</h3>
+            <p class="text-xs text-gray-500 mt-1">Submitted by ${movie.hostName}</p>
+            <p class="text-xs font-bold text-yellow-400/50 mt-2">Pending Approval</p>
         </div>
     `).join('');
 }
@@ -291,7 +321,7 @@ function renderHistory(movies) {
     historySection.classList.remove('hidden');
     historyContainer.innerHTML = movies.map(movie => `
         <div class="bg-black/30 p-3 rounded-lg shadow-lg border-2 border-gray-500/10 text-center opacity-70 hover:opacity-100 transition-opacity">
-            <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover">
+            <img src="${movie.posterURL || `https://placehold.co/600x900/1a0000/ffca28?text=${encodeURIComponent(movie.movieTitle)}`}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover">
             <h3 class="font-cinzel text-lg font-bold text-gray-400 truncate">${movie.movieTitle}</h3>
             <p class="text-xs text-gray-500">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
         </div>
@@ -301,7 +331,7 @@ function renderHistory(movies) {
 function showError(msg) {
     errorMessage.innerHTML = msg;
     errorContainer.classList.remove('hidden');
-    contentWrapper.remove();
+    mainContent.remove(); // Only remove the main invite, not the whole wrapper
 }
 
 // --- Utility Functions ---
@@ -312,9 +342,7 @@ function getYoutubeVideoId(url) {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-
 // --- Event Handlers for Modals ---
-
 function openTrailerModal(trailerLink) {
     const videoId = getYoutubeVideoId(trailerLink);
     if (videoId) {
@@ -363,7 +391,6 @@ bugReportModal.addEventListener('click', (e) => {
     }
 });
 
-
 // --- Initialization ---
 function setBuildTimestamp() {
     const buildDate = new Date();
@@ -383,6 +410,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
-    Build Timestamp: Mon Sep 22 2025 09:04:00 GMT-0600 (Mountain Daylight Time)
+    Build Timestamp: Mon Sep 22 2025 11:19:00 GMT-0600 (Mountain Daylight Time)
 */
-
