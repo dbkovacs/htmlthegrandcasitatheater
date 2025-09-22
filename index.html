@@ -9,13 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        /*
-         * Consolidated styles for a self-contained component.
-         */
+        /* --- Consolidated Styles --- */
         body {
             /* Add padding to the top to prevent content from being hidden by the fixed banner */
             padding-top: 40px; 
             font-family: 'Inter', sans-serif;
+            background-color: #1a0000;
+            background-image: radial-gradient(circle, #4c0000 0%, #1a0000 70%);
         }
 
         #dev-branch-banner {
@@ -36,34 +36,21 @@
         }
 
         .sash-banner-container {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 150px;
-            height: 150px;
-            overflow: hidden;
-            pointer-events: none;
+            position: absolute; top: -10px; left: -10px;
+            width: 150px; height: 150px;
+            overflow: hidden; pointer-events: none;
         }
 
         .sash-banner {
-            position: absolute;
-            top: 35px;
-            left: -40px;
-            width: 200px;
-            padding: 8px 0;
-            background-color: #d32f2f; /* A deep red */
-            color: white;
-            text-align: center;
-            font-weight: bold;
+            position: absolute; top: 35px; left: -40px;
+            width: 200px; padding: 8px 0;
+            background-color: #d32f2f; color: white;
+            text-align: center; font-weight: bold;
             transform: rotate(-45deg);
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
         .text-shadow { text-shadow: 2px 2px 4px rgba(0,0,0,0.6); }
-        .bg-brand-dark {
-             background-color: #1a0000;
-             background-image: radial-gradient(circle, #4c0000 0%, #1a0000 70%);
-        }
         .bg-brand-card {
             background-color: rgba(26, 0, 0, 0.7);
             backdrop-filter: blur(10px);
@@ -72,38 +59,29 @@
         .font-cinzel { font-family: 'Cinzel', serif; }
 
         .btn-velvet {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
+            padding: 10px 20px; border-radius: 8px;
+            font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1px; text-align: center;
             display: inline-block;
             transition: all 0.2s ease-in-out;
-            background-color: #4a0e0e;
-            color: #ffca28;
+            background-color: #4a0e0e; color: #ffca28;
             border: 2px solid #ffca28;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
         }
         .btn-velvet.primary {
-            background-color: #ffca28;
-            color: #4a0e0e;
+            background-color: #ffca28; color: #4a0e0e;
         }
         .btn-velvet:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(0,0,0,0.5);
         }
         .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            position: relative; padding-bottom: 56.25%; /* 16:9 */
             height: 0;
         }
         .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
         }
     </style>
 </head>
