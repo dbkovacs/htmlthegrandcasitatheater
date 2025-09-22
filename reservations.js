@@ -11,24 +11,22 @@ const loadingOverlay = document.getElementById('loading-overlay');
 const reservationContent = document.getElementById('reservation-content');
 const movieTitleDisplay = document.getElementById('movie-title-display');
 const seatingContainer = document.getElementById('seating-container');
-const selectedSeatsCount = document.getElementById('selected-seats-count');
-const selectedSeatsList = document.getElementById('selected-seats-list');
-const reserverNameInput = document.getElementById('reserver-name');
-const reserveButton = document.getElementById('reserve-button');
-const addAnotherButton = document.getElementById('add-another-button'); // NEW
 const reservationsListContainer = document.getElementById('reservations-list-container');
-const successModal = document.getElementById('success-modal');
-const premiumFullModal = document.getElementById('premium-full-modal');
-const confirmContinueButton = document.getElementById('confirm-continue-button');
-const cancelContinueButton = document.getElementById('cancel-continue-button');
+const nameEntryModal = document.getElementById('name-entry-modal');
+const beanbagConfirmModal = document.getElementById('beanbag-confirm-modal');
+const modalSeatIdDisplay = document.getElementById('modal-seat-id-display');
+const modalReserverNameInput = document.getElementById('modal-reserver-name');
+const modalSaveNameButton = document.getElementById('modal-save-name-button');
+const modalCancelNameButton = document.getElementById('modal-cancel-name-button');
+const confirmBeanbagButton = document.getElementById('confirm-beanbag-button');
+const cancelBeanbagButton = document.getElementById('cancel-beanbag-button');
 
 // --- State ---
 let currentMovie = null;
 let seatingLayout = [];
 let reservations = [];
-let selectedSeats = [];
 let unsubscribeReservations = null;
-let arePremiumSeatsFull = false;
+let seatToProcess = null; // To hold the entire seat object between modals
 
 // --- Main Initialization ---
 async function initializePage() {
@@ -79,7 +77,7 @@ async function fetchSeatingLayout() {
     if (layoutDoc.exists()) {
         seatingLayout = layoutDoc.data().seats;
     } else {
-        throw new Error("The 'default' seating layout was not found. Please run 'setup-firestore.html'.");
+        throw new Error("The 'default' seating layout was not found.");
     }
 }
 
@@ -97,7 +95,6 @@ function setupRealtimeReservationsListener() {
             return timeA - timeB;
         });
 
-        checkPremiumSeatStatus();
         renderAll();
     }, (error) => {
         console.error("Error listening to reservations:", error);
@@ -105,22 +102,10 @@ function setupRealtimeReservationsListener() {
     });
 }
 
-// --- Check Premium Seat Status ---
-function checkPremiumSeatStatus() {
-    const premiumSeatIds = seatingLayout.filter(s => s.isPremium).map(s => s.id);
-    if (premiumSeatIds.length === 0) {
-        arePremiumSeatsFull = false;
-        return;
-    }
-    const reservedSeatIds = reservations.flatMap(r => r.seats.map(s => s.id));
-    arePremiumSeatsFull = premiumSeatIds.every(id => reservedSeatIds.includes(id));
-}
-
 // --- Rendering ---
 function renderAll() {
     renderSeatingChart();
     renderGuestList();
-    updateReservationButtons();
 }
 
 function renderSeatingChart() {
@@ -132,16 +117,18 @@ function renderSeatingChart() {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'flex justify-center gap-4 items-center';
         
-        const rowSeats = seatingLayout.filter(s => s.row === rowLetter).sort((a,b) => a.number - b.number);
+        // Sort by number ascending, then reverse for the 4,3,2,1 visual order
+        const rowSeats = seatingLayout
+            .filter(s => s.row === rowLetter)
+            .sort((a, b) => a.number - b.number)
+            .reverse(); 
         
         rowSeats.forEach(seat => {
             const seatDiv = document.createElement('div');
             const isReserved = reservedSeatIds.includes(seat.id);
-            const isSelected = selectedSeats.includes(seat.id);
             
             let statusClass = 'bg-gray-400 hover:bg-gray-500 cursor-pointer';
             if (isReserved) statusClass = 'bg-red-800 cursor-not-allowed opacity-70';
-            if (isSelected) statusClass = 'bg-blue-500 ring-2 ring-offset-2 ring-offset-brand-card ring-blue-400';
             
             const shapeClass = seat.type === 'beanbag' ? 'rounded-full' : 'rounded-lg';
 
@@ -150,7 +137,7 @@ function renderSeatingChart() {
             seatDiv.dataset.seatId = seat.id;
 
             if (!isReserved) {
-                seatDiv.addEventListener('click', () => handleSeatClick(seat.id));
+                seatDiv.addEventListener('click', () => handleSeatClick(seat));
             }
             rowDiv.appendChild(seatDiv);
         });
@@ -170,7 +157,7 @@ function renderGuestList() {
         li.className = 'bg-brand-dark/50 p-3 rounded-lg';
         li.innerHTML = `
             <p class="font-semibold text-lg text-brand-gold">${res.name}</p>
-            <p class="text-gray-300 text-sm">Seats: ${res.seats.map(s => s.id).sort().join(', ')}</p>
+            <p class="text-gray-300 text-sm">Seat: ${res.seats.map(s => s.id).sort().join(', ')}</p>
         `;
         list.appendChild(li);
     });
@@ -178,130 +165,75 @@ function renderGuestList() {
     reservationsListContainer.appendChild(list);
 }
 
-// --- UI Interaction & State Management ---
-function handleSeatClick(seatId) {
-    if (selectedSeats.includes(seatId)) {
-        selectedSeats = selectedSeats.filter(id => id !== seatId);
+// --- UI Interaction & Modals ---
+function handleSeatClick(seat) {
+    seatToProcess = seat; // Store the entire seat object
+    if (seat.type === 'beanbag') {
+        beanbagConfirmModal.classList.remove('hidden');
     } else {
-        selectedSeats.push(seatId);
-    }
-    updateSelectedSeatsDisplay();
-    renderSeatingChart();
-}
-
-function updateSelectedSeatsDisplay() {
-    selectedSeatsCount.textContent = selectedSeats.length;
-    if (selectedSeats.length > 0) {
-        const seatNames = selectedSeats.map(id => {
-            const seat = seatingLayout.find(s => s.id === id);
-            return seat ? `${seat.row}${seat.number}` : '';
-        }).sort().join(', ');
-        selectedSeatsList.textContent = seatNames;
-    } else {
-        selectedSeatsList.textContent = 'None';
-    }
-    updateReservationButtons();
-}
-
-function updateReservationButtons() {
-    const name = reserverNameInput.value.trim();
-    if (name && selectedSeats.length > 0) {
-        reserveButton.classList.remove('disabled');
-        addAnotherButton.classList.remove('disabled');
-    } else {
-        reserveButton.classList.add('disabled');
-        addAnotherButton.classList.add('disabled');
+        showNameEntryModal();
     }
 }
 
-// --- NEW: Function to reset the form after a reservation ---
-function resetFormForNewReservation() {
-    reserverNameInput.value = ''; // Clear name input
-    selectedSeats = []; // Clear selected seats array
-    updateSelectedSeatsDisplay(); // This will reset the count/list and call updateReservationButtons
+function showNameEntryModal() {
+    modalSeatIdDisplay.textContent = seatToProcess.id;
+    nameEntryModal.classList.remove('hidden');
+    modalReserverNameInput.focus();
 }
 
-// --- Form Submission Logic ---
-function handleReservationClick(andFinish) {
-    const selectedSeatObjects = selectedSeats.map(id => seatingLayout.find(s => s.id === id));
-    const isSelectingOnlyNonPremium = selectedSeatObjects.every(s => !s.isPremium);
-
-    if (arePremiumSeatsFull && !isSelectingOnlyNonPremium) {
-       alert("All premium seats are currently taken. Please select only available bean bag seats.");
-       return;
-    }
-    
-    if (arePremiumSeatsFull && isSelectingOnlyNonPremium) {
-        confirmContinueButton.dataset.andFinish = andFinish;
-        premiumFullModal.classList.remove('hidden');
-    } else {
-        submitReservation(andFinish);
-    }
+function closeAndResetNameModal() {
+    nameEntryModal.classList.add('hidden');
+    modalReserverNameInput.value = '';
+    seatToProcess = null;
 }
 
-async function submitReservation(andFinish = true) {
-    const name = reserverNameInput.value.trim();
-    if (!name || selectedSeats.length === 0) return;
+// --- Form Submission ---
+async function submitReservation() {
+    const name = modalReserverNameInput.value.trim();
+    if (!name || !seatToProcess) return;
 
-    reserveButton.disabled = true;
-    addAnotherButton.disabled = true;
-    const originalReserveText = reserveButton.textContent;
-    const originalAddAnotherText = addAnotherButton.textContent;
-    reserveButton.textContent = 'Reserving...';
-    addAnotherButton.textContent = 'Reserving...';
+    modalSaveNameButton.disabled = true;
+    modalSaveNameButton.textContent = 'Reserving...';
 
-    const seatsToReserve = selectedSeats.map(id => {
-        const seat = seatingLayout.find(s => s.id === id);
-        return { id: seat.id, row: seat.row, number: seat.number };
-    });
+    const seatToReserve = { id: seatToProcess.id, row: seatToProcess.row, number: seatToProcess.number };
 
     try {
         const reservationsRef = collection(db, "movies", currentMovie.id, "reservations");
         await addDoc(reservationsRef, {
             name: name,
-            seats: seatsToReserve,
+            seats: [seatToReserve], // Save as an array with one seat object
             timestamp: serverTimestamp()
         });
-
-        if (andFinish) {
-            successModal.classList.remove('hidden');
-        } else {
-            resetFormForNewReservation();
-        }
+        closeAndResetNameModal(); // Success is handled by the listener
     } catch (error) {
         console.error("Error submitting reservation:", error);
         alert("There was an error saving your reservation.");
     } finally {
-        reserveButton.disabled = false;
-        addAnotherButton.disabled = false;
-        reserveButton.textContent = originalReserveText;
-        addAnotherButton.textContent = originalAddAnotherText;
-        updateReservationButtons(); 
+        modalSaveNameButton.disabled = false;
+        modalSaveNameButton.textContent = 'Reserve';
     }
 }
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', initializePage);
-reserverNameInput.addEventListener('input', updateReservationButtons);
 
-reserveButton.addEventListener('click', () => {
-    if (!reserveButton.classList.contains('disabled')) {
-        handleReservationClick(true); // true = Reserve & Finish
+// Beanbag Modal Listeners
+confirmBeanbagButton.addEventListener('click', () => {
+    beanbagConfirmModal.classList.add('hidden');
+    showNameEntryModal(); // Proceed to name entry
+});
+
+cancelBeanbagButton.addEventListener('click', () => {
+    beanbagConfirmModal.classList.add('hidden');
+    seatToProcess = null; // Clear the selected seat
+});
+
+// Name Modal Listeners
+modalSaveNameButton.addEventListener('click', submitReservation);
+modalCancelNameButton.addEventListener('click', closeAndResetNameModal);
+
+modalReserverNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        submitReservation();
     }
-});
-
-addAnotherButton.addEventListener('click', () => {
-    if (!addAnotherButton.classList.contains('disabled')) {
-        handleReservationClick(false); // false = Reserve & Add Another
-    }
-});
-
-confirmContinueButton.addEventListener('click', () => {
-    premiumFullModal.classList.add('hidden');
-    const andFinish = confirmContinueButton.dataset.andFinish === 'true';
-    submitReservation(andFinish);
-});
-
-cancelContinueButton.addEventListener('click', () => {
-    premiumFullModal.classList.add('hidden');
 });
