@@ -125,6 +125,8 @@ const inviterComment = document.getElementById('inviter-comment');
 const movieTitle = document.getElementById('movie-title');
 const movieTagline = document.getElementById('movie-tagline');
 const eventDateDisplay = document.getElementById('event-date-display');
+const eventTimeDoors = document.getElementById('event-time-doors');
+const eventTimeMovie = document.getElementById('event-time-movie');
 const actionsContainer = document.getElementById('actions-container');
 const audienceSection = document.getElementById('audience-section');
 
@@ -146,6 +148,10 @@ const bugReportResponse = document.getElementById('bug-report-response');
 const openBugReportModalBtn = document.getElementById('bug-report-button');
 const closeBugReportModalBtn = document.getElementById('close-bug-modal');
 
+// --- Global Scope Function for Coming Soon Cards ---
+window.playTrailer = function(trailerLink) {
+    openTrailerModal(trailerLink);
+}
 
 // --- Main Function ---
 async function initializePage() {
@@ -202,7 +208,6 @@ function categorizeAndRenderMovies(allMovies) {
         upcomingMovies = allMovies.slice(firstUpcomingIndex + 1);
         pastMovies = allMovies.slice(0, firstUpcomingIndex);
     } else if (allMovies.length > 0) {
-        // If all movies are in the past, show the most recent one as current.
         currentMovie = allMovies[allMovies.length - 1];
         pastMovies = allMovies.slice(0, allMovies.length - 1);
     }
@@ -231,6 +236,10 @@ function renderCurrentMovie(movie) {
 
     const date = new Date(movie.showDate + 'T19:00:00');
     eventDateDisplay.textContent = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    eventTimeDoors.textContent = "Doors Open 6:00pm";
+    eventTimeMovie.textContent = "Movie Starts 6:30pm";
+
 
     if (movie.isAdultsOnly) {
         audienceSection.textContent = 'Adults Only (21+)';
@@ -267,10 +276,13 @@ function renderCurrentMovie(movie) {
 function renderComingSoon(movies) {
     comingSoonSection.classList.remove('hidden');
     comingSoonContainer.innerHTML = movies.map(movie => `
-        <div class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center">
-            <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover">
-            <h3 class="font-cinzel text-lg font-bold text-brand-gold truncate">${movie.movieTitle}</h3>
-            <p class="text-xs text-gray-400">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
+        <div 
+            class="bg-brand-card p-3 rounded-lg shadow-lg border-2 border-yellow-300/10 text-center cursor-pointer hover:border-yellow-300/50 transition-colors"
+            onclick="playTrailer('${movie.trailerLink}')"
+            >
+            <img src="${movie.posterURL}" alt="${movie.movieTitle}" class="w-full h-auto rounded-md mb-3 aspect-[2/3] object-cover pointer-events-none">
+            <h3 class="font-cinzel text-lg font-bold text-brand-gold truncate pointer-events-none">${movie.movieTitle}</h3>
+            <p class="text-xs text-gray-400 pointer-events-none">${new Date(movie.showDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</p>
         </div>
     `).join('');
 }
@@ -310,7 +322,6 @@ function openTrailerModal(trailerLink) {
         trailerModal.classList.remove('hidden');
     } else {
         console.error("Could not extract a valid YouTube Video ID from the link:", trailerLink);
-        // In a real-world scenario, you might want to show a user-friendly error here.
     }
 }
 
@@ -372,5 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /*
-    Build Timestamp: Mon Sep 22 2025 08:58:00 GMT-0600 (Mountain Daylight Time)
+    Build Timestamp: Mon Sep 22 2025 09:04:00 GMT-0600 (Mountain Daylight Time)
 */
+
