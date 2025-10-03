@@ -137,6 +137,20 @@
                 <div class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
                 </div>
+
+                <section id="homepage-mode-section" class="mb-12">
+                    <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Homepage Display Mode</h3>
+                    <div class="bg-black/20 p-6 rounded-lg border border-yellow-300/10 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-lg" id="homepage-mode-status">Regular Schedule</p>
+                            <p class="text-sm text-gray-400" id="homepage-mode-description">The homepage is showing the normal movie schedule.</p>
+                        </div>
+                        <label class="admin-toggle-switch">
+                            <input type="checkbox" id="homepage-mode-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </section>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     <section id="pending-section">
@@ -151,7 +165,7 @@
                             <button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
                         </div>
                         <div id="approved-movies-container" class="space-y-6">
-                           </div>
+                            </div>
                     </section>
                 </div>
             </div>
@@ -167,5 +181,42 @@
     
     <script type="module" src="admin.js"></script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('homepage-mode-toggle');
+            const statusEl = document.getElementById('homepage-mode-status');
+            const descriptionEl = document.getElementById('homepage-mode-description');
+            
+            const storageKey = 'casita_theater_mode';
+
+            // Function to update UI based on mode
+            function updateUI(mode) {
+                if (mode === 'temporary') {
+                    statusEl.textContent = 'Special Announcement';
+                    descriptionEl.textContent = 'The homepage is showing a temporary message about schedule changes.';
+                    toggle.checked = true;
+                } else {
+                    statusEl.textContent = 'Regular Schedule';
+                    descriptionEl.textContent = 'The homepage is showing the normal movie schedule.';
+                    toggle.checked = false;
+                }
+            }
+
+            // Initialize state from localStorage
+            const currentMode = localStorage.getItem(storageKey) || 'regular';
+            updateUI(currentMode);
+
+            // Listen for changes on the toggle
+            toggle.addEventListener('change', function() {
+                if (this.checked) {
+                    localStorage.setItem(storageKey, 'temporary');
+                    updateUI('temporary');
+                } else {
+                    localStorage.setItem(storageKey, 'regular');
+                    updateUI('regular');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
