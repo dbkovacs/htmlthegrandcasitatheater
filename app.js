@@ -43,10 +43,6 @@ const youtubePlayer = document.getElementById('youtube-player');
 const adultsOnlyModal = document.getElementById('adults-only-modal');
 const confirmAgeButton = document.getElementById('confirm-age-button');
 const cancelAgeButton = document.getElementById('cancel-age-button');
-const bugReportModal = document.getElementById('bug-report-modal');
-const bugReportResponse = document.getElementById('bug-report-response');
-const openBugReportModalBtn = document.getElementById('bug-report-button');
-const closeBugReportModalBtn = document.getElementById('close-bug-modal');
 
 // --- Global Scope Function for Coming Soon Cards ---
 window.playTrailer = function(trailerLink) {
@@ -312,24 +308,6 @@ confirmAgeButton.addEventListener('click', () => {
 
 cancelAgeButton.addEventListener('click', () => {
     adultsOnlyModal.classList.add('hidden');
-});
-
-// --- Event Handlers for Bug Report Modal ---
-openBugReportModalBtn.addEventListener('click', () => {
-    const randomIndex = Math.floor(Math.random() * VONNEGUT_JOKES.length);
-    bugReportResponse.textContent = VONNEGUT_JOKES[randomIndex];
-    bugReportModal.classList.remove('hidden');
-});
-
-function closeBugModal() {
-    bugReportModal.classList.add('hidden');
-}
-
-closeBugReportModalBtn.addEventListener('click', closeBugModal);
-bugReportModal.addEventListener('click', (e) => {
-    if (e.target === bugReportModal) {
-        closeBugModal();
-    }
 });
 
 // --- Initialization ---

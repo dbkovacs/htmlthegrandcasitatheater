@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit a Report - The Grand Casita Theater</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="layout-styles.css">
+</head>
+<body class="bg-brand-dark text-white">
+
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-2xl">
+
+        <header class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Submit a Report</h1>
+            <p class="text-xl text-gray-300 mt-2">Submit a Feature Request or Bug Report</p>
+        </header>
+
+        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
+            
+            <form id="bug-report-form" class="space-y-8">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name</label>
+                    <input type="text" name="name" id="name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Email</label>
+                    <input type="email" name="email" id="email" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                </div>
+                <div>
+                    <label for="request" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Bug/Feature Request</label>
+                    <textarea name="request" id="request" rows="5" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="Please describe the issue or your idea..."></textarea>
+                </div>
+                <div class="border-t border-yellow-300/10 pt-8">
+                    <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg">
+                        Submit Report
+                    </button>
+                </div>
+            </form>
+            
+            <div id="response-container" class="hidden text-center">
+                <h3 class="text-2xl font-bold mb-4 text-brand-gold font-cinzel">A Note From Management</h3>
+                <p id="response-joke" class="text-gray-200 mb-6 italic"></p>
+                <a href="index.html" class="btn-velvet primary w-full max-w-xs">Very Well</a>
+            </div>
+
+        </main>
+
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
+            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+        </footer>
+    </div>
+
+    <script type="module" src="bug-report.js"></script>
+
+</body>
+</html>
