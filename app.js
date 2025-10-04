@@ -5,7 +5,7 @@
  */
 
 import { db } from './firebase-config.js';
-import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { VONNEGUT_JOKES } from './jokes.js';
 
 // --- DOM References ---
@@ -14,6 +14,9 @@ const errorMessage = document.getElementById('error-message');
 const contentWrapper = document.getElementById('content-wrapper');
 const mainContent = document.getElementById('main-content');
 const buildTimestampElement = document.getElementById('build-timestamp');
+const regularContent = document.getElementById('regular-content');
+const temporaryContent = document.getElementById('temporary-content');
+
 
 // Main Invitation Elements
 const moviePoster = document.getElementById('movie-poster');
@@ -55,6 +58,22 @@ window.playTrailer = function(trailerLink) {
 // --- Main Function ---
 async function initializePage() {
     try {
+        // First, check the homepage mode from Firestore
+        const settingsRef = doc(db, 'settings', 'homepage');
+        const settingsSnap = await getDoc(settingsRef);
+
+        if (settingsSnap.exists() && settingsSnap.data().mode === 'temporary') {
+            // Show temporary content and stop further processing
+            regularContent.style.display = 'none';
+            temporaryContent.style.display = 'block';
+            contentWrapper.style.opacity = '1';
+            return;
+        }
+
+        // If mode is 'regular' (or not set), proceed with normal movie loading
+        regularContent.style.display = 'block';
+        temporaryContent.style.display = 'none';
+
         // Fetch approved and pending movies concurrently
         const approvedQuery = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "asc"));
         const pendingQuery = query(collection(db, 'movies'), where("status", "==", "pending"), orderBy("submittedAt", "asc"));
@@ -99,6 +118,7 @@ async function initializePage() {
         }
     }
 }
+
 
 function categorizeAndRenderMovies(approvedMovies, pendingMovies) {
     let currentMovie = null;

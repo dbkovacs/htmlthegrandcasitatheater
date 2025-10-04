@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7KP0BL67YF"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7KP0BL67YF"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -180,21 +179,6 @@
         <p id="build-timestamp" class="mt-1 text-gray-600"></p>
     </footer>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const mode = localStorage.getItem('casita_theater_mode') || 'regular';
-            const regularContent = document.getElementById('regular-content');
-            const temporaryContent = document.getElementById('temporary-content');
-
-            if (mode === 'temporary') {
-                regularContent.style.display = 'none';
-                temporaryContent.style.display = 'block';
-            } else {
-                regularContent.style.display = 'block';
-                temporaryContent.style.display = 'none';
-            }
-        });
-    </script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

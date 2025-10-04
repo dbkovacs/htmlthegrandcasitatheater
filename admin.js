@@ -5,7 +5,7 @@
 */
 
 import { db, storage } from './firebase-config.js';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // --- DOM References ---
@@ -13,6 +13,10 @@ const timestampContainer = document.getElementById('build-timestamp');
 const submissionsContainer = document.getElementById('submissions-container');
 const approvedMoviesContainer = document.getElementById('approved-movies-container');
 const exportCsvButton = document.getElementById('export-csv-button');
+const homepageModeToggle = document.getElementById('homepage-mode-toggle');
+const homepageModeStatus = document.getElementById('homepage-mode-status');
+const homepageModeDescription = document.getElementById('homepage-mode-description');
+
 
 // --- In-memory store for movie data ---
 let approvedMovies = [];
@@ -21,6 +25,54 @@ const flatpickrOptions = {
     altInput: true,
     altFormat: "F j, Y",
 };
+
+// ===================================================================
+// === HOMEPAGE DISPLAY MODE LOGIC (NEW: FIREBASE-BACKED)
+// ===================================================================
+async function initializeHomepageMode() {
+    const settingsRef = doc(db, 'settings', 'homepage');
+    try {
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists() && docSnap.data().mode === 'temporary') {
+            updateHomepageUIMode('temporary');
+            homepageModeToggle.checked = true;
+        } else {
+            updateHomepageUIMode('regular');
+            homepageModeToggle.checked = false;
+        }
+    } catch (error) {
+        console.error("Error fetching homepage mode:", error);
+        updateHomepageUIMode('regular'); // Default to regular mode on error
+    }
+}
+
+function updateHomepageUIMode(mode) {
+    if (mode === 'temporary') {
+        homepageModeStatus.textContent = 'Special Announcement';
+        homepageModeDescription.textContent = 'The homepage is showing a temporary message about schedule changes.';
+    } else {
+        homepageModeStatus.textContent = 'Regular Schedule';
+        homepageModeDescription.textContent = 'The homepage is showing the normal movie schedule.';
+    }
+}
+
+async function handleHomepageToggleChange(e) {
+    const isTemporary = e.target.checked;
+    const newMode = isTemporary ? 'temporary' : 'regular';
+    const settingsRef = doc(db, 'settings', 'homepage');
+
+    try {
+        await setDoc(settingsRef, { mode: newMode });
+        updateHomepageUIMode(newMode);
+        console.log(`Homepage mode set to: ${newMode}`);
+    } catch (error) {
+        console.error("Error updating homepage mode:", error);
+        alert("Failed to update homepage mode. Please try again.");
+        // Revert the toggle on failure
+        e.target.checked = !isTemporary;
+    }
+}
+
 
 // ===================================================================
 // === PENDING SUBMISSIONS LOGIC
@@ -494,9 +546,13 @@ async function exportMoviesToCSV() {
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    initializeHomepageMode();
     loadSubmissions();
     loadApprovedMovies();
 
+    if (homepageModeToggle) {
+        homepageModeToggle.addEventListener('change', handleHomepageToggleChange);
+    }
     if (timestampContainer) {
         timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
     }
