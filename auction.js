@@ -1,6 +1,6 @@
 /* /auction.js */
 import { db } from './firebase-config.js';
-import { collection, doc, onSnapshot, orderBy, runTransaction, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, orderBy, runTransaction, query, where, getDocs, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- START: Family Verification ---
 // List of approved phone numbers for family verification.
@@ -167,70 +167,65 @@ async function placeBid(itemId) {
     const bidderName = bidderNameInput.value.trim();
     const bidderPhone = bidderPhoneInput.value.replace(/\D/g, ''); // Remove non-numeric characters
 
-    if (!bidderName) {
-        alert("You must enter a name to bid.");
-        return;
-    }
-
-    // --- Phone number verification ---
-    if (!knownFamilyNumbers.includes(bidderPhone)) {
-        alert("This phone number is not recognized. Please use a known family number to place a bid.");
-        return;
-    }
-
-    if (isNaN(newBidAmount) || newBidAmount <= 0) {
-        alert('Please enter a valid bid amount.');
+    if (!bidderName || !knownFamilyNumbers.includes(bidderPhone) || isNaN(newBidAmount) || newBidAmount <= 0) {
+        alert("Please provide a valid name, a recognized phone number, and a valid bid amount.");
         return;
     }
 
     const itemRef = doc(db, 'auctionItems', itemId);
-    const bidsRef = collection(itemRef, 'bids');
 
     try {
+        // STEP 1: READ data OUTSIDE the transaction
+        const itemDoc = await getDoc(itemRef);
+        if (!itemDoc.exists()) {
+            throw new Error("Auction item not found.");
+        }
+        const item = itemDoc.data();
+        
+        // Query for the current highest valid bid
+        const bidsQuery = query(collection(itemRef, 'bids'), where('status', '!=', 'rejected'), orderBy('amount', 'desc'));
+        const activeBidsSnapshot = await getDocs(bidsQuery);
+
+        // Determine the actual current high bid
+        let currentHighestBid = item.startBid;
+        if (!activeBidsSnapshot.empty) {
+            // The highest bid is the first one in the sorted list
+            currentHighestBid = activeBidsSnapshot.docs[0].data().amount;
+        }
+
+        // STEP 2: VALIDATE the new bid
+        if (newBidAmount <= currentHighestBid) {
+            throw new Error('Your bid must be higher than the current highest bid.');
+        }
+
+        // STEP 3: RUN TRANSACTION for writes only
         await runTransaction(db, async (transaction) => {
-            const itemDoc = await transaction.get(itemRef);
-            if (!itemDoc.exists()) {
-                throw new Error("Auction item not found.");
-            }
-            const item = itemDoc.data();
-            
-            // --- Determine the actual current highest bid from the bids subcollection ---
-            // Firestore transactions don't allow queries, so we have to get all bids and filter manually.
-            const allBidsSnapshot = await getDocs(collection(db, 'auctionItems', itemId, 'bids'));
-            let currentHighestBid = item.startBid; // Default to start bid if no active bids exist
-            allBidsSnapshot.forEach(bidDoc => {
-                const bid = bidDoc.data();
-                if (bid.status !== 'rejected' && bid.amount > currentHighestBid) {
-                    currentHighestBid = bid.amount;
-                }
+            const bidsRef = collection(itemRef, 'bids');
+            const newBidRef = doc(bidsRef);
+
+            // Write 1: Create the new bid document
+            transaction.set(newBidRef, {
+                name: bidderName,
+                phone: bidderPhone,
+                amount: newBidAmount,
+                timestamp: serverTimestamp(),
+                status: 'active'
             });
 
-            if (newBidAmount > currentHighestBid) {
-                // First, add the new bid to the subcollection
-                const newBidRef = doc(bidsRef); // Create a new doc reference in the subcollection
-                transaction.set(newBidRef, {
-                    name: bidderName,
-                    phone: bidderPhone,
-                    amount: newBidAmount,
-                    timestamp: serverTimestamp(),
-                    status: 'active' 
-                });
-
-                // Then, update the main item document with the new high bid info
-                transaction.update(itemRef, {
-                    currentBid: newBidAmount,
-                    highBidder: bidderName
-                });
-            } else {
-                throw new Error('Your bid must be higher than the current highest bid.');
-            }
+            // Write 2: Update the main item document
+            transaction.update(itemRef, {
+                currentBid: newBidAmount,
+                highBidder: bidderName
+            });
         });
+
         alert(`Congratulations, ${bidderName}! Your bid of $${newBidAmount.toFixed(2)} is the new high bid!`);
         document.getElementById('bid-form').reset();
         document.getElementById('bid-modal').classList.add('hidden');
+
     } catch (error) {
         console.error("Error placing bid: ", error);
         alert(`Failed to place bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:46:37 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 13:51:52 GMT-0600 (Mountain Daylight Time) */

@@ -1,6 +1,6 @@
 /* /admin_auction.js */
 import { db } from './firebase-config.js';
-import { collection, addDoc, onSnapshot, orderBy, doc, deleteDoc, serverTimestamp, Timestamp, getDocs, runTransaction, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, onSnapshot, orderBy, doc, getDoc, getDocs, deleteDoc, serverTimestamp, Timestamp, runTransaction, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const addItemForm = document.getElementById('add-item-form');
@@ -173,48 +173,48 @@ async function rejectBid(itemId, bidId) {
     const bidRef = doc(itemRef, 'bids', bidId);
 
     try {
-        await runTransaction(db, async (transaction) => {
-            // 1. Mark the bid as rejected
-            transaction.update(bidRef, { status: 'rejected' });
-            
-            const itemDoc = await transaction.get(itemRef);
-            const itemData = itemDoc.data();
+        // STEP 1: READ all necessary data outside the transaction
+        const itemDoc = await getDoc(itemRef);
+        const itemData = itemDoc.data();
+        const allBidsSnapshot = await getDocs(collection(itemRef, 'bids'));
 
-            // 2. We can't query inside a transaction, so we fetch all bids and filter them in memory
-            const allBidsSnapshot = await getDocs(collection(itemRef, 'bids'));
-            
-            let newHighBidder = null;
-            let newCurrentBid = itemData.startBid; 
-            let highestValidBidFound = null;
+        let newHighBidder = null;
+        let newCurrentBid = itemData.startBid;
+        let highestValidBidFound = null;
 
-            allBidsSnapshot.forEach(doc => {
-                const bid = doc.data();
-                const currentBidId = doc.id;
-                // Exclude the bid we're actively rejecting
-                if (currentBidId === bidId) return; 
+        allBidsSnapshot.forEach(doc => {
+            const bid = doc.data();
+            // Skip the bid being rejected from recalculation
+            if (doc.id === bidId) return;
 
-                if (bid.status !== 'rejected') {
-                    if (!highestValidBidFound || bid.amount > highestValidBidFound.amount) {
-                        highestValidBidFound = bid;
-                    }
+            // Find the highest among the remaining valid bids
+            if (bid.status !== 'rejected') {
+                if (!highestValidBidFound || bid.amount > highestValidBidFound.amount) {
+                    highestValidBidFound = bid;
                 }
-            });
-
-            if (highestValidBidFound) {
-                newHighBidder = highestValidBidFound.name;
-                newCurrentBid = highestValidBidFound.amount;
             }
+        });
+        
+        if (highestValidBidFound) {
+            newHighBidder = highestValidBidFound.name;
+            newCurrentBid = highestValidBidFound.amount;
+        }
 
-            // 3. Update the parent item with the new high bid information
+        // STEP 2: RUN transaction for writes only
+        await runTransaction(db, async (transaction) => {
+            // Write 1: Reject the specified bid
+            transaction.update(bidRef, { status: 'rejected' });
+            // Write 2: Update the main item document with recalculated data
             transaction.update(itemRef, {
                 highBidder: newHighBidder,
                 currentBid: newCurrentBid
             });
         });
+        
         alert('Bid rejected and high bidder recalculated successfully.');
     } catch (error) {
         console.error("Error rejecting bid: ", error);
         alert(`Failed to reject bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:46:37 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 13:51:52 GMT-0600 (Mountain Daylight Time) */
