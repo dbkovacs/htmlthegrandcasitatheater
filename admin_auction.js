@@ -1,6 +1,6 @@
 /* /admin_auction.js */
 import { db } from './firebase-config.js';
-import { collection, addDoc, onSnapshot, orderBy, doc, deleteDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, onSnapshot, orderBy, doc, deleteDoc, serverTimestamp, Timestamp, getDocs, runTransaction, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     const addItemForm = document.getElementById('add-item-form');
@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 title,
                 description,
                 imageUrl,
+                startBid: startBid,
                 currentBid: startBid,
                 increment,
                 highBidder: null,
@@ -37,38 +38,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Use event delegation for delete buttons
-    manageItemsContainer.addEventListener('click', function(event) {
-        if (event.target.matches('.delete-button')) {
-            const itemId = event.target.dataset.itemId;
-            const itemTitle = event.target.dataset.itemTitle;
+    // Use event delegation for all buttons inside the manage items container
+    manageItemsContainer.addEventListener('click', async function(event) {
+        const target = event.target;
+        
+        // Handle Delete Item
+        if (target.matches('.delete-button')) {
+            const itemId = target.dataset.itemId;
+            const itemTitle = target.dataset.itemTitle;
             deleteItem(itemId, itemTitle);
+        }
+
+        // Handle Toggle Bids View
+        if (target.matches('.toggle-bids-button')) {
+            const bidsSectionId = `bids-${target.dataset.itemId}`;
+            const bidsSection = document.getElementById(bidsSectionId);
+            bidsSection.classList.toggle('hidden');
+            target.textContent = bidsSection.classList.contains('hidden') ? `Show Bids (${target.dataset.bidCount})` : 'Hide Bids';
+        }
+
+        // Handle Reject Bid
+        if (target.matches('.reject-bid-button')) {
+            const bidId = target.dataset.bidId;
+            const itemId = target.dataset.itemId;
+            rejectBid(itemId, bidId);
         }
     });
 
 
     // Load existing items for management
-    const q = orderBy('endTime', 'desc');
-    onSnapshot(collection(db, 'auctionItems'), q, (snapshot) => {
+    const q = query(collection(db, 'auctionItems'), orderBy('endTime', 'desc'));
+    onSnapshot(q, async (snapshot) => {
         if (snapshot.empty) {
             manageItemsContainer.innerHTML = '<p class="text-gray-400">No items to manage.</p>';
             return;
         }
 
-        manageItemsContainer.innerHTML = '';
-        snapshot.forEach(doc => {
+        const itemPromises = snapshot.docs.map(async (doc) => {
             const item = doc.data();
             const itemId = doc.id;
+            
+            // Fetch bids for each item
+            const bidsRef = collection(db, 'auctionItems', itemId, 'bids');
+            const bidsQuery = query(bidsRef, orderBy('timestamp', 'desc'));
+            const bidsSnapshot = await getDocs(bidsQuery);
+            const bids = bidsSnapshot.docs.map(bidDoc => ({ id: bidDoc.id, ...bidDoc.data() }));
+
+            return { item, itemId, bids };
+        });
+
+        const itemsWithBids = await Promise.all(itemPromises);
+
+        manageItemsContainer.innerHTML = '';
+        itemsWithBids.forEach(({ item, itemId, bids }) => {
             const itemElement = document.createElement('div');
-            itemElement.className = 'item-card-admin';
+            itemElement.className = 'item-card-admin-container'; // New container class
+
+            const bidsHtml = bids.map(bid => `
+                <tr class="bid-row ${bid.status === 'rejected' ? 'opacity-50 text-gray-500' : ''}">
+                    <td>${bid.name}</td>
+                    <td>$${bid.amount.toFixed(2)}</td>
+                    <td>${bid.timestamp ? bid.timestamp.toDate().toLocaleString() : 'N/A'}</td>
+                    <td>${bid.status || 'active'}</td>
+                    <td>
+                        ${bid.status !== 'rejected' ? `<button class="reject-bid-button" data-item-id="${itemId}" data-bid-id="${bid.id}">Reject</button>` : 'Rejected'}
+                    </td>
+                </tr>
+            `).join('');
 
             itemElement.innerHTML = `
-                <div>
-                    <h4 class="font-bold text-lg text-brand-gold">${item.title}</h4>
-                    <p class="text-sm">Current Bid: $${item.currentBid.toFixed(2)}</p>
-                    <p class="text-xs text-gray-400">Ends: ${item.endTime.toDate().toLocaleString()}</p>
+                <div class="item-card-admin">
+                    <div>
+                        <h4 class="font-bold text-lg text-brand-gold">${item.title}</h4>
+                        <p class="text-sm">Current Bid: $${item.currentBid.toFixed(2)} by ${item.highBidder || 'N/A'}</p>
+                        <p class="text-xs text-gray-400">Ends: ${item.endTime.toDate().toLocaleString()}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="toggle-bids-button" data-item-id="${itemId}" data-bid-count="${bids.length}">Show Bids (${bids.length})</button>
+                        <button class="delete-button" data-item-id="${itemId}" data-item-title="${item.title}">Delete</button>
+                    </div>
                 </div>
-                <button class="delete-button" data-item-id="${itemId}" data-item-title="${item.title}">Delete</button>
+                <div id="bids-${itemId}" class="bids-section hidden">
+                    <h5 class="font-bold text-md text-brand-gold mb-2">Bid History</h5>
+                    ${bids.length > 0 ? `
+                    <div class="overflow-x-auto">
+                        <table class="bids-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Amount</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${bidsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : '<p class="text-gray-400">No bids placed yet.</p>'}
+                </div>
             `;
             manageItemsContainer.appendChild(itemElement);
         });
@@ -93,4 +163,58 @@ async function deleteItem(itemId, itemTitle) {
         }
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:19:14 GMT-0600 (Mountain Daylight Time) */
+
+async function rejectBid(itemId, bidId) {
+    if (!confirm('Are you sure you want to reject this bid? This will recalculate the high bidder.')) {
+        return;
+    }
+
+    const itemRef = doc(db, 'auctionItems', itemId);
+    const bidRef = doc(itemRef, 'bids', bidId);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            // 1. Mark the bid as rejected
+            transaction.update(bidRef, { status: 'rejected' });
+            
+            const itemDoc = await transaction.get(itemRef);
+            const itemData = itemDoc.data();
+
+            // 2. We can't query inside a transaction, so we fetch all bids and filter them in memory
+            const allBidsSnapshot = await getDocs(collection(itemRef, 'bids'));
+            
+            let newHighBidder = null;
+            let newCurrentBid = itemData.startBid; 
+            let highestValidBidFound = null;
+
+            allBidsSnapshot.forEach(doc => {
+                const bid = doc.data();
+                const currentBidId = doc.id;
+                // Exclude the bid we're actively rejecting
+                if (currentBidId === bidId) return; 
+
+                if (bid.status !== 'rejected') {
+                    if (!highestValidBidFound || bid.amount > highestValidBidFound.amount) {
+                        highestValidBidFound = bid;
+                    }
+                }
+            });
+
+            if (highestValidBidFound) {
+                newHighBidder = highestValidBidFound.name;
+                newCurrentBid = highestValidBidFound.amount;
+            }
+
+            // 3. Update the parent item with the new high bid information
+            transaction.update(itemRef, {
+                highBidder: newHighBidder,
+                currentBid: newCurrentBid
+            });
+        });
+        alert('Bid rejected and high bidder recalculated successfully.');
+    } catch (error) {
+        console.error("Error rejecting bid: ", error);
+        alert(`Failed to reject bid. Reason: ${error.message}`);
+    }
+}
+/* Build Timestamp: Thu Oct 16 2025 13:46:37 GMT-0600 (Mountain Daylight Time) */
