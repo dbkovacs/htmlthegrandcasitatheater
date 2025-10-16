@@ -1,39 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7KP0BL67YF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-7KP0BL67YF');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casita Auction - The Grand Casita Family Hub</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="layout-styles.css">
 </head>
-<body>
-    <header>
-        <h1>Casita Auction</h1>
-        <nav>
-            <a href="index.html">Theater</a>
-            <a href="auction.html">Auction</a>
-            <a href="admin.html">Admin</a>
-        </nav>
-    </header>
+<body class="bg-brand-dark text-white">
 
-    <main>
-        <h2>Items Up for Grabs!</h2>
-        <p>All proceeds fund our family get-togethers. Happy bidding!</p>
-        <div id="auction-items-container">
-            <p>Loading auction items...</p>
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <div class="relative max-w-7xl mx-auto">
+
+            <header class="text-center mb-12">
+                <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Casita Auction</h1>
+                <p class="text-xl text-gray-300 mt-2">All proceeds fund our family get-togethers. Happy bidding!</p>
+            </header>
+
+            <main class="bg-brand-card shadow-2xl rounded-2xl overflow-hidden border-2 border-yellow-300/20 p-8">
+                <nav class="flex justify-center items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
+                    <a href="index.html" class="btn-velvet">Theater</a>
+                    <a href="auction.html" class="btn-velvet primary">Auction</a>
+                    <a href="admin_auction.html" class="btn-velvet">Auction Admin</a>
+                </nav>
+
+                <div id="auction-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <p class="text-gray-400 col-span-full text-center">Loading auction items...</p>
+                </div>
+            </main>
+
         </div>
-    </main>
 
-    <footer>
-        <p>&copy; 2025 The Grand Casita Family Hub</p>
-        <p id="build-timestamp"></p>
-    </footer>
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
+             <p><a href="index.html" class="hover:text-yellow-300">&copy; 2025 The Grand Casita Family Hub</a></p>
+            <p id="build-timestamp" class="mt-2"></p>
+        </footer>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <script src="firebase-config.js"></script>
-    <script src="auction.js"></script>
+    <script type="module" src="auction.js"></script>
 </body>
 </html>
