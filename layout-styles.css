@@ -269,7 +269,8 @@ body {
     background-color: #facc15;
 }
 
-#add-item-form input, #add-item-form textarea {
+#add-item-form input, #add-item-form textarea,
+.item-edit-form input, .item-edit-form textarea {
     width: 100%;
     background-color: rgba(0,0,0,0.3);
     border: 1px solid rgba(252, 211, 77, 0.2);
@@ -278,14 +279,15 @@ body {
     padding: 0.5rem 0.75rem;
     transition: all 0.2s ease-in-out;
 }
-#add-item-form input:focus, #add-item-form textarea:focus {
+#add-item-form input:focus, #add-item-form textarea:focus,
+.item-edit-form input:focus, .item-edit-form textarea:focus {
     outline: none;
     box-shadow: 0 0 0 2px #fcd34d;
     border-color: #fcd34d;
 }
 
 /* Auction Admin */
-#add-item-form label {
+#add-item-form label, .item-edit-form label {
     display: block;
     font-size: 0.75rem;
     font-weight: 500;
@@ -299,6 +301,11 @@ body {
     border: 1px solid rgba(253, 224, 71, 0.1);
     border-radius: 0.5rem;
     overflow: hidden;
+    transition: opacity 0.3s ease-in-out;
+}
+.item-card-admin-container.item-closed {
+    opacity: 0.6;
+    border-color: rgba(107, 114, 128, 0.2);
 }
 .item-card-admin {
     display: flex;
@@ -307,31 +314,43 @@ body {
     padding: 1rem;
 }
 .item-card-admin .delete-button,
-.item-card-admin .toggle-bids-button {
+.item-card-admin .toggle-bids-button,
+.item-card-admin .edit-button {
     font-family: 'Cinzel', serif;
     padding: 0.25rem 0.75rem;
     border-radius: 0.375rem;
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s;
+    border: 1px solid;
 }
 .item-card-admin .delete-button {
-    background-color: #991b1b;
-    color: #fecaca;
-    border: 1px solid #ef4444;
+    background-color: #991b1b; color: #fecaca; border-color: #ef4444;
 }
 .item-card-admin .delete-button:hover {
-    background-color: #ef4444;
-    color: white;
+    background-color: #ef4444; color: white;
 }
 .item-card-admin .toggle-bids-button {
-    background-color: #1e3a8a;
-    color: #bfdbfe;
-    border: 1px solid #3b82f6;
+    background-color: #1e3a8a; color: #bfdbfe; border-color: #3b82f6;
 }
 .item-card-admin .toggle-bids-button:hover {
-    background-color: #3b82f6;
-    color: white;
+    background-color: #3b82f6; color: white;
+}
+.item-card-admin .edit-button {
+    background-color: #166534; color: #bbf7d0; border-color: #22c55e;
+}
+.item-card-admin .edit-button:hover {
+    background-color: #22c55e; color: white;
+}
+.closed-badge {
+    background-color: #4b5563;
+    color: #d1d5db;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-family: 'Inter', sans-serif;
 }
 
 .bids-section {
@@ -371,4 +390,4 @@ body {
 }
 
 /* NOTE: All datepicker styles have been moved to datepicker-theme.css */
-/* Build Timestamp: Thu Oct 16 2025 13:46:37 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 14:10:22 GMT-0600 (Mountain Daylight Time) */
