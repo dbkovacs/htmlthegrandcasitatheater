@@ -95,12 +95,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const endTime = item.endTime.toDate();
             const timeLeft = endTime > now ? formatTimeLeft(endTime - now) : 'Bidding Ended';
             const canBid = endTime > now;
+            
+            const modelInfoHtml = (item.modelNumber && item.modelUrl) 
+                ? `<p class="text-gray-400 text-xs mt-1">Model: <a href="${item.modelUrl}" target="_blank" class="text-blue-400 hover:underline">${item.modelNumber}</a></p>`
+                : (item.modelNumber ? `<p class="text-gray-400 text-xs mt-1">Model: ${item.modelNumber}</p>` : '');
 
             itemElement.innerHTML = `
                 <img src="${item.imageUrl}" alt="${item.title}" class="item-image cursor-pointer">
                 <div class="p-4 flex flex-col flex-grow">
                     <h3 class="font-cinzel text-2xl text-brand-gold mb-2">${item.title}</h3>
                     <p class="text-gray-300 text-sm mb-4 flex-grow">${item.description}</p>
+                    ${modelInfoHtml}
                     <div class="my-4 border-t border-yellow-300/10"></div>
                     <div class="grid grid-cols-2 gap-x-4 text-sm">
                         <div>
@@ -228,4 +233,4 @@ async function placeBid(itemId) {
         alert(`Failed to place bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:51:52 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 14:05:00 GMT-0600 (Mountain Daylight Time) */

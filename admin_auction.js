@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const startBid = parseFloat(document.getElementById('item-start-bid').value);
         const increment = parseFloat(document.getElementById('item-increment').value);
         const endTime = new Date(document.getElementById('item-end-time').value);
+        const modelNumber = document.getElementById('item-model-number').value;
+        const modelUrl = document.getElementById('item-model-url').value;
 
         try {
             await addDoc(collection(db, 'auctionItems'), {
@@ -29,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 highBidder: null,
                 startTime: serverTimestamp(),
                 endTime: Timestamp.fromDate(endTime),
+                modelNumber: modelNumber || null,
+                modelUrl: modelUrl || null,
             });
             alert('Item added successfully!');
             addItemForm.reset();
@@ -223,4 +227,4 @@ async function rejectBid(itemId, bidId) {
         alert(`Failed to reject bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:58:18 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 14:05:00 GMT-0600 (Mountain Daylight Time) */
