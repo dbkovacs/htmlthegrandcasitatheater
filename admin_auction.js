@@ -173,48 +173,54 @@ async function rejectBid(itemId, bidId) {
     const bidRef = doc(itemRef, 'bids', bidId);
 
     try {
-        // STEP 1: READ all necessary data outside the transaction
+        // STEP 1: READ all necessary data OUTSIDE the transaction
         const itemDoc = await getDoc(itemRef);
+        if (!itemDoc.exists()) {
+            throw new Error("Auction item not found.");
+        }
         const itemData = itemDoc.data();
+        
         const allBidsSnapshot = await getDocs(collection(itemRef, 'bids'));
 
         let newHighBidder = null;
         let newCurrentBid = itemData.startBid;
         let highestValidBidFound = null;
 
+        // STEP 2: CALCULATE the new state in memory
         allBidsSnapshot.forEach(doc => {
             const bid = doc.data();
-            // Skip the bid being rejected from recalculation
+            // Exclude the bid being rejected from the recalculation
             if (doc.id === bidId) return;
 
-            // Find the highest among the remaining valid bids
             if (bid.status !== 'rejected') {
                 if (!highestValidBidFound || bid.amount > highestValidBidFound.amount) {
                     highestValidBidFound = bid;
                 }
             }
         });
-        
+
         if (highestValidBidFound) {
             newHighBidder = highestValidBidFound.name;
             newCurrentBid = highestValidBidFound.amount;
         }
 
-        // STEP 2: RUN transaction for writes only
+        // STEP 3: RUN transaction for WRITES only
         await runTransaction(db, async (transaction) => {
-            // Write 1: Reject the specified bid
+            // Write 1: Mark the bid as rejected
             transaction.update(bidRef, { status: 'rejected' });
-            // Write 2: Update the main item document with recalculated data
+            
+            // Write 2: Update the parent item with the recalculated state
             transaction.update(itemRef, {
                 highBidder: newHighBidder,
                 currentBid: newCurrentBid
             });
         });
-        
+
         alert('Bid rejected and high bidder recalculated successfully.');
+
     } catch (error) {
         console.error("Error rejecting bid: ", error);
         alert(`Failed to reject bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 13:51:52 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 16 2025 13:58:18 GMT-0600 (Mountain Daylight Time) */
