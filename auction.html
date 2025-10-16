@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casita Auction - The Grand Casita Family Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <h1>Casita Auction</h1>
+        <nav>
+            <a href="index.html">Theater</a>
+            <a href="auction.html">Auction</a>
+            <a href="admin.html">Admin</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Items Up for Grabs!</h2>
+        <p>All proceeds fund our family get-togethers. Happy bidding!</p>
+        <div id="auction-items-container">
+            <p>Loading auction items...</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 The Grand Casita Family Hub</p>
+        <p id="build-timestamp"></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script src="auction.js"></script>
+</body>
+</html>
