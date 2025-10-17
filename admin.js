@@ -3,6 +3,107 @@
     File: admin.js
     Extension: .js
 */
+/*
+    Folder: /
+    File: admin.js
+    Extension: .js
+*/
+
+// --- ADD THIS AT THE TOP ---
+import { db, storage, auth } from './firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// --- END ADD ---
+
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+// --- DOM References ---
+const timestampContainer = document.getElementById('build-timestamp');
+const submissionsContainer = document.getElementById('submissions-container');
+const approvedMoviesContainer = document.getElementById('approved-movies-container');
+const exportCsvButton = document.getElementById('export-csv-button');
+const homepageModeToggle = document.getElementById('homepage-mode-toggle');
+const homepageModeStatus = document.getElementById('homepage-mode-status');
+const homepageModeDescription = document.getElementById('homepage-mode-description');
+
+// --- ADD THIS AUTH GUARD ---
+const logoutButton = document.getElementById('logout-button');
+
+function checkAuth() {
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            // No user is signed in, redirect to login.
+            console.log("No user signed in. Redirecting to login.");
+            window.location.href = 'login.html';
+        } else {
+            // User is signed in.
+            console.log("Admin user authenticated:", user.email);
+            // Initialize the page *after* auth is confirmed
+            initializePage();
+        }
+    });
+}
+// --- END ADD ---
+
+
+// --- In-memory store for movie data ---
+let approvedMovies = [];
+const flatpickrOptions = {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "F j, Y",
+};
+
+// ===================================================================
+// === HOMEPAGE DISPLAY MODE LOGIC (NEW: FIREBASE-BACKED)
+// ===================================================================
+async function initializeHomepageMode() {
+    // ... (rest of this function is unchanged)
+}
+function updateHomepageUIMode(mode) {
+    // ... (rest of this function is unchanged)
+}
+async function handleHomepageToggleChange(e) {
+    // ... (rest of this function is unchanged)
+}
+
+// ... (all other functions: loadSubmissions, loadApprovedMovies, etc. remain unchanged) ...
+// ... (scroll down to the bottom) ...
+
+
+// ===================================================================
+// === INITIALIZATION
+// ===================================================================
+
+// --- UPDATE THIS PART ---
+function initializePage() {
+    // This function now contains all the original setup code
+    initializeHomepageMode();
+    loadSubmissions();
+    loadApprovedMovies();
+
+    if (homepageModeToggle) {
+        homepageModeToggle.addEventListener('change', handleHomepageToggleChange);
+    }
+    if (timestampContainer) {
+        timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
+    }
+    if(exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportMoviesToCSV);
+    }
+    // NEW: Logout handler
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            signOut(auth).catch((error) => console.error("Sign out error", error));
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Start the auth check. The checkAuth function will call initializePage() on success.
+    checkAuth();
+});
+// --- END UPDATE ---
 
 import { db, storage } from './firebase-config.js';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - The Grand Casita Theater</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="layout-styles.css">
+</head>
+<body class="bg-brand-dark text-white min-h-screen flex items-center justify-center p-4">
+
+    <main class="bg-brand-card p-8 rounded-2xl shadow-2xl w-full max-w-sm border-2 border-yellow-300/10">
+        <h1 class="font-cinzel text-3xl text-brand-gold text-shadow text-center mb-8">Admin Login</h1>
+        
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Email</label>
+                <input type="email" name="email" id="email" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Password</label>
+                <input type="password" name="password" id="password" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+            </div>
+            
+            <p id="login-error" class="text-red-400 text-sm text-center h-4"></p>
+
+            <div class="pt-2">
+                <button type="submit" id="login-button" class="btn-velvet primary w-full text-lg">
+                    Sign In
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script type="module" src="login.js"></script>
+</body>
+</html>
