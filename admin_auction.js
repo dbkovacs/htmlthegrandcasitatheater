@@ -1,30 +1,81 @@
 /* /admin_auction.js */
-import { db } from './firebase-config.js';
+import { db, storage, auth } from './firebase-config.js';
 import { collection, addDoc, onSnapshot, orderBy, doc, getDoc, getDocs, deleteDoc, serverTimestamp, Timestamp, runTransaction, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+// NEW: Authentication Guard
+function checkAuth() {
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            // No user is signed in, redirect to login.
+            // IMPORTANT: You must create this login.html page.
+            console.log("No user signed in. Redirecting to login.");
+            window.location.href = 'login.html';
+        } else {
+            // User is signed in.
+            console.log("Admin user authenticated:", user.email);
+        }
+    });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Run the auth check immediately
+    checkAuth();
+
     const addItemForm = document.getElementById('add-item-form');
     const manageItemsContainer = document.getElementById('manage-items-container');
     const timestampContainer = document.getElementById('build-timestamp');
+    const logoutButton = document.getElementById('logout-button');
+    const submitButton = document.getElementById('add-item-submit-button');
 
-    // Handle form submission for adding new items
+    // NEW: Logout Button Handler
+    logoutButton.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            console.log("User signed out.");
+            // checkAuth() will automatically redirect
+        }).catch((error) => {
+            console.error("Sign out error:", error);
+        });
+    });
+
+    // UPDATED: Handle form submission with file upload
     addItemForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        submitButton.disabled = true;
+        submitButton.textContent = 'Uploading Image...';
 
         const title = document.getElementById('item-title').value;
         const description = document.getElementById('item-description').value;
-        const imageUrl = document.getElementById('item-image-url').value;
+        const file = document.getElementById('item-image-file').files[0];
         const startBid = parseFloat(document.getElementById('item-start-bid').value);
         const increment = parseFloat(document.getElementById('item-increment').value);
         const endTime = new Date(document.getElementById('item-end-time').value);
         const modelNumber = document.getElementById('item-model-number').value;
         const modelUrl = document.getElementById('item-model-url').value;
 
+        if (!file) {
+            alert('Please select an image file.');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Add Item';
+            return;
+        }
+
         try {
+            // 1. Upload Image to Firebase Storage
+            const storageRef = ref(storage, `auction-images/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const imageUrl = await getDownloadURL(snapshot.ref);
+            
+            submitButton.textContent = 'Adding Item...';
+
+            // 2. Add Item to Firestore
             await addDoc(collection(db, 'auctionItems'), {
                 title,
                 description,
-                imageUrl,
+                imageUrl, // Use the URL from Storage
                 startBid: startBid,
                 currentBid: startBid,
                 increment,
@@ -33,12 +84,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 endTime: Timestamp.fromDate(endTime),
                 modelNumber: modelNumber || null,
                 modelUrl: modelUrl || null,
+                status: 'active' // NEW: Status for winner management
             });
+            
             alert('Item added successfully!');
             addItemForm.reset();
+
         } catch (error) {
             console.error('Error adding item: ', error);
             alert('Failed to add item.');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Add Item';
         }
     });
 
@@ -84,10 +141,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target.matches('.save-edit-button')) {
             saveItemChanges(itemId, itemContainer);
         }
+
+        // NEW: Handle Winner Management Buttons
+        if (target.matches('.mark-payment-button')) {
+            if (confirm('Mark this item as "Awaiting Payment"?')) {
+                target.disabled = true;
+                await updateDoc(doc(db, 'auctionItems', itemId), { status: 'awaiting_payment' });
+                // Snapshot will refresh the UI
+            }
+        }
+        if (target.matches('.mark-paid-button')) {
+            if (confirm('Mark this item as "Paid"? This is the final step.')) {
+                target.disabled = true;
+                await updateDoc(doc(db, 'auctionItems', itemId), { status: 'paid' });
+                // Snapshot will refresh the UI
+            }
+        }
     });
 
 
-    // Load existing items for management
+    // UPDATED: Load existing items with winner management logic
     const q = query(collection(db, 'auctionItems'), orderBy('endTime', 'desc'));
     onSnapshot(q, async (snapshot) => {
         if (snapshot.empty) {
@@ -119,15 +192,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const now = new Date();
             const endTime = item.endTime.toDate();
             const isClosed = now > endTime;
+            const itemStatus = item.status || 'active'; // Default to active if status not set
+
             if (isClosed) {
                 itemElement.classList.add('item-closed');
             }
 
+            // Bids Table HTML
             const bidsHtml = bids.map(bid => `
                 <tr class="bid-row ${bid.status === 'rejected' ? 'opacity-50 text-gray-500' : ''}">
                     <td>${bid.name}</td>
                     <td>$${bid.amount.toFixed(2)}</td>
-                    <td>${bid.timestamp ? bid.timestamp.toDate().toLocaleString() : 'N/A'}</td>
+                    <td>${bid.phone || 'N/A'}</td>
                     <td>${bid.status || 'active'}</td>
                     <td>
                         ${bid.status !== 'rejected' && !isClosed ? `<button class="reject-bid-button" data-item-id="${itemId}" data-bid-id="${bid.id}">Reject</button>` : (isClosed ? 'Closed' : 'Rejected')}
@@ -138,11 +214,41 @@ document.addEventListener('DOMContentLoaded', () => {
             // Convert Firestore Timestamp to a string suitable for datetime-local input
             const endTimeForInput = new Date(endTime.getTime() - (endTime.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
+            // NEW: Winner Management HTML
+            let winnerHtml = '';
+            if (isClosed && item.highBidder) {
+                // Find the winner's phone number from the bid list
+                const winnerBid = bids.find(b => b.name === item.highBidder && b.amount === item.currentBid);
+                const winnerPhone = winnerBid ? winnerBid.phone : 'N/A';
+                
+                let statusButton = '';
+                if (itemStatus === 'active') {
+                    statusButton = '<button class="btn-velvet primary mark-payment-button">Mark as Awaiting Payment</button>';
+                } else if (itemStatus === 'awaiting_payment') {
+                    statusButton = '<button class="btn-velvet primary mark-paid-button">Mark as Paid</button>';
+                } else if (itemStatus === 'paid') {
+                    statusButton = '<p class="text-green-400 font-bold">Payment Received</p>';
+                }
+
+                winnerHtml = `
+                <div class="winner-section">
+                    <h5 class="font-bold text-md text-brand-gold mb-2">Winner Details</h5>
+                    <p><strong>Name:</strong> ${item.highBidder}</p>
+                    <p><strong>Phone:</strong> ${winnerPhone}</p>
+                    <p><strong>Final Bid:</strong> $${item.currentBid.toFixed(2)}</p>
+                    <div class="mt-4">${statusButton}</div>
+                </div>
+                `;
+            } else if (isClosed) {
+                 winnerHtml = `<div class="winner-section"><p class="text-gray-400">Auction closed with no bids.</p></div>`;
+            }
+
+            // Main Card Template
             itemElement.innerHTML = `
                 <div class="item-view">
                     <div class="item-card-admin">
                         <div>
-                            <h4 class="font-bold text-lg text-brand-gold">${item.title} ${isClosed ? '<span class="closed-badge">Closed</span>' : ''}</h4>
+                            <h4 class="font-bold text-lg text-brand-gold">${item.title} ${isClosed ? `<span class="closed-badge">${itemStatus.replace('_', ' ')}</span>` : ''}</h4>
                             <p class="text-sm">Current Bid: $${item.currentBid.toFixed(2)} by ${item.highBidder || 'N/A'}</p>
                             <p class="text-xs text-gray-400">Ends: ${endTime.toLocaleString()}</p>
                         </div>
@@ -152,9 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="delete-button" data-item-title="${item.title}">Delete</button>
                         </div>
                     </div>
+                    
+                    ${winnerHtml}
+
                     <div class="bids-section hidden">
                         <h5 class="font-bold text-md text-brand-gold mb-2">Bid History</h5>
-                        ${bids.length > 0 ? `<div class="overflow-x-auto"><table class="bids-table"><thead><tr><th>Name</th><th>Amount</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody>${bidsHtml}</tbody></table></div>` : '<p class="text-gray-400">No bids placed yet.</p>'}
+                        ${bids.length > 0 ? `<div class="overflow-x-auto"><table class="bids-table"><thead><tr><th>Name</th><th>Amount</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead><tbody>${bidsHtml}</tbody></table></div>` : '<p class="text-gray-400">No bids placed yet.</p>'}
                     </div>
                 </div>
 
@@ -206,6 +315,7 @@ async function saveItemChanges(itemId, container) {
 }
 
 async function deleteItem(itemId, itemTitle) {
+    // TODO: Add logic to delete associated image from Storage
     if (confirm(`Are you sure you want to delete "${itemTitle}"? This action cannot be undone.`)) {
         try {
             await deleteDoc(doc(db, 'auctionItems', itemId));
@@ -226,33 +336,36 @@ async function rejectBid(itemId, bidId) {
     const bidRef = doc(itemRef, 'bids', bidId);
 
     try {
-        const itemDoc = await getDoc(itemRef);
-        if (!itemDoc.exists()) throw new Error("Auction item not found.");
-        const itemData = itemDoc.data();
-        
-        const allBidsSnapshot = await getDocs(collection(itemRef, 'bids'));
-
-        let newHighBidder = null;
-        let newCurrentBid = itemData.startBid;
-        let highestValidBidFound = null;
-
-        allBidsSnapshot.forEach(doc => {
-            const bid = doc.data();
-            if (doc.id === bidId) return;
-            if (bid.status !== 'rejected') {
-                if (!highestValidBidFound || bid.amount > highestValidBidFound.amount) {
-                    highestValidBidFound = bid;
-                }
-            }
-        });
-
-        if (highestValidBidFound) {
-            newHighBidder = highestValidBidFound.name;
-            newCurrentBid = highestValidBidFound.amount;
-        }
-
         await runTransaction(db, async (transaction) => {
+            const itemDoc = await transaction.get(itemRef);
+            if (!itemDoc.exists()) throw new Error("Auction item not found.");
+            const itemData = itemDoc.data();
+            
+            // Mark the bid as rejected
             transaction.update(bidRef, { status: 'rejected' });
+
+            // Find the *new* highest valid bid
+            const bidsQuery = query(
+                collection(db, 'auctionItems', itemId, 'bids'), 
+                where('status', '!=', 'rejected'), 
+                orderBy('amount', 'desc')
+            );
+            
+            // We must use transaction.get() for queries inside a transaction
+            const activeBidsSnapshot = await transaction.get(bidsQuery);
+
+            let newHighBidder = null;
+            let newCurrentBid = itemData.startBid; // Default to start bid
+
+            // Find the highest bid that isn't the one we just rejected
+            const highestValidBid = activeBidsSnapshot.docs.find(doc => doc.id !== bidId);
+
+            if (highestValidBid) {
+                newHighBidder = highestValidBid.data().name;
+                newCurrentBid = highestValidBid.data().amount;
+            }
+
+            // Update the main item
             transaction.update(itemRef, {
                 highBidder: newHighBidder,
                 currentBid: newCurrentBid
@@ -264,4 +377,4 @@ async function rejectBid(itemId, bidId) {
         alert(`Failed to reject bid. Reason: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 16 2025 14:10:22 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 17 2025 14:10:00 GMT-0600 (Mountain Daylight Time) */

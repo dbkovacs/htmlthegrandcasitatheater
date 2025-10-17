@@ -32,7 +32,8 @@
                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Auction Dashboard</h2>
                     <div class="flex justify-center items-center gap-4">
                         <a href="admin.html" class="btn-velvet">Theater Admin</a>
-                        <a href="auction.html" class="btn-velvet">Auction Page</a>
+                        <a href="auction.html" class.="btn-velvet">Auction Page</a>
+                        <button id="logout-button" class="btn-velvet">Logout</button>
                     </div>
                 </nav>
                 
@@ -43,7 +44,12 @@
                             <form id="add-item-form" class="space-y-4">
                                 <input type="text" id="item-title" placeholder="Item Title" required>
                                 <textarea id="item-description" placeholder="Item Description" rows="4" required></textarea>
-                                <input type="url" id="item-image-url" placeholder="Image URL" required>
+                                
+                                <div>
+                                    <label for="item-image-file">Image File</label>
+                                    <input type="file" id="item-image-file" accept="image/*" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-900 hover:file:bg-yellow-200 cursor-pointer">
+                                </div>
+
                                 <input type="text" id="item-model-number" placeholder="Model Number (e.g., MQ052LL/A)">
                                 <input type="url" id="item-model-url" placeholder="Product URL (for Model Number)">
                                 <div>
@@ -58,7 +64,7 @@
                                     <label for="item-end-time">Auction End Time</label>
                                     <input type="datetime-local" id="item-end-time" required>
                                 </div>
-                                <button type="submit" class="btn-velvet primary w-full">Add Item</button>
+                                <button type="submit" id="add-item-submit-button" class="btn-velvet primary w-full">Add Item</button>
                             </form>
                         </div>
                     </section>
