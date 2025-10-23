@@ -73,10 +73,10 @@ async function initializeHomepageMode() {
         const docSnap = await getDoc(settingsRef);
         if (docSnap.exists() && docSnap.data().mode === 'temporary') {
             updateHomepageUIMode('temporary');
-            homepageModeToggle.checked = true;
+            if (homepageModeToggle) homepageModeToggle.checked = true;
         } else {
             updateHomepageUIMode('regular');
-            homepageModeToggle.checked = false;
+            if (homepageModeToggle) homepageModeToggle.checked = false;
         }
     } catch (error) {
         console.error("Error fetching homepage mode:", error);
@@ -85,12 +85,14 @@ async function initializeHomepageMode() {
 }
 
 function updateHomepageUIMode(mode) {
-    if (mode === 'temporary') {
-        homepageModeStatus.textContent = 'Special Announcement';
-        homepageModeDescription.textContent = 'The homepage is showing a temporary message about schedule changes.';
-    } else {
-        homepageModeStatus.textContent = 'Regular Schedule';
-        homepageModeDescription.textContent = 'The homepage is showing the normal movie schedule.';
+    if (homepageModeStatus && homepageModeDescription) {
+        if (mode === 'temporary') {
+            homepageModeStatus.textContent = 'Special Announcement';
+            homepageModeDescription.textContent = 'The homepage is showing a temporary message about schedule changes.';
+        } else {
+            homepageModeStatus.textContent = 'Regular Schedule';
+            homepageModeDescription.textContent = 'The homepage is showing the normal movie schedule.';
+        }
     }
 }
 
@@ -165,58 +167,67 @@ async function loadSubmissions() {
             submissionsContainer.appendChild(movieCard);
             
             const dateInput = movieCard.querySelector('.show-date-input');
-            if (dateInput) flatpickr(dateInput, flatpickrOptions);
+            // Ensure flatpickr is defined before calling
+            if (dateInput && typeof flatpickr === 'function') {
+                 flatpickr(dateInput, flatpickrOptions);
+            } else if (dateInput) {
+                console.warn('flatpickr library not loaded or defined');
+            }
         });
     } catch (error) {
         console.error("Error loading submissions:", error);
         submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions.</p>';
     }
 }
-submissionsContainer.addEventListener('click', async (e) => {
-    const card = e.target.closest('.bg-black\\/40');
-    if (!card) return;
-    const movieId = card.getAttribute('data-id');
-    if (e.target.classList.contains('approve-btn')) {
-        e.target.textContent = 'Approving...'; e.target.disabled = true;
-        const showDate = card.querySelector('.show-date-input').value;
-        const trailerLink = card.querySelector('.trailer-link-input').value;
-        const posterFile = card.querySelector('.poster-file-input').files[0];
-        if (!showDate || !posterFile) {
-            alert('Please select a show date and a poster image.');
-            e.target.textContent = 'Approve'; e.target.disabled = false; return;
-        }
-        try {
-            const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
-            await uploadBytes(posterRef, posterFile);
-            const posterURL = await getDownloadURL(posterRef);
-            await updateDoc(doc(db, 'movies', movieId), { status: 'Approved', showDate, trailerLink, posterURL }); 
-            alert('Movie approved successfully!');
-            loadSubmissions();
-            loadApprovedMovies();
-        } catch (error) {
-            console.error('Error approving movie:', error);
-            alert('An error occurred.');
-            e.target.textContent = 'Approve'; e.target.disabled = false;
-        }
-    }
-    if (e.target.classList.contains('decline-btn')) {
-        if (confirm('Are you sure you want to decline this movie?')) {
+
+if (submissionsContainer) { // Check if element exists before adding listeners
+    submissionsContainer.addEventListener('click', async (e) => {
+        const card = e.target.closest('.bg-black\\/40');
+        if (!card) return;
+        const movieId = card.getAttribute('data-id');
+        if (e.target.classList.contains('approve-btn')) {
+            e.target.textContent = 'Approving...'; e.target.disabled = true;
+            const showDate = card.querySelector('.show-date-input').value;
+            const trailerLink = card.querySelector('.trailer-link-input').value;
+            const posterFile = card.querySelector('.poster-file-input').files[0];
+            if (!showDate || !posterFile) {
+                alert('Please select a show date and a poster image.');
+                e.target.textContent = 'Approve'; e.target.disabled = false; return;
+            }
             try {
-                await deleteDoc(doc(db, 'movies', movieId));
-                alert('Submission declined and deleted.');
+                const posterRef = ref(storage, `posters/${movieId}_${posterFile.name}`);
+                await uploadBytes(posterRef, posterFile);
+                const posterURL = await getDownloadURL(posterRef);
+                await updateDoc(doc(db, 'movies', movieId), { status: 'Approved', showDate, trailerLink, posterURL }); 
+                alert('Movie approved successfully!');
                 loadSubmissions();
-            } catch (error) { console.error('Error declining movie:', error); alert('An error occurred.'); }
+                loadApprovedMovies();
+            } catch (error) {
+                console.error('Error approving movie:', error);
+                alert('An error occurred.');
+                e.target.textContent = 'Approve'; e.target.disabled = false;
+            }
         }
-    }
-});
-submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) area.classList.add('drag-over'); });
-submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
-submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
+        if (e.target.classList.contains('decline-btn')) {
+            if (confirm('Are you sure you want to decline this movie?')) {
+                try {
+                    await deleteDoc(doc(db, 'movies', movieId));
+                    alert('Submission declined and deleted.');
+                    loadSubmissions();
+                } catch (error) { console.error('Error declining movie:', error); alert('An error occurred.'); }
+            }
+        }
+    });
+    submissionsContainer.addEventListener('dragover', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) area.classList.add('drag-over'); });
+    submissionsContainer.addEventListener('dragleave', (e) => { const area = e.target.closest('.poster-upload-area'); if (area) area.classList.remove('drag-over'); });
+    submissionsContainer.addEventListener('drop', (e) => { e.preventDefault(); const area = e.target.closest('.poster-upload-area'); if (area) { area.classList.remove('drag-over'); const fileInput = area.nextElementSibling; if (e.dataTransfer.files.length > 0) { fileInput.files = e.dataTransfer.files; area.querySelector('span').textContent = e.dataTransfer.files[0].name; } } });
+}
 
 // ===================================================================
 // === APPROVED MOVIES LOGIC
 // ===================================================================
 async function loadApprovedMovies() {
+    if (!approvedMoviesContainer) return; // Add check
     try {
         const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(q);
@@ -368,110 +379,117 @@ function createEditFormView(movie) {
     `;
 }
 
-approvedMoviesContainer.addEventListener('click', async (e) => {
-    const card = e.target.closest('.approved-movie-card');
-    if (!card) return;
-    const movieId = card.getAttribute('data-id');
+if (approvedMoviesContainer) { // Check if element exists before adding listener
+    approvedMoviesContainer.addEventListener('click', async (e) => {
+        const card = e.target.closest('.approved-movie-card');
+        if (!card) return;
+        const movieId = card.getAttribute('data-id');
 
-    // --- Movie Card Actions ---
-    if (e.target.classList.contains('edit-btn')) {
-        const movieData = approvedMovies.find(m => m.id === movieId);
-        if (!movieData) return;
-        card.innerHTML = createEditFormView(movieData);
-        const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
-        if (dateInput) flatpickr(dateInput, flatpickrOptions);
-    }
-    if (e.target.classList.contains('save-btn')) {
-        const updatedData = {
-            movieTitle: card.querySelector(`#edit-movieTitle-${movieId}`).value,
-            hostName: card.querySelector(`#edit-hostName-${movieId}`).value,
-            showDate: card.querySelector(`#edit-showDate-${movieId}`).value,
-            greeting: card.querySelector(`#edit-greeting-${movieId}`).value,
-            movieTagline: card.querySelector(`#edit-movieTagline-${movieId}`).value,
-            trailerLink: card.querySelector(`#edit-trailerLink-${movieId}`).value,
-            posterURL: card.querySelector(`#edit-posterURL-${movieId}`).value,
-            isAdultsOnly: card.querySelector(`#edit-isAdultsOnly-${movieId}`).checked,
-        };
-        try {
-            await updateDoc(doc(db, 'movies', movieId), updatedData);
-            alert("Movie details saved successfully!");
-            loadApprovedMovies(); 
-        } catch (error) {
-            console.error("Error updating movie document:", error);
-            alert("Failed to save movie details.");
+        // --- Movie Card Actions ---
+        if (e.target.classList.contains('edit-btn')) {
+            const movieData = approvedMovies.find(m => m.id === movieId);
+            if (!movieData) return;
+            card.innerHTML = createEditFormView(movieData);
+            const dateInput = card.querySelector(`#edit-showDate-${movieId}`);
+             // Ensure flatpickr is defined before calling
+            if (dateInput && typeof flatpickr === 'function') {
+                 flatpickr(dateInput, flatpickrOptions);
+            } else if (dateInput) {
+                console.warn('flatpickr library not loaded or defined');
+            }
         }
-    }
-    if (e.target.classList.contains('cancel-btn')) {
-        loadApprovedMovies();
-    }
-
-    // --- Reservation Table Actions ---
-    if (e.target.classList.contains('save-reservation-btn')) {
-        const button = e.target;
-        button.textContent = 'Saving...';
-        button.disabled = true;
-
-        const row = button.closest('.reservation-row');
-        if (!row) return;
-
-        const resId = row.getAttribute('data-res-id');
-        const name = row.querySelector('.res-input-name').value.trim();
-        // Parse the comma-separated string back into an array of seat numbers
-        const seatsInput = row.querySelector('.res-input-seats').value.trim();
-        const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
-        // Convert strings back to the required object format
-        const seats = seatStrings.map(seatId => {
-            const row = seatId.charAt(0);
-            const number = parseInt(seatId.slice(1), 10);
-            return { id: seatId, row, number };
-        });
-
-
-        if (!name || seats.length === 0) {
-            alert('Please fill in all reservation fields correctly, including at least one seat number.');
-            button.textContent = 'Save';
-            button.disabled = false;
-            return;
+        if (e.target.classList.contains('save-btn')) {
+            const updatedData = {
+                movieTitle: card.querySelector(`#edit-movieTitle-${movieId}`).value,
+                hostName: card.querySelector(`#edit-hostName-${movieId}`).value,
+                showDate: card.querySelector(`#edit-showDate-${movieId}`).value,
+                greeting: card.querySelector(`#edit-greeting-${movieId}`).value,
+                movieTagline: card.querySelector(`#edit-movieTagline-${movieId}`).value,
+                trailerLink: card.querySelector(`#edit-trailerLink-${movieId}`).value,
+                posterURL: card.querySelector(`#edit-posterURL-${movieId}`).value,
+                isAdultsOnly: card.querySelector(`#edit-isAdultsOnly-${movieId}`).checked,
+            };
+            try {
+                await updateDoc(doc(db, 'movies', movieId), updatedData);
+                alert("Movie details saved successfully!");
+                loadApprovedMovies(); 
+            } catch (error) {
+                console.error("Error updating movie document:", error);
+                alert("Failed to save movie details.");
+            }
         }
-
-        try {
-            const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
-            await updateDoc(reservationDocRef, { name, seats });
-            alert("Reservation updated successfully!");
+        if (e.target.classList.contains('cancel-btn')) {
             loadApprovedMovies();
-        } catch (error) {
-            console.error("Error updating reservation:", error);
-            alert("Failed to update reservation.");
-            button.textContent = 'Save';
-            button.disabled = false;
         }
-    }
 
-    if (e.target.classList.contains('delete-reservation-btn')) {
-        if (confirm('Are you sure you want to delete this reservation?')) {
+        // --- Reservation Table Actions ---
+        if (e.target.classList.contains('save-reservation-btn')) {
             const button = e.target;
-            button.textContent = 'Deleting...';
+            button.textContent = 'Saving...';
             button.disabled = true;
 
             const row = button.closest('.reservation-row');
             if (!row) return;
 
             const resId = row.getAttribute('data-res-id');
+            const name = row.querySelector('.res-input-name').value.trim();
+            // Parse the comma-separated string back into an array of seat numbers
+            const seatsInput = row.querySelector('.res-input-seats').value.trim();
+            const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+            // Convert strings back to the required object format
+            const seats = seatStrings.map(seatId => {
+                const row = seatId.charAt(0);
+                const number = parseInt(seatId.slice(1), 10);
+                return { id: seatId, row, number };
+            });
+
+
+            if (!name || seats.length === 0) {
+                alert('Please fill in all reservation fields correctly, including at least one seat number.');
+                button.textContent = 'Save';
+                button.disabled = false;
+                return;
+            }
 
             try {
                 const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
-                await deleteDoc(reservationDocRef);
-                alert("Reservation deleted successfully!");
+                await updateDoc(reservationDocRef, { name, seats });
+                alert("Reservation updated successfully!");
                 loadApprovedMovies();
             } catch (error) {
-                console.error("Error deleting reservation:", error);
-                alert("Failed to delete reservation.");
-                button.textContent = 'Delete';
+                console.error("Error updating reservation:", error);
+                alert("Failed to update reservation.");
+                button.textContent = 'Save';
                 button.disabled = false;
             }
         }
-    }
-});
+
+        if (e.target.classList.contains('delete-reservation-btn')) {
+            if (confirm('Are you sure you want to delete this reservation?')) {
+                const button = e.target;
+                button.textContent = 'Deleting...';
+                button.disabled = true;
+
+                const row = button.closest('.reservation-row');
+                if (!row) return;
+
+                const resId = row.getAttribute('data-res-id');
+
+                try {
+                    const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
+                    await deleteDoc(reservationDocRef);
+                    alert("Reservation deleted successfully!");
+                    loadApprovedMovies();
+                } catch (error) {
+                    console.error("Error deleting reservation:", error);
+                    alert("Failed to delete reservation.");
+                    button.textContent = 'Delete';
+                    button.disabled = false;
+                }
+            }
+        }
+    });
+}
 
 // ===================================================================
 // === CSV EXPORT LOGIC (NEW IMPLEMENTATION)
@@ -487,6 +505,7 @@ function formatCSVRow(items) {
 }
 
 async function exportMoviesToCSV() {
+    if (!exportCsvButton) return; // Add check
     exportCsvButton.disabled = true;
     exportCsvButton.textContent = 'Exporting...';
     try {
