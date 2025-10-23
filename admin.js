@@ -73,9 +73,11 @@ async function initializeHomepageMode() {
         const docSnap = await getDoc(settingsRef);
         if (docSnap.exists() && docSnap.data().mode === 'temporary') {
             updateHomepageUIMode('temporary');
+            // Ensure toggle exists before accessing checked property
             if (homepageModeToggle) homepageModeToggle.checked = true;
         } else {
             updateHomepageUIMode('regular');
+             // Ensure toggle exists before accessing checked property
             if (homepageModeToggle) homepageModeToggle.checked = false;
         }
     } catch (error) {
@@ -85,6 +87,7 @@ async function initializeHomepageMode() {
 }
 
 function updateHomepageUIMode(mode) {
+    // Ensure status elements exist before updating
     if (homepageModeStatus && homepageModeDescription) {
         if (mode === 'temporary') {
             homepageModeStatus.textContent = 'Special Announcement';
@@ -118,6 +121,7 @@ async function handleHomepageToggleChange(e) {
 // === PENDING SUBMISSIONS LOGIC
 // ===================================================================
 async function loadSubmissions() {
+    // Ensure container exists before proceeding
     if (!submissionsContainer) return;
     submissionsContainer.innerHTML = '<p class="text-gray-400">Loading submissions...</p>';
     try {
@@ -129,7 +133,7 @@ async function loadSubmissions() {
             return;
         }
 
-        submissionsContainer.innerHTML = '';
+        submissionsContainer.innerHTML = ''; // Clear loading message
         querySnapshot.forEach((doc) => {
             const movie = doc.data();
             const movieId = doc.id;
@@ -167,11 +171,11 @@ async function loadSubmissions() {
             submissionsContainer.appendChild(movieCard);
             
             const dateInput = movieCard.querySelector('.show-date-input');
-            // Ensure flatpickr is defined before calling
+             // Ensure flatpickr is defined before calling
             if (dateInput && typeof flatpickr === 'function') {
                  flatpickr(dateInput, flatpickrOptions);
             } else if (dateInput) {
-                console.warn('flatpickr library not loaded or defined');
+                console.warn('flatpickr library not loaded or defined when trying to initialize date input.');
             }
         });
     } catch (error) {
@@ -180,7 +184,8 @@ async function loadSubmissions() {
     }
 }
 
-if (submissionsContainer) { // Check if element exists before adding listeners
+// Add event listeners only if the container exists
+if (submissionsContainer) {
     submissionsContainer.addEventListener('click', async (e) => {
         const card = e.target.closest('.bg-black\\/40');
         if (!card) return;
@@ -227,7 +232,8 @@ if (submissionsContainer) { // Check if element exists before adding listeners
 // === APPROVED MOVIES LOGIC
 // ===================================================================
 async function loadApprovedMovies() {
-    if (!approvedMoviesContainer) return; // Add check
+     // Ensure container exists before proceeding
+    if (!approvedMoviesContainer) return;
     try {
         const q = query(collection(db, 'movies'), where("status", "==", "Approved"), orderBy("showDate", "desc"));
         const querySnapshot = await getDocs(q);
@@ -242,7 +248,7 @@ async function loadApprovedMovies() {
 
         approvedMovies = await Promise.all(moviesPromises);
 
-        approvedMoviesContainer.innerHTML = '';
+        approvedMoviesContainer.innerHTML = ''; // Clear previous content
         if (approvedMovies.length === 0) {
             approvedMoviesContainer.innerHTML = '<p class="text-gray-400">No approved movies found.</p>';
             return;
@@ -254,7 +260,7 @@ async function loadApprovedMovies() {
         let currentMovie = null;
 
         const upcomingOrTodayMovies = approvedMovies.filter(movie => {
-            const movieDate = new Date(movie.showDate + 'T00:00:00');
+            const movieDate = new Date(movie.showDate + 'T00:00:00'); // Ensure correct date comparison
             return movieDate >= now;
         });
 
@@ -262,20 +268,27 @@ async function loadApprovedMovies() {
             upcomingOrTodayMovies.sort((a, b) => new Date(a.showDate) - new Date(b.showDate));
             currentMovie = upcomingOrTodayMovies[0];
         } else if (approvedMovies.length > 0) {
-            currentMovie = approvedMovies[0]; // Already sorted descending, so [0] is the most recent past one
+            // If no upcoming, the most recent past one is the "current" for display purposes
+             // approvedMovies is already sorted desc by date, so the first is the most recent
+            currentMovie = approvedMovies[0];
         }
         
         const currentMovieDateObject = currentMovie ? new Date(currentMovie.showDate + 'T00:00:00') : null;
 
         approvedMovies.forEach(movie => {
             let status = 'past';
-            const movieDate = new Date(movie.showDate + 'T00:00:00');
+            const movieDate = new Date(movie.showDate + 'T00:00:00'); // Ensure correct date comparison
 
             if (currentMovie && movie.id === currentMovie.id) {
-                status = 'current';
-            } else if (currentMovieDateObject && movieDate > currentMovieDateObject) {
-                status = 'upcoming';
-            }
+                 // Check if it's actually in the future or today vs. just the most recent past one
+                 if (movieDate >= now) {
+                     status = 'current';
+                 } else {
+                     status = 'past'; // Still mark as past if it's the most recent but already occurred
+                 }
+            } else if (movieDate > now) { // Any movie after today is upcoming
+                 status = 'upcoming';
+             }
             
             const card = document.createElement('div');
             card.className = 'approved-movie-card';
@@ -309,19 +322,23 @@ function createReservationRowHtml(reservation) {
     let seatDisplay = '';
     const seatsData = reservation.seats; 
 
+    // Handle both old string format and new object array format
     if (Array.isArray(seatsData)) {
         seatDisplay = seatsData.map(seatItem => {
+            // Check if it's the new object format
             if (typeof seatItem === 'object' && seatItem !== null && seatItem.hasOwnProperty('id')) {
                 return seatItem.id;
+            // Fallback for potentially old string data within the array
             } else if (typeof seatItem === 'string') {
                 return seatItem;
             }
-            return '';
-        }).filter(s => s !== '').join(', ');
-    } else if (typeof seatsData === 'object' && seatsData !== null) {
-        seatDisplay = Object.keys(seatsData).join(', ');
+            return ''; // Handle unexpected formats gracefully
+        }).filter(s => s !== '').sort().join(', '); // Sort for consistency
+    } else if (typeof seatsData === 'string') { // Handle legacy string format
+        seatDisplay = seatsData.split(',').map(s => s.trim()).filter(s => s !== '').sort().join(', ');
     }
-    
+    // Note: The old object format { A1: true, B2: true } is less likely but could be handled too if needed
+
     return `
         <tr class="reservation-row" data-res-id="${reservation.id}">
             <td><input type="text" value="${reservation.name || ''}" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm"></td>
@@ -369,7 +386,9 @@ function createEditFormView(movie) {
                         </tbody>
                     </table>
                 </div>
+                 <button class="btn-velvet text-xs add-reservation-btn mt-2">Add Manual Reservation</button>
             </div>
+
 
             <div class="flex gap-4 pt-4 border-t border-yellow-300/10">
                 <button class="btn-velvet primary save-btn flex-1">Save All Movie Changes</button>
@@ -379,7 +398,8 @@ function createEditFormView(movie) {
     `;
 }
 
-if (approvedMoviesContainer) { // Check if element exists before adding listener
+// Add event listeners only if the container exists
+if (approvedMoviesContainer) {
     approvedMoviesContainer.addEventListener('click', async (e) => {
         const card = e.target.closest('.approved-movie-card');
         if (!card) return;
@@ -395,10 +415,11 @@ if (approvedMoviesContainer) { // Check if element exists before adding listener
             if (dateInput && typeof flatpickr === 'function') {
                  flatpickr(dateInput, flatpickrOptions);
             } else if (dateInput) {
-                console.warn('flatpickr library not loaded or defined');
+                console.warn('flatpickr library not loaded or defined when trying to initialize date input.');
             }
         }
         if (e.target.classList.contains('save-btn')) {
+             e.target.textContent = 'Saving...'; e.target.disabled = true;
             const updatedData = {
                 movieTitle: card.querySelector(`#edit-movieTitle-${movieId}`).value,
                 hostName: card.querySelector(`#edit-hostName-${movieId}`).value,
@@ -412,17 +433,99 @@ if (approvedMoviesContainer) { // Check if element exists before adding listener
             try {
                 await updateDoc(doc(db, 'movies', movieId), updatedData);
                 alert("Movie details saved successfully!");
-                loadApprovedMovies(); 
+                loadApprovedMovies(); // Reload to show updated view
             } catch (error) {
                 console.error("Error updating movie document:", error);
                 alert("Failed to save movie details.");
+                 e.target.textContent = 'Save All Movie Changes'; e.target.disabled = false;
             }
         }
         if (e.target.classList.contains('cancel-btn')) {
-            loadApprovedMovies();
+            loadApprovedMovies(); // Reload to discard changes and show original view
         }
 
-        // --- Reservation Table Actions ---
+         // --- Add Manual Reservation Button ---
+        if (e.target.classList.contains('add-reservation-btn')) {
+            const tableBody = card.querySelector(`#reservations-table-body-${movieId}`);
+            if (tableBody) {
+                // Check if an empty row already exists to prevent multiple adds
+                const existingEmptyRow = tableBody.querySelector('.new-reservation-row');
+                if (!existingEmptyRow) {
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'reservation-row new-reservation-row'; // Add a class to identify new rows
+                    newRow.innerHTML = `
+                        <td><input type="text" value="" class="res-input-name w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm" placeholder="New Guest Name"></td>
+                        <td><input type="text" value="" class="res-input-seats w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-1 text-sm" placeholder="e.g. A1, B2"></td>
+                        <td class="text-right">
+                            <button class="btn-velvet text-xs save-new-reservation-btn primary mr-1">Save New</button>
+                            <button class="btn-velvet text-xs cancel-new-reservation-btn">Cancel</button>
+                        </td>
+                    `;
+                    // Insert at the beginning or end as preferred
+                    tableBody.appendChild(newRow); // Appends to the end
+                    newRow.querySelector('.res-input-name').focus(); // Focus on the name input
+                }
+            }
+        }
+
+        // --- Save NEW Manual Reservation Button ---
+        if (e.target.classList.contains('save-new-reservation-btn')) {
+             const button = e.target;
+             button.textContent = 'Saving...';
+             button.disabled = true;
+
+             const row = button.closest('.new-reservation-row');
+             if (!row) return;
+
+             const name = row.querySelector('.res-input-name').value.trim();
+             const seatsInput = row.querySelector('.res-input-seats').value.trim();
+             const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
+
+             if (!name || seatStrings.length === 0) {
+                 alert('Please enter a name and at least one seat (e.g., A1, B2).');
+                 button.textContent = 'Save New';
+                 button.disabled = false;
+                 return;
+             }
+
+             // Convert seat strings to the required object format
+             const seats = seatStrings.map(seatId => {
+                 const seatRow = seatId.charAt(0);
+                 const seatNumber = parseInt(seatId.slice(1), 10);
+                 // Basic validation (optional but good)
+                 if (!seatRow.match(/[A-Z]/) || isNaN(seatNumber)) {
+                     throw new Error(`Invalid seat format: ${seatId}`); // Throw error to stop saving
+                 }
+                 return { id: seatId, row: seatRow, number: seatNumber };
+             });
+
+             try {
+                 const reservationsRef = collection(db, 'movies', movieId, 'reservations');
+                 await addDoc(reservationsRef, {
+                     name: name,
+                     seats: seats, // Save the array of seat objects
+                     timestamp: serverTimestamp() // Add timestamp if needed
+                 });
+                 alert("New reservation added successfully!");
+                 loadApprovedMovies(); // Reload to show the updated list including the new one
+             } catch (error) {
+                 console.error("Error adding new reservation:", error);
+                 alert(`Failed to add reservation: ${error.message}`);
+                 button.textContent = 'Save New';
+                 button.disabled = false;
+             }
+        }
+
+        // --- Cancel NEW Manual Reservation Button ---
+        if (e.target.classList.contains('cancel-new-reservation-btn')) {
+            const row = e.target.closest('.new-reservation-row');
+            if (row) {
+                row.remove(); // Just remove the row from the DOM
+            }
+        }
+
+
+        // --- Reservation Table Actions (Save Existing / Delete Existing) ---
         if (e.target.classList.contains('save-reservation-btn')) {
             const button = e.target;
             button.textContent = 'Saving...';
@@ -432,33 +535,41 @@ if (approvedMoviesContainer) { // Check if element exists before adding listener
             if (!row) return;
 
             const resId = row.getAttribute('data-res-id');
+             if (!resId) { // Should not happen for existing saves, but good check
+                 console.error("Missing reservation ID for saving.");
+                 button.textContent = 'Save'; button.disabled = false; return;
+             }
+
             const name = row.querySelector('.res-input-name').value.trim();
-            // Parse the comma-separated string back into an array of seat numbers
             const seatsInput = row.querySelector('.res-input-seats').value.trim();
-            const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
-            // Convert strings back to the required object format
-            const seats = seatStrings.map(seatId => {
-                const row = seatId.charAt(0);
-                const number = parseInt(seatId.slice(1), 10);
-                return { id: seatId, row, number };
-            });
+             const seatStrings = seatsInput ? seatsInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== '') : [];
 
 
-            if (!name || seats.length === 0) {
-                alert('Please fill in all reservation fields correctly, including at least one seat number.');
+            if (!name || seatStrings.length === 0) {
+                alert('Please fill in name and at least one seat (e.g., A1, B2).');
                 button.textContent = 'Save';
                 button.disabled = false;
                 return;
             }
 
+            // Convert seat strings to the required object format
+             const seats = seatStrings.map(seatId => {
+                 const seatRow = seatId.charAt(0);
+                 const seatNumber = parseInt(seatId.slice(1), 10);
+                 if (!seatRow.match(/[A-Z]/) || isNaN(seatNumber)) {
+                      throw new Error(`Invalid seat format: ${seatId}`);
+                 }
+                 return { id: seatId, row: seatRow, number: seatNumber };
+             });
+
             try {
                 const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
-                await updateDoc(reservationDocRef, { name, seats });
+                await updateDoc(reservationDocRef, { name, seats }); // Update with array of objects
                 alert("Reservation updated successfully!");
-                loadApprovedMovies();
+                loadApprovedMovies(); // Reload to reflect changes
             } catch (error) {
                 console.error("Error updating reservation:", error);
-                alert("Failed to update reservation.");
+                alert(`Failed to update reservation: ${error.message}`);
                 button.textContent = 'Save';
                 button.disabled = false;
             }
@@ -474,12 +585,17 @@ if (approvedMoviesContainer) { // Check if element exists before adding listener
                 if (!row) return;
 
                 const resId = row.getAttribute('data-res-id');
+                 if (!resId) { // Should not happen, but good check
+                     console.error("Missing reservation ID for deleting.");
+                      button.textContent = 'Delete'; button.disabled = false; return;
+                 }
+
 
                 try {
                     const reservationDocRef = doc(db, 'movies', movieId, 'reservations', resId);
                     await deleteDoc(reservationDocRef);
                     alert("Reservation deleted successfully!");
-                    loadApprovedMovies();
+                    loadApprovedMovies(); // Reload to remove the row visually
                 } catch (error) {
                     console.error("Error deleting reservation:", error);
                     alert("Failed to delete reservation.");
@@ -497,6 +613,7 @@ if (approvedMoviesContainer) { // Check if element exists before adding listener
 function formatCSVRow(items) {
     return items.map(item => {
         let str = String(item === null || item === undefined ? '' : item);
+        // Escape double quotes by doubling them, and wrap field in quotes if it contains comma, newline, or double quote
         if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
             str = `"${str.replace(/"/g, '""')}"`;
         }
@@ -505,7 +622,8 @@ function formatCSVRow(items) {
 }
 
 async function exportMoviesToCSV() {
-    if (!exportCsvButton) return; // Add check
+     // Ensure button exists before proceeding
+    if (!exportCsvButton) return;
     exportCsvButton.disabled = true;
     exportCsvButton.textContent = 'Exporting...';
     try {
@@ -513,6 +631,7 @@ async function exportMoviesToCSV() {
         const layoutDoc = await getDoc(doc(db, "layouts", "default"));
         if (!layoutDoc.exists()) {
             alert("Default seating layout not found. Cannot generate export.");
+             exportCsvButton.disabled = false; exportCsvButton.textContent = 'Export All to CSV'; // Re-enable button
             return;
         }
         // Get all seat IDs and sort them consistently (e.g., A1, A2, B1, B2...)
@@ -532,6 +651,7 @@ async function exportMoviesToCSV() {
 
         if (querySnapshot.empty) {
             alert("No movies found to export.");
+            exportCsvButton.disabled = false; exportCsvButton.textContent = 'Export All to CSV'; // Re-enable button
             return;
         }
 
@@ -558,13 +678,21 @@ async function exportMoviesToCSV() {
             // Create a map of { SeatID: "Reserver Name" } for this movie
             const seatReservationMap = {};
             reservations.forEach(res => {
-                if (res.seats && Array.isArray(res.seats)) {
-                    res.seats.forEach(seat => {
-                        if (seat && seat.id) {
-                            seatReservationMap[seat.id] = res.name;
-                        }
-                    });
-                }
+                // Handle both array of objects and legacy string format
+                 if (res.seats && Array.isArray(res.seats)) {
+                     res.seats.forEach(seat => {
+                         if (seat && seat.id) { // New format {id: "A1", ...}
+                             seatReservationMap[seat.id] = res.name;
+                         } else if (typeof seat === 'string') { // Old format ["A1", "B2"]
+                             seatReservationMap[seat] = res.name;
+                         }
+                     });
+                 } else if (res.seats && typeof res.seats === 'string') { // Legacy "A1, B2"
+                     res.seats.split(',').forEach(seatId => {
+                         const trimmedId = seatId.trim();
+                         if (trimmedId) seatReservationMap[trimmedId] = res.name;
+                     });
+                 }
             });
 
             // For each possible seat, find the reserver's name or leave it blank
@@ -580,18 +708,19 @@ async function exportMoviesToCSV() {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        const timestamp = new Date().toISOString().slice(0, 10);
+        const timestamp = new Date().toISOString().slice(0, 10); // Format YYYY-MM-DD
         link.setAttribute("download", `theater_seating_export_${timestamp}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        alert("Seating map exported to CSV successfully!");
+        // No alert needed on success, button text change is enough feedback
 
     } catch (error) {
         console.error("Error exporting to CSV:", error);
         alert("An error occurred during the export. Check the console for details.");
     } finally {
+        // Ensure button is re-enabled even if there's an error
         exportCsvButton.disabled = false;
         exportCsvButton.textContent = 'Export All to CSV';
     }
@@ -602,13 +731,13 @@ async function exportMoviesToCSV() {
 // === INITIALIZATION
 // ===================================================================
 
-// --- UPDATE THIS PART ---
+// --- Main initialization function called by checkAuth ---
 function initializePage() {
-    // This function now contains all the original setup code
     initializeHomepageMode();
     loadSubmissions();
     loadApprovedMovies();
 
+    // Add event listeners only if elements exist
     if (homepageModeToggle) {
         homepageModeToggle.addEventListener('change', handleHomepageToggleChange);
     }
@@ -618,17 +747,19 @@ function initializePage() {
     if(exportCsvButton) {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
-    // NEW: Logout handler
     if (logoutButton) {
         logoutButton.addEventListener('click', () => {
             signOut(auth).catch((error) => console.error("Sign out error", error));
+            // Auth state listener in checkAuth will handle redirect
         });
     }
 }
 
+// --- Start the process ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Start the auth check. The checkAuth function will call initializePage() on success.
+    // Start the auth check first.
+    // checkAuth will call initializePage() only if the user is an authorized admin.
     checkAuth();
 });
-// --- END UPDATE ---
+// --- END ---
 
