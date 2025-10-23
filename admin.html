@@ -1,205 +1,190 @@
+<!-- /auction.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7KP0BL67YF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  gtag('config', 'G-7KP0BL67YF');
-</script>
-
+      gtag('config', 'G-7KP0BL67YF');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - The Grand Casita Theater</title>
+    <title>Casita Auction - The Grand Casita Family Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <link rel="stylesheet" href="layout-styles.css">
-    <link rel="stylesheet" href="datepicker-theme.css">
-
     <style>
-        /* Custom styles for reservation section */
-        .reservation-table {
-            border-collapse: collapse;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.5rem;
-            overflow: hidden; /* Ensures rounded corners apply to the table */
+        /* Style for the success toast */
+        #success-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background-color: #166534; /* Dark Green */
+            color: #d1fae5; /* Light Green */
+            border: 1px solid #22c55e; /* Green */
+            border-radius: 8px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Allows clicks through when hidden */
         }
-
-        .reservation-table th,
-        .reservation-table td {
-            padding: 0.75rem 0.5rem; /* Adjust padding for cells */
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Lighter border for rows */
-            vertical-align: middle;
+        #success-toast.show {
+            opacity: 1;
         }
-
-        .reservation-table thead th {
-            background-color: rgba(0, 0, 0, 0.2);
-            color: #d1d5db; /* gray-300 */
-            font-size: 0.75rem; /* text-xs */
-            font-weight: 500;
-            letter-spacing: 0.05em; /* tracking-wider */
-            text-transform: uppercase;
+        /* Style for smaller quick bid buttons */
+        .btn-quick-increment {
+             padding: 0.4rem 0.8rem;
+             font-size: 0.8rem;
+             min-width: 60px; /* Ensure they have some width */
         }
-
-        .reservation-table tbody tr:last-child td {
-            border-bottom: none;
+        /* Style for completed items */
+        #completed-items-container .item-card {
+            opacity: 0.7;
+            border-color: rgba(107, 114, 128, 0.2); /* gray-500/20 */
         }
-
-        .reservation-table tbody tr:hover {
-            background-color: rgba(0, 0, 0, 0.1); /* Slight hover effect */
-        }
-        
-        .reservation-table input[type="text"],
-        .reservation-table input[type="email"],
-        .reservation-table input[type="number"] {
-            background-color: rgba(0, 0, 0, 0.3); /* black/30 */
-            border: 1px solid rgba(252, 211, 77, 0.2); /* yellow-300/20 */
-            color: #fff;
-            border-radius: 0.375rem; /* rounded-md */
-            padding: 0.25rem 0.5rem; /* py-1 px-2 */
-            font-size: 0.875rem; /* text-sm */
-            width: 100%;
-            transition: all 0.15s ease-in-out;
-        }
-
-        .reservation-table input[type="text"]:focus,
-        .reservation-table input[type="email"]:focus,
-        .reservation-table input[type="number"]:focus {
-            outline: none;
-            box-shadow: 0 0 0 1px #fcd34d; /* yellow-300 */
-            border-color: #fcd34d; /* yellow-300 */
-        }
-
-        .reservation-table .btn-velvet {
-            padding: 0.2rem 0.6rem; /* Adjust button padding for table */
-            font-size: 0.65rem; /* Smaller font for table buttons */
-            margin-left: 0.25rem;
-        }
-
-        .edit-form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-        .edit-form-grid .col-span-2 {
-            grid-column: span 2;
-        }
-        .edit-form-grid label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: #d1d5db; /* gray-300 */
-            margin-bottom: 0.25rem;
-            font-family: 'Cinzel', serif;
-            letter-spacing: 0.05em;
-        }
-        .edit-form-grid input[type="text"],
-        .edit-form-grid input[type="url"],
-        .edit-form-grid input[type="number"],
-        .edit-form-grid textarea {
-            width: 100%;
-            background-color: rgba(0, 0, 0, 0.3); /* black/30 */
-            border: 1px solid rgba(252, 211, 77, 0.2); /* yellow-300/20 */
-            color: #fff;
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            transition: all 0.2s ease-in-out;
-        }
-        .edit-form-grid input:focus,
-        .edit-form-grid textarea:focus {
-            outline: none;
-            box-shadow: 0 0 0 1px #fcd34d; /* yellow-300 */
-            border-color: #fcd34d; /* yellow-300 */
-        }
-        .edit-form-grid textarea {
-            min-height: 60px;
-            resize: vertical;
-        }
-        .edit-form-grid input[type="checkbox"] {
-            width: auto;
-            height: auto;
-            margin-right: 0.5rem;
-        }
-        .edit-form-grid .flex.items-center label {
-            margin-bottom: 0;
-        }
+         #completed-items-container .item-card:hover {
+             transform: none; /* Disable hover effect */
+             box-shadow: none;
+             opacity: 0.75; /* Slight increase on hover */
+         }
     </style>
 </head>
 <body class="bg-brand-dark text-white">
 
-    <div class="container mx-auto px-4 py-8 md:py-16 max-w-7xl">
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <div class="relative max-w-7xl mx-auto">
 
-        <header class="text-center mb-12">
-            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Admin Panel</h1>
-        </header>
+            <header class="text-center mb-12">
+                <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Casita Auction</h1>
+                <p class="text-xl text-gray-300 mt-2">All proceeds fund our family get-togethers. Happy bidding!</p>
+            </header>
 
-        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
-            <div id="dashboard">
-                <div class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
-                    <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
-                    <!-- This div contains the buttons -->
-                    <div class="flex gap-4">
-                        <!-- This button was missing from the original file but present in the stray code -->
-                        <button id="logout-button" class="btn-velvet">Logout</button>
+            <main class="bg-brand-card shadow-2xl rounded-2xl overflow-hidden border-2 border-yellow-300/20 p-8">
+                <nav class="flex flex-col sm:flex-row justify-between items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-center items-center gap-4">
+                        <a href="index.html" class="btn-velvet">Theater</a>
+                        <a href="auction.html" class="btn-velvet primary">Auction</a>
                     </div>
+                    <!-- Sorting Dropdown -->
+                    <div class="relative">
+                        <label for="sort-items" class="text-sm font-medium text-gray-300 mr-2">Sort Active Items by:</label>
+                        <select id="sort-items" name="sort-items" class="bg-black/30 border border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition appearance-none pr-8">
+                            <option value="endTimeAsc">Ending Soonest</option>
+                            <option value="endTimeDesc">Newly Listed</option>
+                            <option value="currentBidDesc">Highest Bid</option>
+                            <option value="currentBidAsc">Lowest Bid</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                           <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </nav>
+
+                <div id="auction-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <p class="text-gray-400 col-span-full text-center">Loading auction items...</p>
+                    <!-- Active items will be loaded here -->
                 </div>
 
-                <section id="homepage-mode-section" class="mb-12">
-                    <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Homepage Display Mode</h3>
-                    <div class="bg-black/20 p-6 rounded-lg border border-yellow-300/10 flex items-center justify-between">
-                        <div>
-                            <p class="font-bold text-lg" id="homepage-mode-status">Loading...</p>
-                            <p class="text-sm text-gray-400" id="homepage-mode-description">Fetching current homepage status from the database.</p>
-                        </div>
-                        <label class="admin-toggle-switch">
-                            <input type="checkbox" id="homepage-mode-toggle">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </section>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <section id="pending-section">
-                        <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
-                        <div id="submissions-container" class="space-y-6">
-                            <!-- Submissions loaded by admin.js -->
-                        </div>
-                    </section>
-
-                    <section id="approved-section">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-cinzel text-2xl text-brand-gold text-shadow">Approved & Scheduled</h3>
-                            <button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
-                        </div>
-                        <div id="approved-movies-container" class="space-y-6">
-                            <!-- Approved movies loaded by admin.js -->
-                        </div>
-                    </section>
+                 <!-- === NEW SECTION FOR COMPLETED ITEMS === -->
+                <div id="completed-items-section" class="mt-16 pt-8 border-t border-yellow-300/10 hidden">
+                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow text-center mb-8">Completed Auctions</h2>
+                     <div id="completed-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                         <!-- Completed items will be loaded here -->
+                     </div>
                 </div>
-            </div>
-        </main>
+                 <!-- === END NEW SECTION === -->
+
+            </main>
+
+        </div>
 
         <footer class="text-center p-4 text-xs text-gray-400 mt-8">
-            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+             <p><a href="index.html" class="hover:text-yellow-300">&copy; 2025 The Grand Casita Family Hub</a></p>
             <p id="build-timestamp" class="mt-2"></p>
         </footer>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
-    <script type="module" src="admin.js"></script>
-    <!-- 
-      FIX: Removed the stray, malformed <section> and ``` tags 
-      that were outside the </html> tag.
-    -->
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="relative">
+            <button id="close-image-modal" class="absolute -top-4 -right-4 text-white text-4xl bg-brand-dark rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
+            <img id="modal-image" src="" alt="Full size view" class="max-w-[90vw] max-h-[90vh] object-contain">
+        </div>
+    </div>
+
+    <!-- Bid Modal (Enhanced) -->
+    <div id="bid-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-brand-card p-8 rounded-lg shadow-xl max-w-md w-full border-2 border-yellow-300/50">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="bid-modal-title" class="text-2xl font-bold text-brand-gold font-cinzel">Place Your Bid</h3>
+                <button id="close-bid-modal" class="text-white text-3xl hover:text-gray-400">&times;</button>
+            </div>
+            <form id="bid-form" class="space-y-4">
+                <div>
+                    <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Your Max Bid ($)</label>
+                    <input type="number" id="bid-amount" name="bid-amount" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    <!-- Quick Bid Increments -->
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="quick-bid-min-button" class="btn-velvet btn-quick-increment">Bid $0.00</button>
+                        <button type="button" id="quick-bid-plus-1-button" class="btn-velvet btn-quick-increment">+ $1</button>
+                        <button type="button" id="quick-bid-plus-5-button" class="btn-velvet btn-quick-increment">+ $5</button>
+                        <button type="button" id="quick-bid-plus-10-button" class="btn-velvet btn-quick-increment">+ $10</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="bidder-name" class="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
+                    <input type="text" id="bidder-name" name="bidder-name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                </div>
+                <div>
+                    <label for="bidder-phone" class="block text-sm font-medium text-gray-300 mb-1">Phone Number (for verification)</label>
+                    <input type="tel" id="bidder-phone" name="bidder-phone" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 1234567890">
+                </div>
+
+                <!-- ADDED PROXY BID EXPLANATION -->
+                <div class="mt-4 p-3 bg-black/20 rounded-lg border border-yellow-300/10">
+                    <p class="text-xs text-gray-300 italic">
+                        <strong>How this works:</strong> This is a proxy bid. Enter the <span class="font-bold text-brand-gold">maximum</span> amount you're willing to pay. The system will automatically bid for you, one increment at a time, to keep you in the lead only up to your max bid.
+                    </p>
+                </div>
+                <!-- END ADDED EXPLANATION -->
+
+                <p id="bid-error-message" class="text-red-400 text-sm h-4 mb-2 text-center"></p>
+
+                <div class="pt-2">
+                     <button type="submit" id="submit-bid-button" class="btn-velvet primary w-full text-lg">Submit Bid</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-brand-card p-8 rounded-lg shadow-xl max-w-md w-full border-2 border-yellow-300/50">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="history-modal-title" class="text-2xl font-bold text-brand-gold font-cinzel">Bid History</h3>
+                <button id="close-history-modal" class="text-white text-3xl hover:text-gray-400">&times;</button>
+            </div>
+            <div id="history-modal-content" class="max-h-80 overflow-y-auto">
+                <p class="text-gray-400">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="success-toast" role="alert">
+        <p id="success-message"></p>
+    </div>
+
+    <script type="module" src="auction.js"></script>
 </body>
 </html>
-<!-- Build Timestamp: 10/23/2025, 3:37:00 PM MDT -->
+<!-- Build Timestamp: 10/23/2025, 4:10:00 PM MDT -->
