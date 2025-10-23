@@ -4,9 +4,12 @@
  * Extension: .js
  */
 
-import { db } from './firebase-config.js';
+// --- MODIFIED IMPORTS ---
+import { db, auth } from './firebase-config.js'; // Import auth
 import { collection, query, where, getDocs, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"; // Import auth functions
 import { VONNEGUT_JOKES } from './jokes.js';
+// --- END MODIFIED IMPORTS ---
 
 // --- DOM References ---
 const errorContainer = document.getElementById('error-container');
@@ -51,8 +54,28 @@ window.playTrailer = function(trailerLink) {
     }
 }
 
-// --- Main Function ---
+// --- MODIFIED Main Function ---
 async function initializePage() {
+    // Wrap data loading in an auth check
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in (or has just signed in anonymously)
+            console.log('Auth state changed, user ID:', user.uid);
+            loadPageData(); // New function containing the original try/catch
+        } else {
+            // No user, sign in anonymously
+            console.log('No user found, signing in anonymously...');
+            signInAnonymously(auth).catch((error) => {
+                console.error("Anonymous sign-in failed:", error);
+                showError("Could not connect to service. Please check your internet connection and refresh.");
+            });
+            // The onAuthStateChanged listener will fire again on success, triggering loadPageData
+        }
+    });
+}
+
+// This new function holds the original data-loading logic
+async function loadPageData() {
     try {
         // First, check the homepage mode from Firestore
         const settingsRef = doc(db, 'settings', 'homepage');
@@ -95,6 +118,7 @@ async function initializePage() {
 
     } catch (error) {
         console.error("Error loading movie data:", error);
+        // This is line 97 from your error log
         if (error.code === 'failed-precondition' && error.message.includes('index')) {
             const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
             if (urlMatch && urlMatch[0]) {
@@ -109,11 +133,15 @@ async function initializePage() {
             } else {
                 showError("Firebase Error: A required database index is missing. Please check the developer console for the creation link.");
             }
-        } else {
-            showError("Error loading movie data. Please try again later.");
+        } else if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+             showError("Permission Denied: You don't have permission to view this data. This might be a configuration issue.");
+        }
+         else {
+            showError(`Error loading movie data (${error.code}). Please try again later.`);
         }
     }
 }
+// --- END MODIFIED Main Function ---
 
 
 function categorizeAndRenderMovies(approvedMovies, pendingMovies) {
@@ -309,7 +337,22 @@ confirmAgeButton.addEventListener('click', () => {
 cancelAgeButton.addEventListener('click', () => {
     adultsOnlyModal.classList.add('hidden');
 });
+// ... existing code ...
+function renderCurrentMovie(movie) {
+// ... existing code ...
+    actionsContainer.appendChild(reserveButton);
 
+    // --- ADDED AUCTION BUTTON ---
+    const auctionButton = document.createElement('a');
+    auctionButton.className = 'btn-velvet primary w-full text-center block'; // Match 'Watch Trailer' style
+    auctionButton.textContent = 'View Auction';
+    auctionButton.href = 'auction.html';
+    actionsContainer.appendChild(auctionButton);
+    // --- END ADDED AUCTION BUTTON ---
+}
+
+function renderComingSoon(upcomingMovies, pendingMovies) {
+// ... existing code ...
 // --- Initialization ---
 function setBuildTimestamp() {
     const buildDate = new Date();
@@ -329,7 +372,7 @@ function setBuildTimestamp() {
 
 document.addEventListener('DOMContentLoaded', () => {
     setBuildTimestamp();
-    initializePage();
+    initializePage(); // This now kicks off the auth check
 });
 
 /*

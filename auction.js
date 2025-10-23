@@ -13,7 +13,9 @@ import {
     Timestamp,
     getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// --- MODIFIED IMPORTS ---
+import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// --- END MODIFIED IMPORTS ---
 
 // --- DOM Elements ---
 const auctionItemsContainer = document.getElementById('auction-items-container');
@@ -57,14 +59,38 @@ let currentSort = 'endTimeAsc';
 let allItems = [];
 let currentItemData = null; // Holds data for the item being bid on
 
-// --- Initialization ---
+// --- MODIFIED Initialization ---
 function initializePage() {
-    setupListeners();
-    setupFirebaseListener();
+    setupListeners(); // Listeners can be set up regardless of auth
+
+    // --- NEW Auth Check ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in (anon or otherwise)
+            console.log('Auction user authenticated:', user.uid);
+            setupFirebaseListener(); // NOW we can safely listen to data
+            
+            // Pre-fill name if it's a *real* user (not anonymous) and they have a display name
+            if (!user.isAnonymous && user.displayName) {
+                 bidderNameInput.value = user.displayName;
+            }
+        } else {
+            // No user, sign in anonymously
+            console.log('No auction user, signing in anonymously...');
+            signInAnonymously(auth).catch((error) => {
+                console.error("Anonymous sign-in failed:", error);
+                auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
+            });
+            // The listener will re-run on success, triggering setupFirebaseListener
+        }
+    });
+    // --- END NEW Auth Check ---
+
     if (timestampContainer) {
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
 }
+// --- END MODIFIED Initialization ---
 
 function setupListeners() {
     // Sort dropdown
@@ -109,12 +135,7 @@ function setupListeners() {
     quickBidPlus5Button.addEventListener('click', () => setQuickBid('plus5'));
     quickBidPlus10Button.addEventListener('click', () => setQuickBid('plus10'));
 
-    // Check auth state to pre-fill name (if user is logged in for theater)
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.displayName) {
-            bidderNameInput.value = user.displayName;
-        }
-    });
+    // --- REMOVED onAuthStateChanged from here, as it's now in initializePage ---
 }
 
 // --- Firebase ---
@@ -126,7 +147,11 @@ function setupFirebaseListener() {
         renderAuctionItems();
     }, (error) => {
         console.error("Error fetching auction items: ", error);
-        auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error loading items. Please refresh.</p>';
+        if (error.code === 'permission-denied' || error.code === 'missing-or-insufficient-permissions') {
+            auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Permission Denied. Please ensure you have access to view these items.</p>';
+        } else {
+            auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error loading items. Please refresh.</p>';
+        }
     });
 }
 
@@ -224,6 +249,7 @@ function formatTimeRemaining(endTime) {
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
+    if (parts.length === 0) return { text: 'Ending very soon!', closed: false }; // Handle last minute
 
     return { text: `Ends in: ${parts.join(' ')}`, closed: false };
 }
@@ -247,7 +273,7 @@ function handleBidButtonClick(button) {
         minBid: minBid,
         increment: parseFloat(increment),
         currentBid: parseFloat(currentBid),
-        notToExceedBid: notExceedBid ? parseFloat(notExceedBid) : null
+        notToExceedBid: notExceedBid ? parseFloat(notToExceedBid) : null
     };
 
     bidModalTitle.textContent = `Bid on: ${itemTitle}`;
