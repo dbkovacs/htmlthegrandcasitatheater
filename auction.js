@@ -65,7 +65,8 @@ let currentItemData = null; // Holds data for the item being bid on
 
 // --- MODIFIED Initialization ---
 function initializePage() {
-    setupListeners(); // Listeners can be set up regardless of auth
+    // --- FIX: Call setupListeners AFTER DOMContentLoaded ensures elements exist ---
+    // setupListeners(); // Moved to DOMContentLoaded event listener
 
     // --- NEW Auth Check ---
     onAuthStateChanged(auth, (user) => {
@@ -76,7 +77,7 @@ function initializePage() {
             
             // Pre-fill name if it's a *real* user (not anonymous) and they have a display name
             // This is just a convenience for the *first time* they open the modal
-            if (!user.isAnonymous && user.displayName) {
+            if (bidderNameInput && !user.isAnonymous && user.displayName) { // Add null check for bidderNameInput
                  bidderNameInput.value = user.displayName;
             }
         } else {
@@ -84,7 +85,9 @@ function initializePage() {
             console.log('No auction user, signing in anonymously...');
             signInAnonymously(auth).catch((error) => {
                 console.error("Anonymous sign-in failed:", error);
-                auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
+                 if (auctionItemsContainer) { // Add null check
+                    auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
+                 }
             });
             // The listener will re-run on success, triggering setupFirebaseListener
         }
@@ -99,40 +102,62 @@ function initializePage() {
 
 function setupListeners() {
     // Sort dropdown
-    sortItemsSelect.addEventListener('change', (e) => {
-        currentSort = e.target.value;
-        renderAuctionItems(); // This will re-render both active and completed based on the new sort for active
-    });
+    if (sortItemsSelect) {
+        sortItemsSelect.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            renderAuctionItems(); // This will re-render both active and completed based on the new sort for active
+        });
+    }
 
     // Event Delegation for item cards (applies to both containers now)
-    document.getElementById('auction-items-container').addEventListener('click', handleCardClick);
-    document.getElementById('completed-items-container').addEventListener('click', handleCardClick);
+    // --- FIX: Add null checks ---
+    if (auctionItemsContainer) {
+        auctionItemsContainer.addEventListener('click', handleCardClick);
+    }
+    if (completedItemsContainer) { // This was the line causing the error
+        completedItemsContainer.addEventListener('click', handleCardClick);
+    }
+    // --- END FIX ---
 
 
     // Modal Close Buttons
-    closeImageModalBtn.addEventListener('click', () => imageModal.classList.add('hidden'));
-    imageModal.addEventListener('click', (e) => {
-        if (e.target === imageModal) imageModal.classList.add('hidden');
-    });
+    if (closeImageModalBtn) {
+        closeImageModalBtn.addEventListener('click', () => imageModal.classList.add('hidden'));
+    }
+    if (imageModal) {
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) imageModal.classList.add('hidden');
+        });
+    }
 
-    closeBidModalBtn.addEventListener('click', () => bidModal.classList.add('hidden'));
-    bidModal.addEventListener('click', (e) => {
-        if (e.target === bidModal) bidModal.classList.add('hidden');
-    });
+    if (closeBidModalBtn) {
+        closeBidModalBtn.addEventListener('click', () => bidModal.classList.add('hidden'));
+    }
+    if (bidModal) {
+        bidModal.addEventListener('click', (e) => {
+            if (e.target === bidModal) bidModal.classList.add('hidden');
+        });
+    }
 
-    closeHistoryModalBtn.addEventListener('click', () => historyModal.classList.add('hidden'));
-    historyModal.addEventListener('click', (e) => {
-        if (e.target === historyModal) historyModal.classList.add('hidden');
-    });
+    if (closeHistoryModalBtn) {
+        closeHistoryModalBtn.addEventListener('click', () => historyModal.classList.add('hidden'));
+    }
+    if (historyModal) {
+        historyModal.addEventListener('click', (e) => {
+            if (e.target === historyModal) historyModal.classList.add('hidden');
+        });
+    }
 
     // Bid Form
-    bidForm.addEventListener('submit', handleBidSubmit);
+    if (bidForm) {
+        bidForm.addEventListener('submit', handleBidSubmit);
+    }
 
     // Quick Bid Buttons
-    quickBidMinButton.addEventListener('click', () => setQuickBid('min'));
-    quickBidPlus1Button.addEventListener('click', () => setQuickBid('plus1'));
-    quickBidPlus5Button.addEventListener('click', () => setQuickBid('plus5'));
-    quickBidPlus10Button.addEventListener('click', () => setQuickBid('plus10'));
+    if (quickBidMinButton) quickBidMinButton.addEventListener('click', () => setQuickBid('min'));
+    if (quickBidPlus1Button) quickBidPlus1Button.addEventListener('click', () => setQuickBid('plus1'));
+    if (quickBidPlus5Button) quickBidPlus5Button.addEventListener('click', () => setQuickBid('plus5'));
+    if (quickBidPlus10Button) quickBidPlus10Button.addEventListener('click', () => setQuickBid('plus10'));
 
 }
 
@@ -160,7 +185,9 @@ function setupFirebaseListener() {
     }, (error) => {
         console.error("Error fetching auction items: ", error);
         // Display error in the active items container
-        auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error loading items. Please check permissions or refresh.</p>';
+        if (auctionItemsContainer) { // Add null check
+            auctionItemsContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error loading items. Please check permissions or refresh.</p>';
+        }
         // Hide the completed section if there's an error
         if (completedItemsSection) completedItemsSection.classList.add('hidden');
     });
@@ -192,6 +219,12 @@ function sortActiveItems(items) {
 
 // --- MODIFIED: renderAuctionItems separates active and completed ---
 function renderAuctionItems() {
+    // Add null checks for containers
+    if (!auctionItemsContainer || !completedItemsContainer || !completedItemsSection) {
+        console.error("Required container elements not found in the DOM.");
+        return;
+    }
+
     auctionItemsContainer.innerHTML = ''; // Clear active items
     completedItemsContainer.innerHTML = ''; // Clear completed items
 
@@ -239,9 +272,10 @@ function createItemCardElement(item) {
     itemCard.className = 'item-card flex flex-col'; // Base class
     itemCard.dataset.itemId = item.id;
     itemCard.dataset.itemTitle = item.title;
-    itemCard.dataset.currentBid = item.currentBid;
-    itemCard.dataset.increment = item.increment;
-    itemCard.dataset.startBid = item.startBid;
+    // Ensure numeric values or default to 0 before setting dataset attributes
+    itemCard.dataset.currentBid = item.currentBid ?? item.startBid ?? 0;
+    itemCard.dataset.increment = item.increment ?? 1; // Default increment if missing
+    itemCard.dataset.startBid = item.startBid ?? 0;
     itemCard.dataset.notExceedBid = item.notToExceedBid || ''; // Store for bid logic
 
     const endTime = item.endTime?.toDate();
@@ -252,7 +286,7 @@ function createItemCardElement(item) {
     const { text: timeText, closed } = formatTimeRemaining(endTime); // Use the existing formatter
 
     // Determine the final price/bid shown for completed items
-    let finalBidDisplay = (item.currentBid || item.startBid || 0).toFixed(2);
+    let finalBidDisplay = (parseFloat(itemCard.dataset.currentBid) || 0).toFixed(2); // Use dataset value which has fallback
     let finalBidder = item.highBidder;
 
     // Adjust display for "awaiting_payment" or "paid"
@@ -268,15 +302,15 @@ function createItemCardElement(item) {
 
 
     itemCard.innerHTML = `
-        <img src="${item.imageUrl}" alt="${item.title}" class="item-image w-full h-64 object-cover ${isCompleted ? '' : 'cursor-pointer'}">
+        <img src="${item.imageUrl}" alt="${item.title || 'Auction Item'}" class="item-image w-full h-64 object-cover ${isCompleted ? '' : 'cursor-pointer'}">
         <div class="p-6 flex-grow flex flex-col">
-            <h3 class="font-cinzel text-2xl font-bold text-brand-gold mb-2">${item.title}</h3>
-            <p class="text-gray-300 text-sm mb-4 flex-grow">${item.description}</p>
+            <h3 class="font-cinzel text-2xl font-bold text-brand-gold mb-2">${item.title || 'Untitled Item'}</h3>
+            <p class="text-gray-300 text-sm mb-4 flex-grow">${item.description || 'No description available.'}</p>
             
             ${item.modelNumber ? `<p class="text-xs text-gray-400 mb-4">Model: ${item.modelUrl ? `<a href="${item.modelUrl}" target="_blank" class="text-yellow-300 hover:underline">${item.modelNumber}</a>` : item.modelNumber}</p>` : ''}
             
             <!-- Only show Buy Now if item is active -->
-            ${!isCompleted && item.notToExceedBid ? `<p class="text-sm font-semibold text-purple-300 mb-2">Buy Now at $${item.notToExceedBid.toFixed(2)}!</p>` : ''}
+            ${!isCompleted && item.notToExceedBid ? `<p class="text-sm font-semibold text-purple-300 mb-2">Buy Now at $${parseFloat(item.notToExceedBid).toFixed(2)}!</p>` : ''}
 
             <div class="mb-4">
                 <p class="text-sm text-gray-400">${isCompleted ? (finalBidder ? 'Winning Bid' : 'Final Price') : (item.highBidder ? 'Current Bid' : 'Starting Bid')}</p>
@@ -324,8 +358,8 @@ function formatTimeRemaining(endTime) {
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
     // Ensure seconds are calculated and shown only when distance is less than a minute
-    if (distance < 60000) { // Less than 1 minute
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    if (distance < 60000 && distance > 0) { // Less than 1 minute remaining
+        const seconds = Math.floor(distance / 1000); // Show total seconds remaining
         return { text: `Ends in: ${seconds}s`, closed: false };
     }
     if (parts.length === 0 && distance > 0) return { text: 'Ending very soon!', closed: false }; // Covers the gap between 1min and 0s
@@ -337,22 +371,30 @@ function formatTimeRemaining(endTime) {
 // --- Modal & Bidding Logic (Largely unchanged below this line) ---
 
 function handleImageClick(imgElement) {
-    modalImage.src = imgElement.src;
-    imageModal.classList.remove('hidden');
+    if (modalImage) {
+        modalImage.src = imgElement.src;
+    }
+    if (imageModal) {
+        imageModal.classList.remove('hidden');
+    }
 }
 
 function handleBidButtonClick(button) {
     const card = button.closest('.item-card');
+    if (!card || !card.dataset) return; // Add check for card and dataset
+
     const { itemId, itemTitle, currentBid, increment, startBid, notToExceedBid } = card.dataset;
 
-    const currentBidValue = parseFloat(currentBid);
-    const startBidValue = parseFloat(startBid);
-    const incrementValue = parseFloat(increment);
+    // Ensure values are parsed correctly, providing defaults
+    const currentBidValue = parseFloat(currentBid || 0);
+    const startBidValue = parseFloat(startBid || 0);
+    const incrementValue = parseFloat(increment || 1); // Default increment to 1 if missing
 
-    // Calculate minimum bid based on currentBid if it exists and is > 0, otherwise use startBid
-    const baseBid = (currentBidValue > 0) ? currentBidValue : startBidValue;
-    // Minimum bid must be at least startBid + increment if no bids yet, or currentBid + increment otherwise
-    const minBid = (baseBid === startBidValue && currentBidValue === 0) ? startBidValue + incrementValue : baseBid + incrementValue;
+    // Calculate minimum bid
+    const baseBid = (currentBidValue > startBidValue) ? currentBidValue : startBidValue;
+    // If baseBid is 0 (e.g., free item start, no bids), min bid is just the increment
+    // Otherwise, it's base + increment
+    const minBid = (baseBid === 0) ? incrementValue : baseBid + incrementValue;
 
 
     currentItemData = {
@@ -365,30 +407,38 @@ function handleBidButtonClick(button) {
         notToExceedBid: notToExceedBid ? parseFloat(notToExceedBid) : null
     };
 
-    bidModalTitle.textContent = `Bid on: ${itemTitle}`;
-    bidAmountInput.value = minBid.toFixed(2);
-    bidAmountInput.min = minBid.toFixed(2);
-    bidErrorMessage.textContent = '';
-
-    if (auth.currentUser && !auth.currentUser.isAnonymous && auth.currentUser.displayName) {
-        bidderNameInput.value = auth.currentUser.displayName;
-    } else {
-        bidderNameInput.value = '';
+    // Update Modal UI only if elements exist
+    if (bidModalTitle) bidModalTitle.textContent = `Bid on: ${itemTitle || 'Item'}`;
+    if (bidAmountInput) {
+        bidAmountInput.value = minBid.toFixed(2);
+        bidAmountInput.min = minBid.toFixed(2);
     }
-    bidderPhoneInput.value = '';
+    if (bidErrorMessage) bidErrorMessage.textContent = '';
 
-    quickBidMinButton.textContent = `Bid $${minBid.toFixed(2)}`;
-    quickBidPlus1Button.textContent = `+ $1 ($${(minBid + 1).toFixed(2)})`;
-    quickBidPlus5Button.textContent = `+ $5 ($${(minBid + 5).toFixed(2)})`;
-    quickBidPlus10Button.textContent = `+ $10 ($${(minBid + 10).toFixed(2)})`;
+    if (bidderNameInput) {
+         if (auth.currentUser && !auth.currentUser.isAnonymous && auth.currentUser.displayName) {
+             bidderNameInput.value = auth.currentUser.displayName;
+         } else {
+             bidderNameInput.value = '';
+         }
+    }
+   if (bidderPhoneInput) bidderPhoneInput.value = '';
 
-    bidModal.classList.remove('hidden');
-    bidAmountInput.focus();
+    // Update quick bid buttons only if they exist
+    if (quickBidMinButton) quickBidMinButton.textContent = `Bid $${minBid.toFixed(2)}`;
+    if (quickBidPlus1Button) quickBidPlus1Button.textContent = `+ $1 ($${(minBid + 1).toFixed(2)})`;
+    if (quickBidPlus5Button) quickBidPlus5Button.textContent = `+ $5 ($${(minBid + 5).toFixed(2)})`;
+    if (quickBidPlus10Button) quickBidPlus10Button.textContent = `+ $10 ($${(minBid + 10).toFixed(2)})`;
+
+    if (bidModal) {
+        bidModal.classList.remove('hidden');
+    }
+    if (bidAmountInput) bidAmountInput.focus();
 }
 
 
 function setQuickBid(type) {
-    if (!currentItemData) return;
+    if (!currentItemData || !bidAmountInput) return; // Add check for input element
 
     let newBid = 0;
     // Start calculation from the minimum bid required now
@@ -416,9 +466,17 @@ function setQuickBid(type) {
 
 async function handleHistoryButtonClick(button) {
     const card = button.closest('.item-card');
+    if (!card || !card.dataset) return; // Add check
     const { itemId, itemTitle } = card.dataset;
 
-    historyModalTitle.textContent = `History for: ${itemTitle}`;
+    // Add checks for modal elements
+    if (!historyModal || !historyModalTitle || !historyModalContent) {
+        console.error("History modal elements not found.");
+        return;
+    }
+
+
+    historyModalTitle.textContent = `History for: ${itemTitle || 'Item'}`;
     historyModalContent.innerHTML = '<p class="text-gray-400">Loading history...</p>';
     historyModal.classList.remove('hidden');
 
@@ -437,8 +495,8 @@ async function handleHistoryButtonClick(button) {
             // Show Max Bid placed in history for transparency within the family context
             return `
                 <div class="p-3 bg-brand-dark/50 rounded-lg">
-                    <p class="font-semibold text-brand-gold">$${bid.amount.toFixed(2)} (Max Bid)</p>
-                    <p class="text-sm text-gray-300">by ${bid.name}</p>
+                    <p class="font-semibold text-brand-gold">$${(bid.amount || 0).toFixed(2)} (Max Bid)</p>
+                    <p class="text-sm text-gray-300">by ${bid.name || 'Anonymous'}</p>
                     <p class="text-xs text-gray-500">${bid.timestamp?.toDate()?.toLocaleString() ?? 'Date unknown'}</p>
                 </div>
             `;
@@ -453,7 +511,10 @@ async function handleHistoryButtonClick(button) {
 
 async function handleBidSubmit(e) {
     e.preventDefault();
-    if (!currentItemData) return;
+    if (!currentItemData || !bidAmountInput || !bidderNameInput || !bidderPhoneInput || !bidErrorMessage || !submitBidButton) {
+        console.error("Bid modal form elements missing.");
+        return;
+    }; // Add checks
 
     const maxBid = parseFloat(bidAmountInput.value);
     const name = bidderNameInput.value.trim();
@@ -478,7 +539,7 @@ async function handleBidSubmit(e) {
 
     try {
         const result = await placeBid(currentItemData.id, maxBid, name, phone); // Capture result
-        bidModal.classList.add('hidden');
+        if (bidModal) bidModal.classList.add('hidden'); // Add check
 
         // Modify toast based on whether the user is the high bidder *after* the transaction
         if (result === 'INSTANT_WIN') {
@@ -504,11 +565,11 @@ async function handleBidSubmit(e) {
             currentItemData.currentBid = parseFloat(newMinBid) - currentItemData.increment; // approx
             bidAmountInput.value = newMinBid;
             bidAmountInput.min = newMinBid;
-            quickBidMinButton.textContent = `Bid $${newMinBid}`;
+            if (quickBidMinButton) quickBidMinButton.textContent = `Bid $${newMinBid}`;
             // Adjust other quick bid buttons relative to the new minimum
-            quickBidPlus1Button.textContent = `+ $1 ($${(parseFloat(newMinBid) + 1).toFixed(2)})`;
-            quickBidPlus5Button.textContent = `+ $5 ($${(parseFloat(newMinBid) + 5).toFixed(2)})`;
-            quickBidPlus10Button.textContent = `+ $10 ($${(parseFloat(newMinBid) + 10).toFixed(2)})`;
+            if (quickBidPlus1Button) quickBidPlus1Button.textContent = `+ $1 ($${(parseFloat(newMinBid) + 1).toFixed(2)})`;
+            if (quickBidPlus5Button) quickBidPlus5Button.textContent = `+ $5 ($${(parseFloat(newMinBid) + 5).toFixed(2)})`;
+            if (quickBidPlus10Button) quickBidPlus10Button.textContent = `+ $10 ($${(parseFloat(newMinBid) + 10).toFixed(2)})`;
 
         } else {
              bidErrorMessage.textContent = `Error: ${error.message}`; // Show generic errors
@@ -556,9 +617,11 @@ async function placeBid(itemId, maxBid, name, phone) {
             // --- Additional Check: Ensure bid is at least the *current* minimum bid ---
             const currentBidValue = item.currentBid || 0;
             const startBidValue = item.startBid || 0;
-            const increment = item.increment || 1; // Default increment if missing? Risky, ensure it's set.
+            const increment = item.increment || 1; // Default increment to 1 if missing
             const baseBid = (currentBidValue > startBidValue) ? currentBidValue : startBidValue;
-            const minBid = baseBid + increment;
+            // Recalculate minBid inside transaction based on fetched data
+            const minBid = (baseBid === 0) ? increment : baseBid + increment;
+
 
              if (maxBid < minBid) {
                  // Throw specific error if the bid isn't high enough *at the time of the transaction*
@@ -568,36 +631,23 @@ async function placeBid(itemId, maxBid, name, phone) {
 
             // --- Standard Proxy Bidding Logic ---
             const currentHighBidderMax = item.highBidderMaxBid || 0;
-            let newCurrentBid; // = item.currentBid; // Re-calculate based on logic below
+            let newCurrentBid;
 
             if (maxBid > currentHighBidderMax) {
                 // This new bid is the highest max bid
-                // The new current bid is the OLD max bid + increment, but capped at the new max bid
-                // Also ensure it's at least the calculated minBid
-                newCurrentBid = Math.max(minBid, Math.min(maxBid, currentHighBidderMax + increment));
-
-                // If this is the very first bid (no high bidder yet), the current bid should be the start bid,
-                // unless the maxBid is only one increment above startBid, in which case it becomes startBid + increment.
-                // Correction: If first bid, currentBid should ideally stay startBid until another bid forces it up.
-                // Let's refine: If no high bidder, newCurrentBid should be startBid IF maxBid >= startBid+increment.
-                // If the first maxBid is LESS than startBid+increment, the currentBid remains startBid.
-                // Actually, the simplest initial state is currentBid = startBid.
-                // When the first bid comes in (maxBid > currentHighBidderMax which is 0):
-                // newCurrentBid becomes Math.max(minBid, Math.min(maxBid, 0 + increment))
-                // which simplifies to Math.max(startBid+increment, Math.min(maxBid, increment))
-                // This seems wrong. Let's rethink first bid.
-                // If first bid (maxBid > 0): newCurrentBid should be startBid + increment, but only if maxBid allows it.
-                // Let's make it simpler: The effective bid is the second highest max + increment.
-                // If only one bidder, effective bid is startBid. If their max > startBid+inc, currentBid becomes startBid+inc.
-                 if (!item.highBidder) { // This is the first bid
-                    newCurrentBid = item.startBid; // Current bid *starts* at startBid
-                    // If the max bid allows, immediately raise current bid
-                    if (maxBid >= item.startBid + increment) {
-                        newCurrentBid = item.startBid + increment;
-                    }
+                // Determine the new current bid based on the previous high max bid + increment
+                 if (!item.highBidder) { // This is the first *successful* bid
+                     // Current bid becomes startBid + increment if maxBid allows, otherwise stays startBid
+                     // Capped at maxBid
+                     newCurrentBid = Math.min(maxBid, item.startBid + increment);
+                     // Ensure it doesn't go below start bid if increment is small or start is 0
+                     newCurrentBid = Math.max(newCurrentBid, item.startBid);
                  } else { // Subsequent bid that is higher max
-                     newCurrentBid = Math.max(minBid, Math.min(maxBid, currentHighBidderMax + increment));
+                     // New current is old max + increment, capped by new max bid
+                     newCurrentBid = Math.min(maxBid, currentHighBidderMax + increment);
                  }
+                 // Ensure newCurrentBid is at least the minimum required bid calculated earlier
+                 newCurrentBid = Math.max(newCurrentBid, minBid);
 
 
                 const updates = {
@@ -612,12 +662,12 @@ async function placeBid(itemId, maxBid, name, phone) {
             
             } else {
                 // This new bid is NOT the highest max bid
-                // The current high bidder remains, but their bid may be pushed up
+                // The current high bidder remains, but their current bid might increase
                 // The new current bid will be the NEW max bid + increment, capped at the high bidder's max
                 newCurrentBid = Math.min(currentHighBidderMax, maxBid + increment);
 
-                 // Ensure the current bid doesn't somehow drop below the start bid + increment if multiple bids are low
-                 newCurrentBid = Math.max(newCurrentBid, item.startBid + increment);
+                 // Ensure the current bid doesn't somehow drop below the minimum required bid
+                 newCurrentBid = Math.max(newCurrentBid, minBid);
 
 
                 const updates = {
@@ -641,14 +691,21 @@ async function placeBid(itemId, maxBid, name, phone) {
 
 
 function showToast(message) {
-    successMessage.textContent = message;
-    successToast.classList.add('show');
-    setTimeout(() => {
-        successToast.classList.remove('show');
-    }, 3000);
+    // Add null checks for toast elements
+    if (successMessage) successMessage.textContent = message;
+    if (successToast) {
+        successToast.classList.add('show');
+        setTimeout(() => {
+            successToast.classList.remove('show');
+        }, 3000);
+    }
 }
 
 // --- Start ---
-document.addEventListener('DOMContentLoaded', initializePage);
-/* Build Timestamp: 10/23/2025, 4:12:00 PM MDT */
+// --- FIX: Wrap initializePage and setupListeners in DOMContentLoaded ---
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage(); // Handles auth and Firebase listener setup
+    setupListeners(); // Setup static listeners once DOM is ready
+});
+/* Build Timestamp: 10/23/2025, 4:17:00 PM MDT */
 
