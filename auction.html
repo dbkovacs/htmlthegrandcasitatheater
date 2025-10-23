@@ -1,3 +1,4 @@
+<!-- /auction.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +18,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="layout-styles.css">
+    <style>
+        /* Style for the success toast */
+        #success-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background-color: #166534; /* Dark Green */
+            color: #d1fae5; /* Light Green */
+            border: 1px solid #22c55e; /* Green */
+            border-radius: 8px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none; /* Allows clicks through when hidden */
+        }
+        #success-toast.show {
+            opacity: 1;
+        }
+        /* Style for smaller quick bid buttons */
+        .btn-quick-increment {
+             padding: 0.4rem 0.8rem;
+             font-size: 0.8rem;
+             min-width: 60px; /* Ensure they have some width */
+        }
+    </style>
 </head>
 <body class="bg-brand-dark text-white">
 
@@ -29,9 +58,25 @@
             </header>
 
             <main class="bg-brand-card shadow-2xl rounded-2xl overflow-hidden border-2 border-yellow-300/20 p-8">
-                <nav class="flex justify-center items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
-                    <a href="index.html" class="btn-velvet">Theater</a>
-                    <a href="auction.html" class="btn-velvet primary">Auction</a>
+                <nav class="flex flex-col sm:flex-row justify-between items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-center items-center gap-4">
+                        <a href="index.html" class="btn-velvet">Theater</a>
+                        <a href="auction.html" class="btn-velvet primary">Auction</a>
+                    </div>
+                    <!-- Sorting Dropdown -->
+                    <div class="relative">
+                        <label for="sort-items" class="text-sm font-medium text-gray-300 mr-2">Sort by:</label>
+                        <select id="sort-items" name="sort-items" class="bg-black/30 border border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition appearance-none pr-8">
+                            <option value="endTimeAsc">Ending Soonest</option>
+                            <option value="endTimeDesc">Newly Listed</option>
+                            <option value="currentBidDesc">Highest Bid</option>
+                            <option value="currentBidAsc">Lowest Bid</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                           <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
                 </nav>
 
                 <div id="auction-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -47,6 +92,7 @@
         </footer>
     </div>
 
+    <!-- Image Modal -->
     <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="relative">
             <button id="close-image-modal" class="absolute -top-4 -right-4 text-white text-4xl bg-brand-dark rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
@@ -54,6 +100,7 @@
         </div>
     </div>
 
+    <!-- Bid Modal (Enhanced) -->
     <div id="bid-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-brand-card p-8 rounded-lg shadow-xl max-w-md w-full border-2 border-yellow-300/50">
             <div class="flex justify-between items-center mb-6">
@@ -62,8 +109,15 @@
             </div>
             <form id="bid-form" class="space-y-4">
                 <div>
-                    <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Bid Amount</label>
+                    <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Bid Amount ($)</label>
                     <input type="number" id="bid-amount" name="bid-amount" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    <!-- Quick Bid Increments -->
+                    <div class="mt-2 flex justify-center gap-2">
+                        <button type="button" id="quick-bid-min-button" class="btn-velvet btn-quick-increment">Bid $0.00</button>
+                        <button type="button" id="quick-bid-plus-1-button" class="btn-velvet btn-quick-increment">+ $1</button>
+                        <button type="button" id="quick-bid-plus-5-button" class="btn-velvet btn-quick-increment">+ $5</button>
+                        <button type="button" id="quick-bid-plus-10-button" class="btn-velvet btn-quick-increment">+ $10</button>
+                    </div>
                 </div>
                 <div>
                     <label for="bidder-name" class="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
@@ -73,17 +127,17 @@
                     <label for="bidder-phone" class="block text-sm font-medium text-gray-300 mb-1">Phone Number (for verification)</label>
                     <input type="tel" id="bidder-phone" name="bidder-phone" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 1234567890">
                 </div>
-                
+
                 <p id="bid-error-message" class="text-red-400 text-sm h-4 mb-2 text-center"></p>
 
-                <div class="pt-2 flex flex-col sm:flex-row gap-4">
-                    <button type="button" id="quick-bid-button" class="btn-velvet w-full text-lg order-2 sm:order-1">Bid $0.00</button>
-                    <button type="submit" id="submit-bid-button" class="btn-velvet primary w-full text-lg order-1 sm:order-2">Submit Bid</button>
+                <div class="pt-2">
+                     <button type="submit" id="submit-bid-button" class="btn-velvet primary w-full text-lg">Submit Bid</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- History Modal -->
     <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-brand-card p-8 rounded-lg shadow-xl max-w-md w-full border-2 border-yellow-300/50">
             <div class="flex justify-between items-center mb-6">
@@ -96,6 +150,12 @@
         </div>
     </div>
 
+    <!-- Success Toast -->
+    <div id="success-toast" role="alert">
+        <p id="success-message"></p>
+    </div>
+
     <script type="module" src="auction.js"></script>
 </body>
 </html>
+<!-- /auction.html -->
