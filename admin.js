@@ -3,11 +3,6 @@
     File: admin.js
     Extension: .js
 */
-/*
-    Folder: /
-    File: admin.js
-    Extension: .js
-*/
 
 // --- ADD THIS AT THE TOP ---
 import { db, storage, auth } from './firebase-config.js';
@@ -59,75 +54,6 @@ function checkAuth() {
     });
 }
 // --- END ADD ---
-
-
-// --- In-memory store for movie data ---
-let approvedMovies = [];
-const flatpickrOptions = {
-    dateFormat: "Y-m-d",
-    altInput: true,
-    altFormat: "F j, Y",
-};
-
-// ===================================================================
-// === HOMEPAGE DISPLAY MODE LOGIC (NEW: FIREBASE-BACKED)
-// ===================================================================
-async function initializeHomepageMode() {
-    // ... (rest of this function is unchanged)
-}
-function updateHomepageUIMode(mode) {
-    // ... (rest of this function is unchanged)
-}
-async function handleHomepageToggleChange(e) {
-    // ... (rest of this function is unchanged)
-}
-
-// ... (all other functions: loadSubmissions, loadApprovedMovies, etc. remain unchanged) ...
-// ... (scroll down to the bottom) ...
-
-
-// ===================================================================
-// === INITIALIZATION
-// ===================================================================
-
-// --- UPDATE THIS PART ---
-function initializePage() {
-    // This function now contains all the original setup code
-    initializeHomepageMode();
-    loadSubmissions();
-    loadApprovedMovies();
-
-    if (homepageModeToggle) {
-        homepageModeToggle.addEventListener('change', handleHomepageToggleChange);
-    }
-    if (timestampContainer) {
-        timestampContainer.textContent = `Page loaded: ${new Date().toLocaleString()}`;
-    }
-    if(exportCsvButton) {
-        exportCsvButton.addEventListener('click', exportMoviesToCSV);
-    }
-    // NEW: Logout handler
-    if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-            signOut(auth).catch((error) => console.error("Sign out error", error));
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Start the auth check. The checkAuth function will call initializePage() on success.
-    checkAuth();
-});
-// --- END UPDATE ---
-
-// --- DOM References ---
-const timestampContainer = document.getElementById('build-timestamp');
-const submissionsContainer = document.getElementById('submissions-container');
-const approvedMoviesContainer = document.getElementById('approved-movies-container');
-const exportCsvButton = document.getElementById('export-csv-button');
-const homepageModeToggle = document.getElementById('homepage-mode-toggle');
-const homepageModeStatus = document.getElementById('homepage-mode-status');
-const homepageModeDescription = document.getElementById('homepage-mode-description');
 
 
 // --- In-memory store for movie data ---
@@ -657,7 +583,9 @@ async function exportMoviesToCSV() {
 // === INITIALIZATION
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+// --- UPDATE THIS PART ---
+function initializePage() {
+    // This function now contains all the original setup code
     initializeHomepageMode();
     loadSubmissions();
     loadApprovedMovies();
@@ -671,4 +599,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if(exportCsvButton) {
         exportCsvButton.addEventListener('click', exportMoviesToCSV);
     }
+    // NEW: Logout handler
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            signOut(auth).catch((error) => console.error("Sign out error", error));
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Start the auth check. The checkAuth function will call initializePage() on success.
+    checkAuth();
 });
+// --- END UPDATE ---
+
