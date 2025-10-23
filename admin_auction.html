@@ -17,6 +17,46 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="layout-styles.css">
+    <style>
+        /* Add some specific styles for admin table */
+        .bids-table {
+             width: 100%;
+             border-collapse: collapse;
+             font-size: 0.8rem; /* Smaller font */
+        }
+        .bids-table th, .bids-table td {
+            padding: 0.3rem 0.5rem; /* Tighter padding */
+            text-align: left;
+            border-bottom: 1px solid rgba(253, 224, 71, 0.1);
+        }
+        .bids-table th {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem; /* Even smaller header */
+            color: #d1d5db;
+            text-transform: uppercase;
+             white-space: nowrap;
+        }
+        .bids-table .reject-bid-button {
+            padding: 1px 4px;
+            font-size: 0.65rem;
+            border: 1px solid currentColor;
+            border-radius: 3px;
+        }
+        .item-card-admin .edit-button,
+        .item-card-admin .delete-button,
+        .item-card-admin .toggle-bids-button {
+             padding: 0.2rem 0.6rem;
+             border: 1px solid rgba(255,255,255,0.2);
+             border-radius: 4px;
+        }
+         .item-card-admin .delete-button { background-color: #7f1d1d; color: #fecaca; }
+         .item-card-admin .delete-button:hover { background-color: #b91c1c; color: white;}
+         .item-card-admin .edit-button { background-color: #14532d; color: #dcfce7;}
+         .item-card-admin .edit-button:hover { background-color: #166534; color: white;}
+         .item-card-admin .toggle-bids-button { background-color: #1e3a8a; color: #dbeafe;}
+         .item-card-admin .toggle-bids-button:hover { background-color: #1e40af; color: white;}
+
+    </style>
 </head>
 <body class="bg-brand-dark text-white">
 
@@ -31,39 +71,70 @@
                 <nav class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Auction Dashboard</h2>
                     <div class="flex justify-center items-center gap-4">
-                        <a href="admin.html" class="btn-velvet">Theater Admin</a>
-                        <a href="auction.html" class.="btn-velvet">Auction Page</a>
-                        <button id="logout-button" class="btn-velvet">Logout</button>
+                        <a href="admin.html" class="btn-velvet text-sm py-2 px-3">Theater Admin</a>
+                        <a href="auction.html" class="btn-velvet text-sm py-2 px-3">Auction Page</a>
+                        <button id="logout-button" class="btn-velvet text-sm py-2 px-3">Logout</button>
                     </div>
                 </nav>
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     <section id="add-item-section">
                         <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Add New Auction Item</h3>
                         <div class="bg-black/40 p-6 rounded-lg border border-yellow-300/10">
                             <form id="add-item-form" class="space-y-4">
-                                <input type="text" id="item-title" placeholder="Item Title" required>
-                                <textarea id="item-description" placeholder="Item Description" rows="4" required></textarea>
-                                
+                                <!-- Item Title -->
+                                <div>
+                                    <label for="item-title">Item Title</label>
+                                    <input type="text" id="item-title" placeholder="Item Title" required>
+                                </div>
+                                <!-- Item Description -->
+                                <div>
+                                     <label for="item-description">Item Description</label>
+                                    <textarea id="item-description" placeholder="Item Description" rows="4" required></textarea>
+                                </div>
+                                <!-- Image File -->
                                 <div>
                                     <label for="item-image-file">Image File</label>
                                     <input type="file" id="item-image-file" accept="image/*" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-900 hover:file:bg-yellow-200 cursor-pointer">
                                 </div>
+                                <!-- Model Number -->
+                                <div>
+                                    <label for="item-model-number">Model Number (Optional)</label>
+                                    <input type="text" id="item-model-number" placeholder="e.g., MQ052LL/A">
+                                </div>
+                                <!-- Product URL -->
+                                <div>
+                                     <label for="item-model-url">Product URL (Optional)</label>
+                                    <input type="url" id="item-model-url" placeholder="Link for Model Number">
+                                </div>
+                                <!-- Bidding Details Grid -->
+                                <div class="grid grid-cols-2 gap-4">
+                                    <!-- Starting Bid -->
+                                    <div>
+                                        <label for="item-start-bid">Starting Bid ($)</label>
+                                        <input type="number" id="item-start-bid" placeholder="0.00" step="0.01" min="0" required title="Enter 0 for a free item start">
+                                    </div>
+                                    <!-- Bid Increment -->
+                                    <div>
+                                        <label for="item-increment">Bid Increment ($)</label>
+                                        <input type="number" id="item-increment" placeholder="1.00" step="0.01" min="0.01" required title="Must be a positive value">
+                                    </div>
+                                </div>
 
-                                <input type="text" id="item-model-number" placeholder="Model Number (e.g., MQ052LL/A)">
-                                <input type="url" id="item-model-url" placeholder="Product URL (for Model Number)">
+                                <!-- Not To Exceed Bid (NEW FIELD) -->
                                 <div>
-                                    <label for="item-start-bid">Starting Bid ($)</label>
-                                    <input type="number" id="item-start-bid" placeholder="10.00" step="0.01" min="0" required>
+                                    <label for="item-not-exceed-bid">Not To Exceed Bid ($) (Optional)</label>
+                                    <input type="number" id="item-not-exceed-bid" placeholder="e.g., 50.00" step="0.01" min="0">
+                                    <p class="text-xs text-gray-400 mt-1">First bid at or above this instantly wins at this price. Must be > Starting Bid.</p>
                                 </div>
-                                <div>
-                                    <label for="item-increment">Bid Increment ($)</label>
-                                    <input type="number" id="item-increment" placeholder="1.00" step="0.01" min="0.01" required>
-                                </div>
+                                <!-- End Not to Exceed Bid -->
+
+                                <!-- Auction End Time -->
                                 <div>
                                     <label for="item-end-time">Auction End Time</label>
                                     <input type="datetime-local" id="item-end-time" required>
                                 </div>
+                                <!-- Submit Button -->
                                 <button type="submit" id="add-item-submit-button" class="btn-velvet primary w-full">Add Item</button>
                             </form>
                         </div>
@@ -72,7 +143,9 @@
                     <section id="manage-items-section">
                         <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Manage Existing Items</h3>
                         <div id="manage-items-container" class="space-y-4">
-                            </div>
+                            <!-- Items will be loaded here by JS -->
+                            <p class="text-gray-400">Loading items...</p>
+                        </div>
                     </section>
                 </div>
             </div>
@@ -83,8 +156,9 @@
             <p id="build-timestamp" class="mt-2"></p>
         </footer>
     </div>
-    
+
     <script type="module" src="admin_auction.js"></script>
 
 </body>
 </html>
+<!-- /admin_auction.html -->
