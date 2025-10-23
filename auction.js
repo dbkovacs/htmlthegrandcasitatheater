@@ -56,12 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemTitle = itemData.title || 'Item';
             // Determine the base bid for calculation (startBid if currentBid is missing or same as start)
             const startBid = parseFloat(itemData.startBid || 0);
-            const currentBid = parseFloat(itemData.currentBid || startBid);
-            const baseBidForMin = (itemData.currentBid === undefined || currentBid === startBid) ? startBid : currentBid;
+            // Use startBid as currentBid ONLY if highBidder is null (no bids placed yet)
+            const currentBid = itemData.highBidder ? parseFloat(itemData.currentBid || startBid) : startBid;
 
             const increment = parseFloat(itemData.increment || 1);
             // Pass the effective current bid for validation purposes later
-            openBidModal(itemId, itemTitle, currentBid, increment, startBid);
+            openBidModal(itemId, itemTitle, currentBid, increment, startBid, itemData.highBidder == null); // Pass isFirstBid flag
         }
         // Handle Image Clicks for Modal
         if (target.matches('.item-image')) {
@@ -112,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Bid Modal Logic (Enhanced Quick Bids & Start Bid Handling) ---
-    // Added startBid parameter
-    function openBidModal(itemId, itemTitle, currentBid, increment, startBid) {
+    // Added startBid and isFirstBid parameters
+    function openBidModal(itemId, itemTitle, currentBid, increment, startBid, isFirstBidActual) {
         bidModalTitle.textContent = `Bid on: ${itemTitle}`;
         bidForm.dataset.itemId = itemId;
         const validIncrement = increment > 0 ? increment : 1;
@@ -121,10 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bidForm.dataset.startBid = startBid; // Store start bid
 
         // Determine minimum bid allowed in the input field
-        // If currentBid is the same as startBid (or currentBid doesn't exist yet), min is startBid
+        // If it's the very first bid (no high bidder yet), min is startBid
         // Otherwise, min is currentBid + increment
-        const isFirstBid = (currentBid === startBid);
-        const minBidForInput = isFirstBid ? startBid : (currentBid + validIncrement);
+        const minBidForInput = isFirstBidActual ? startBid : (currentBid + validIncrement);
 
         bidAmountInput.placeholder = `$${minBidForInput.toFixed(2)}`;
         bidAmountInput.min = minBidForInput.toFixed(2); // Set browser validation minimum
@@ -165,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Calculate new bid: Either add increment to current input OR start from min + increment if input is less than min
         let newBidValue;
         if (currentInputValue < minAllowedBid) {
+             // If input is invalid/empty, start from the minimum allowed + increment
              newBidValue = minAllowedBid + incrementAmount;
         } else {
              newBidValue = currentInputValue + incrementAmount;
@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bidAmountInput.value = newBidValue.toFixed(2);
     }
+
 
     quickBidMinButton.addEventListener('click', () => {
         bidAmountInput.value = quickBidMinButton.dataset.bidValue;
@@ -327,7 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const incrementValue = item.increment ?? 1;
                 const highBidderName = item.highBidder || 'None';
                 const buyNowPriceValue = item.buyItNowPrice; // Can be null/undefined
-                const itemStatus = item.status || 'active';
+                // Add status back here for rendering logic
+                const itemStatus = item.status || 'active'; // Assume active if missing for display
 
                 const now = new Date();
                 const endTime = item.endTime?.toDate(); // Safely convert potential Timestamp
@@ -336,11 +338,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (endTime instanceof Date && !isNaN(endTime)) {
                     timeLeft = endTime > now ? formatTimeLeft(endTime - now) : 'Bidding Ended';
+                    // Check status from item data here for canBid
                     canBid = endTime > now && itemStatus === 'active';
                 } else if (!endTime && itemStatus === 'active') { // Handle active items with no end time
                     timeLeft = 'Bidding Open';
                     canBid = true; // Allow bidding if active without end time
                 } else { // Handle items with invalid end times or non-active status without end times
+                    // Display status correctly if not active
                     timeLeft = itemStatus !== 'active' ? itemStatus.replace('_', ' ').toUpperCase() : 'Invalid Date';
                     canBid = false;
                 }
@@ -356,23 +360,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     buyNowHtml = `<button class="buy-now-button btn-velvet primary mt-2 w-full" data-item-id="${itemId}" data-buy-price="${buyNowPriceValue}" data-item-title="${title}">Buy Now for $${buyNowPriceValue.toFixed(2)}</button>`;
                 }
 
-                // Determine status display
+                // Determine status display and color based on canBid and itemStatus
                 let statusDisplay = timeLeft;
-                let statusColor = 'text-green-400';
-                if (itemStatus !== 'active') {
+                let statusColor = 'text-gray-400'; // Default
+                 if (itemStatus !== 'active') {
                     statusDisplay = itemStatus.replace('_', ' ').toUpperCase();
                     statusColor = 'text-yellow-400'; // awaiting_payment or paid
-                    canBid = false; // Ensure bidding is off if not active
+                    canBid = false; // Double ensure bidding is off
                 } else if (!canBid && endTime) { // Ended naturally
                     statusDisplay = 'Bidding Ended';
                     statusColor = 'text-red-400';
-                } else if (!endTime && itemStatus === 'active') { // Active but no end time
-                    statusDisplay = 'Bidding Open'; // Changed from 'Indefinitely'
-                    statusColor = 'text-green-400';
-                } else if (canBid && endTime) { // Active and counting down
-                     statusDisplay = timeLeft; // Will be updated by timer
+                } else if (canBid) { // Active and can bid (either timer running or no end time)
+                     statusDisplay = timeLeft; // Timer will update if endTime exists
                      statusColor = 'text-green-400';
                 }
+
 
                 itemElement.innerHTML = `
                     <img src="${imageUrl}" alt="${title}" class="item-image cursor-pointer w-full h-64 object-cover">
@@ -405,7 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 fragment.appendChild(itemElement);
 
                 // Setup timer *after* element is potentially ready to be added to DOM
-                if (canBid && endTime instanceof Date && !isNaN(endTime) && endTime > now) {
+                // Only set timer if status is active and end time is valid and in the future
+                if (itemStatus === 'active' && endTime instanceof Date && !isNaN(endTime) && endTime > now) {
                      // Pass the element directly to avoid querySelector issues before append
                     setupItemTimer(itemId, endTime, itemElement.querySelector(`[data-timer-id="timer-${itemId}"]`));
                 }
@@ -561,46 +564,47 @@ async function placeBid(itemId, increment, startBid) {
             if (!itemDoc.exists()) throw new Error("Auction item not found.");
             const item = itemDoc.data();
 
-            if (item.status !== 'active') throw new Error("Bidding is closed.");
+             // Check status *first*
+             if (item.status !== 'active') {
+                 console.warn(`Attempted bid on inactive item (${itemId}). Status: ${item.status}`);
+                 throw new Error("Bidding is closed for this item.");
+             }
+             // Then check time
             const now = Timestamp.now();
             const endTime = item.endTime;
-            if (endTime && endTime.toMillis() < now.toMillis()) throw new Error("Auction ended.");
+             if (endTime && endTime.toMillis() < now.toMillis()) {
+                 console.warn(`Attempted bid on ended item (${itemId}). End time: ${endTime.toDate()}, Now: ${now.toDate()}`);
+                 throw new Error("Auction has already ended.");
+             }
 
-            // --- CORRECTED BID VALIDATION ---
-            const currentBid = item.currentBid ?? item.startBid ?? 0;
-            const itemStartBid = item.startBid ?? 0; // Get start bid from item data
+
+            // --- REVISED BID VALIDATION ---
+            const currentBid = item.currentBid ?? item.startBid ?? 0; // Use existing value or default to startBid
+            const itemStartBid = item.startBid ?? 0;
             const validIncrement = (item.increment ?? 1) > 0 ? (item.increment ?? 1) : 1;
+            const highBidderExists = item.highBidder != null; // Check if anyone has bid yet
 
-            // Check 1: Is the new bid less than the start bid? (Should never happen if input min is set, but good safety)
-            if (newBidAmount < itemStartBid) {
-                throw new Error(`Bid must be at least the starting bid of $${itemStartBid.toFixed(2)}.`);
+            // Condition 1: Is this the first bid?
+            if (!highBidderExists) {
+                if (newBidAmount < itemStartBid) {
+                    throw new Error(`First bid must be at least the starting bid of $${itemStartBid.toFixed(2)}.`);
+                }
+                console.log("Processing as first valid bid.");
             }
-
-            // Check 2: Is this the *first* bid (currentBid is still startBid) and does the new bid meet the startBid?
-            if (currentBid === itemStartBid && newBidAmount >= itemStartBid) {
-                 // First bid is valid if it meets or exceeds startBid
-                 console.log("Processing as first valid bid.");
-            }
-            // Check 3: Is this a *subsequent* bid and does it meet the required increment?
-            else if (currentBid > itemStartBid) {
+            // Condition 2: This is a subsequent bid
+            else {
                 const requiredMinNextBid = currentBid + validIncrement;
-                 if (newBidAmount < requiredMinNextBid) {
-                     throw new Error(`Bid must be at least $${requiredMinNextBid.toFixed(2)} (current + increment).`);
-                 }
-                 console.log("Processing as subsequent valid bid.");
-            }
-            // Check 4: Handle the edge case where currentBid might be less than startBid somehow, or initial state
-            else if (newBidAmount < itemStartBid) {
-                 // This case should ideally be caught by Check 1, but covers initial state if startBid is 0 maybe
-                 throw new Error(`Bid must be at least $${itemStartBid.toFixed(2)}.`);
+                if (newBidAmount < requiredMinNextBid) {
+                    throw new Error(`Bid must be at least $${requiredMinNextBid.toFixed(2)} (current + increment).`);
+                }
+                console.log("Processing as subsequent valid bid.");
             }
 
-
-            // Check against Buy Now price if it exists
+            // Check against Buy Now price (remains the same)
             if (item.buyItNowPrice && newBidAmount >= item.buyItNowPrice) {
-                 throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}). Use Buy Now.`);
+                throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}). Use Buy Now.`);
             }
-            // --- END CORRECTED BID VALIDATION ---
+            // --- END REVISED BID VALIDATION ---
 
 
             // Writes
@@ -658,13 +662,30 @@ async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhoneRaw) {
             if (!itemDoc.exists()) throw new Error("Auction item not found.");
             const itemData = itemDoc.data();
 
-            if (itemData.status !== 'active') throw new Error("Item is no longer available.");
-            if (!itemData.buyItNowPrice || itemData.buyItNowPrice !== buyPrice) throw new Error("Buy Now price unavailable/changed.");
+             // Check status *first*
+             if (itemData.status !== 'active') {
+                 console.warn(`Attempted Buy Now on inactive item (${itemId}). Status: ${itemData.status}`);
+                 throw new Error("Item is no longer available for purchase.");
+             }
+             // Check Buy Now price validity
+            if (!itemData.buyItNowPrice || itemData.buyItNowPrice !== buyPrice) {
+                 console.warn(`Attempted Buy Now with incorrect/missing price on item (${itemId}). Expected: ${itemData.buyItNowPrice}, Got: ${buyPrice}`);
+                 throw new Error("Buy Now price unavailable or has changed.");
+            }
+             // Then check time
             const now = Timestamp.now();
             const endTime = itemData.endTime;
-            if (endTime && endTime.toMillis() < now.toMillis()) throw new Error("Auction has already ended.");
+             if (endTime && endTime.toMillis() < now.toMillis()) {
+                 console.warn(`Attempted Buy Now on ended item (${itemId}). End time: ${endTime.toDate()}, Now: ${now.toDate()}`);
+                 throw new Error("Auction has already ended.");
+            }
+             // Check if current bid already met/exceeded
             const currentBid = itemData.currentBid ?? itemData.startBid ?? 0;
-            if (currentBid >= buyPrice) throw new Error("Bid already met/exceeded Buy Now price.");
+            if (currentBid >= buyPrice) {
+                 console.warn(`Attempted Buy Now when current bid (${currentBid}) >= Buy Now price (${buyPrice}) on item (${itemId}).`);
+                 throw new Error("Bid already met or exceeded the Buy Now price.");
+            }
+
 
             // Mark as sold - Set endTime to now
             transaction.update(itemRef, { status: 'awaiting_payment', currentBid: buyPrice, highBidder: buyerName, endTime: now });
@@ -687,6 +708,6 @@ async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhoneRaw) {
 }
 // --- End UPDATED handleBuyNow ---
 
-/* Build Timestamp: Thu Oct 23 2025 13:30:00 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 23 2025 13:42:00 GMT-0600 (Mountain Daylight Time) */
 /* /auction.js */
 
