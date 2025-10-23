@@ -74,7 +74,7 @@ function initializePage() {
             // User is signed in (anon or otherwise)
             console.log('Auction user authenticated:', user.uid);
             setupFirebaseListener(); // NOW we can safely listen to data
-            
+
             // Pre-fill name if it's a *real* user (not anonymous) and they have a display name
             // This is just a convenience for the *first time* they open the modal
             if (bidderNameInput && !user.isAnonymous && user.displayName) { // Add null check for bidderNameInput
@@ -222,7 +222,7 @@ function renderAuctionItems() {
     // Add null checks for containers
     if (!auctionItemsContainer || !completedItemsContainer || !completedItemsSection) {
         console.error("Required container elements not found in the DOM.");
-        return;
+        return; // Stop execution if elements are missing
     }
 
     auctionItemsContainer.innerHTML = ''; // Clear active items
@@ -707,5 +707,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Handles auth and Firebase listener setup
     setupListeners(); // Setup static listeners once DOM is ready
 });
-/* Build Timestamp: 10/23/2025, 4:17:00 PM MDT */
+/* Build Timestamp: 10/23/2025, 4:21:00 PM MDT */
 
