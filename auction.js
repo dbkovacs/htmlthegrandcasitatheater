@@ -54,9 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!itemData) return; // Should not happen if rendering is correct
 
             const itemTitle = itemData.title || 'Item';
-            const currentBid = parseFloat(itemData.currentBid || itemData.startBid || 0);
+            // Determine the base bid for calculation (startBid if currentBid is missing or same as start)
+            const startBid = parseFloat(itemData.startBid || 0);
+            const currentBid = parseFloat(itemData.currentBid || startBid);
+            const baseBidForMin = (itemData.currentBid === undefined || currentBid === startBid) ? startBid : currentBid;
+
             const increment = parseFloat(itemData.increment || 1);
-            openBidModal(itemId, itemTitle, currentBid, increment);
+            // Pass the effective current bid for validation purposes later
+            openBidModal(itemId, itemTitle, currentBid, increment, startBid);
         }
         // Handle Image Clicks for Modal
         if (target.matches('.item-image')) {
@@ -106,28 +111,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Bid Modal Logic (Enhanced Quick Bids) ---
-    function openBidModal(itemId, itemTitle, currentBid, increment) {
+    // --- Bid Modal Logic (Enhanced Quick Bids & Start Bid Handling) ---
+    // Added startBid parameter
+    function openBidModal(itemId, itemTitle, currentBid, increment, startBid) {
         bidModalTitle.textContent = `Bid on: ${itemTitle}`;
         bidForm.dataset.itemId = itemId;
-        // Ensure increment has a valid default
         const validIncrement = increment > 0 ? increment : 1;
         bidForm.dataset.increment = validIncrement;
+        bidForm.dataset.startBid = startBid; // Store start bid
 
-        const minBid = (currentBid + validIncrement);
+        // Determine minimum bid allowed in the input field
+        // If currentBid is the same as startBid (or currentBid doesn't exist yet), min is startBid
+        // Otherwise, min is currentBid + increment
+        const isFirstBid = (currentBid === startBid);
+        const minBidForInput = isFirstBid ? startBid : (currentBid + validIncrement);
 
-        bidAmountInput.placeholder = `$${minBid.toFixed(2)}`;
-        bidAmountInput.min = minBid.toFixed(2);
-        bidAmountInput.step = validIncrement;
+        bidAmountInput.placeholder = `$${minBidForInput.toFixed(2)}`;
+        bidAmountInput.min = minBidForInput.toFixed(2); // Set browser validation minimum
+        bidAmountInput.step = validIncrement; // Keep step for increments
         bidAmountInput.value = ''; // Clear previous input
 
-        // Update Quick Bid buttons using validIncrement
-        quickBidMinButton.textContent = `Bid $${minBid.toFixed(2)}`;
-        quickBidMinButton.dataset.bidValue = minBid.toFixed(2);
+        // --- Update Quick Bid buttons based on minBidForInput ---
+        quickBidMinButton.textContent = `Bid $${minBidForInput.toFixed(2)}`;
+        quickBidMinButton.dataset.bidValue = minBidForInput.toFixed(2);
 
-        // --- Correct Quick Bid Calculations ---
-        // Increments should be added to the *current* input value, or the min bid if empty
-        // We'll handle the calculation logic in the event listeners directly.
+        // Calculate increments relative to the minimum required bid
         quickBidPlus1Button.textContent = `+ $${(validIncrement * 1).toFixed(2)}`;
         quickBidPlus1Button.dataset.incrementValue = (validIncrement * 1);
 
@@ -136,28 +144,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         quickBidPlus10Button.textContent = `+ $${(validIncrement * 10).toFixed(2)}`;
         quickBidPlus10Button.dataset.incrementValue = (validIncrement * 10);
-        // --- End Corrected Calculations ---
+        // --- End Quick Bid Update ---
 
-
-        // Clear old error messages
         document.getElementById('bid-error-message').textContent = '';
-
         bidModal.classList.remove('hidden');
-        bidAmountInput.focus(); // Focus the input field
+        bidAmountInput.focus();
     }
     bidModalClose.onclick = () => {
         bidModal.classList.add('hidden');
         bidForm.reset();
     };
 
-    // --- UPDATED Quick Bid Button Click Handlers ---
+    // --- Quick Bid Button Click Handlers (Adjusted logic) ---
     function handleQuickBidIncrement(button) {
         const incrementAmount = parseFloat(button.dataset.incrementValue || 0);
-        const currentInputValue = parseFloat(bidAmountInput.value || bidAmountInput.min || 0);
-        const newBidValue = currentInputValue + incrementAmount;
-        // Ensure it meets the minimum bid requirement
-        const minBidRequired = parseFloat(bidAmountInput.min || 0);
-        bidAmountInput.value = Math.max(newBidValue, minBidRequired).toFixed(2);
+        // Start calculation from the minimum allowed bid in the input
+        const minAllowedBid = parseFloat(bidAmountInput.min || 0);
+        const currentInputValue = parseFloat(bidAmountInput.value || minAllowedBid); // Default to min if empty
+
+        // Calculate new bid: Either add increment to current input OR start from min + increment if input is less than min
+        let newBidValue;
+        if (currentInputValue < minAllowedBid) {
+             newBidValue = minAllowedBid + incrementAmount;
+        } else {
+             newBidValue = currentInputValue + incrementAmount;
+        }
+
+        bidAmountInput.value = newBidValue.toFixed(2);
     }
 
     quickBidMinButton.addEventListener('click', () => {
@@ -166,16 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
     quickBidPlus1Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus1Button));
     quickBidPlus5Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus5Button));
     quickBidPlus10Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus10Button));
-     // --- End UPDATED Quick Bid Handlers ---
+    // --- End Quick Bid Handlers ---
 
 
     // Handle bid form submission
     bidForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const itemId = bidForm.dataset.itemId;
-        // Retrieve increment from dataset, ensuring it's valid
         const increment = parseFloat(bidForm.dataset.increment || 1);
-        placeBid(itemId, increment > 0 ? increment : 1);
+        const startBid = parseFloat(bidForm.dataset.startBid || 0); // Retrieve start bid
+        placeBid(itemId, increment > 0 ? increment : 1, startBid); // Pass start bid
     });
 
     // --- History Modal Logic ---
@@ -284,8 +297,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortedItems = [...items].sort((a, b) => {
             const endTimeA = a.endTime?.toMillis() ?? 0;
             const endTimeB = b.endTime?.toMillis() ?? 0;
-            const bidA = a.currentBid ?? 0;
-            const bidB = b.currentBid ?? 0;
+            const bidA = a.currentBid ?? a.startBid ?? 0; // Use startBid if currentBid missing
+            const bidB = b.currentBid ?? b.startBid ?? 0; // Use startBid if currentBid missing
+
 
             switch (currentSort) {
                 case 'endTimeDesc': return endTimeB - endTimeA;
@@ -308,8 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const title = item.title || 'Untitled Item';
                 const description = item.description || 'No description available.';
                 const imageUrl = item.imageUrl || 'https://placehold.co/600x400/2a0000/fde047?text=No+Image';
-                const currentBidValue = item.currentBid ?? item.startBid ?? 0;
-                const startBidValue = item.startBid ?? 0;
+                const startBidValue = item.startBid ?? 0; // Ensure startBid exists
+                const currentBidValue = item.currentBid ?? startBidValue; // Default current to start
                 const incrementValue = item.increment ?? 1;
                 const highBidderName = item.highBidder || 'None';
                 const buyNowPriceValue = item.buyItNowPrice; // Can be null/undefined
@@ -324,12 +338,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     timeLeft = endTime > now ? formatTimeLeft(endTime - now) : 'Bidding Ended';
                     canBid = endTime > now && itemStatus === 'active';
                 } else if (!endTime && itemStatus === 'active') { // Handle active items with no end time
-                    timeLeft = 'Bidding Open Indefinitely';
+                    timeLeft = 'Bidding Open';
                     canBid = true; // Allow bidding if active without end time
                 } else { // Handle items with invalid end times or non-active status without end times
                     timeLeft = itemStatus !== 'active' ? itemStatus.replace('_', ' ').toUpperCase() : 'Invalid Date';
                     canBid = false;
                 }
+
 
                 const modelInfoHtml = (item.modelNumber && item.modelUrl)
                     ? `<p class="text-gray-400 text-xs mt-1">Model: <a href="${item.modelUrl}" target="_blank" class="text-blue-400 hover:underline">${item.modelNumber}</a></p>`
@@ -485,10 +500,14 @@ function formatTimeLeft(ms) {
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
-    // Show seconds only if less than a minute remaining
+    // Show seconds only if less than a minute remaining OR if it's the only unit left
     if (days === 0 && hours === 0 && minutes === 0) {
         parts.push(`${seconds}s`);
+    } else if (days === 0 && hours === 0 && minutes < 1 && seconds > 0) {
+        // Also show seconds if less than a minute left even with 0m
+        parts.push(`${seconds}s`);
     }
+
 
     return parts.join(' ') || '0s'; // Handle case where all parts might be zero briefly
 }
@@ -497,7 +516,8 @@ function formatTimeLeft(ms) {
 // --- Bidding and Buy Now Logic ---
 
 // --- UPDATED placeBid ---
-async function placeBid(itemId, increment) {
+// Added startBid parameter
+async function placeBid(itemId, increment, startBid) {
     const bidAmountInput = document.getElementById('bid-amount');
     const bidderNameInput = document.getElementById('bidder-name');
     const bidderPhoneInput = document.getElementById('bidder-phone');
@@ -510,10 +530,8 @@ async function placeBid(itemId, increment) {
 
     const newBidAmount = parseFloat(bidAmountInput.value);
     const bidderName = bidderNameInput.value.trim();
-    // Clean phone number right away
     const bidderPhone = bidderPhoneInput.value.replace(/\D/g, '');
 
-    // Basic client-side checks
     if (!bidderName || !bidderPhone || isNaN(newBidAmount) || newBidAmount <= 0) {
         errorMessage.textContent = "Valid name, phone, and bid amount required.";
         submitButton.disabled = false;
@@ -523,53 +541,66 @@ async function placeBid(itemId, increment) {
 
     try {
         const itemRef = doc(db, 'auctionItems', itemId);
-        const settingsRef = doc(db, 'settings', 'auction'); // Define settingsRef here
+        const settingsRef = doc(db, 'settings', 'auction');
 
         await runTransaction(db, async (transaction) => {
-            // Get settings *inside* transaction
             const settingsSnap = await transaction.get(settingsRef);
             const currentApprovedNumbers = settingsSnap.exists() ? settingsSnap.data().approvedNumbers || [] : [];
 
-            // Add detailed logging
             console.log(`Checking phone: "${bidderPhone}" against list:`, currentApprovedNumbers);
-
-            if (!Array.isArray(currentApprovedNumbers)) {
-                 console.error("approvedNumbers in Firestore is not an array:", currentApprovedNumbers);
-                 throw new Error("Verification system error (data format).");
+            if (!Array.isArray(currentApprovedNumbers) || currentApprovedNumbers.length === 0) {
+                 throw new Error("Verification system offline.");
             }
-            if (currentApprovedNumbers.length === 0) {
-                 console.warn("approvedNumbers array in Firestore is empty.");
-                 throw new Error("Verification system offline (no numbers).");
-            }
-            // Perform the check
             if (!currentApprovedNumbers.includes(bidderPhone)) {
-                 console.log(`Phone "${bidderPhone}" NOT found in approved list.`);
+                 console.log(`Phone "${bidderPhone}" NOT found.`);
                  throw new Error("Phone number not recognized.");
             }
-             console.log(`Phone "${bidderPhone}" IS found in approved list.`);
+            console.log(`Phone "${bidderPhone}" IS found.`);
 
-
-            // Get current item data
             const itemDoc = await transaction.get(itemRef);
             if (!itemDoc.exists()) throw new Error("Auction item not found.");
             const item = itemDoc.data();
 
-            // Validate status and time
-            if (item.status !== 'active') throw new Error("Bidding is closed for this item.");
+            if (item.status !== 'active') throw new Error("Bidding is closed.");
             const now = Timestamp.now();
-            const endTime = item.endTime; // Assume it's a Timestamp or null
-            if (endTime && endTime.toMillis() < now.toMillis()) throw new Error("Auction has already ended.");
+            const endTime = item.endTime;
+            if (endTime && endTime.toMillis() < now.toMillis()) throw new Error("Auction ended.");
 
-            // Validate bid amount
-            const currentBid = item.currentBid ?? item.startBid ?? 0; // Use nullish coalescing
-            const validIncrement = (item.increment ?? 1) > 0 ? (item.increment ?? 1) : 1; // Ensure increment > 0
-            if (newBidAmount <= currentBid) throw new Error(`Bid must be > $${currentBid.toFixed(2)}.`);
-            const minBid = currentBid + validIncrement;
-            if (newBidAmount < minBid) throw new Error(`Minimum bid is now $${minBid.toFixed(2)}.`);
-            // Check against Buy Now price *if* it exists
-            if (item.buyItNowPrice && newBidAmount >= item.buyItNowPrice) {
-                 throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}). Use Buy Now instead.`);
+            // --- CORRECTED BID VALIDATION ---
+            const currentBid = item.currentBid ?? item.startBid ?? 0;
+            const itemStartBid = item.startBid ?? 0; // Get start bid from item data
+            const validIncrement = (item.increment ?? 1) > 0 ? (item.increment ?? 1) : 1;
+
+            // Check 1: Is the new bid less than the start bid? (Should never happen if input min is set, but good safety)
+            if (newBidAmount < itemStartBid) {
+                throw new Error(`Bid must be at least the starting bid of $${itemStartBid.toFixed(2)}.`);
             }
+
+            // Check 2: Is this the *first* bid (currentBid is still startBid) and does the new bid meet the startBid?
+            if (currentBid === itemStartBid && newBidAmount >= itemStartBid) {
+                 // First bid is valid if it meets or exceeds startBid
+                 console.log("Processing as first valid bid.");
+            }
+            // Check 3: Is this a *subsequent* bid and does it meet the required increment?
+            else if (currentBid > itemStartBid) {
+                const requiredMinNextBid = currentBid + validIncrement;
+                 if (newBidAmount < requiredMinNextBid) {
+                     throw new Error(`Bid must be at least $${requiredMinNextBid.toFixed(2)} (current + increment).`);
+                 }
+                 console.log("Processing as subsequent valid bid.");
+            }
+            // Check 4: Handle the edge case where currentBid might be less than startBid somehow, or initial state
+            else if (newBidAmount < itemStartBid) {
+                 // This case should ideally be caught by Check 1, but covers initial state if startBid is 0 maybe
+                 throw new Error(`Bid must be at least $${itemStartBid.toFixed(2)}.`);
+            }
+
+
+            // Check against Buy Now price if it exists
+            if (item.buyItNowPrice && newBidAmount >= item.buyItNowPrice) {
+                 throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}). Use Buy Now.`);
+            }
+            // --- END CORRECTED BID VALIDATION ---
 
 
             // Writes
@@ -579,14 +610,13 @@ async function placeBid(itemId, increment) {
             transaction.update(itemRef, { currentBid: newBidAmount, highBidder: bidderName });
         });
 
-        // Success
         document.getElementById('bid-form').reset();
         document.getElementById('bid-modal').classList.add('hidden');
         showToast("Bid placed successfully!");
 
     } catch (error) {
         console.error("Error placing bid: ", error);
-        errorMessage.textContent = `Failed: ${error.message}`; // Display specific error from transaction
+        errorMessage.textContent = `Failed: ${error.message}`;
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit Bid';
@@ -597,55 +627,48 @@ async function placeBid(itemId, increment) {
 
 // --- UPDATED handleBuyNow ---
 async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhoneRaw) {
-    // Clean phone number immediately
     const buyerPhone = buyerPhoneRaw.replace(/\D/g, '');
-
-     // Basic client-side checks
     if (!buyerName || !buyerPhone) {
         alert("Valid name and phone number required.");
         return;
     }
 
-
     const itemRef = doc(db, 'auctionItems', itemId);
-    const settingsRef = doc(db, 'settings', 'auction'); // Define settingsRef here
+    const settingsRef = doc(db, 'settings', 'auction');
+
+    // Add a loading indicator maybe?
+    const buyButton = document.querySelector(`.buy-now-button[data-item-id="${itemId}"]`);
+    if(buyButton) buyButton.textContent = 'Processing...'; buyButton.disabled = true;
+
 
     try {
         await runTransaction(db, async (transaction) => {
-             // Get settings *inside* transaction
             const settingsSnap = await transaction.get(settingsRef);
             const currentApprovedNumbers = settingsSnap.exists() ? settingsSnap.data().approvedNumbers || [] : [];
 
-             // Add detailed logging
             console.log(`(Buy Now) Checking phone: "${buyerPhone}" against list:`, currentApprovedNumbers);
-
-             if (!Array.isArray(currentApprovedNumbers)) throw new Error("Verification system error.");
-             if (currentApprovedNumbers.length === 0) throw new Error("Verification system offline.");
-             if (!currentApprovedNumbers.includes(buyerPhone)) {
-                  console.log(`(Buy Now) Phone "${buyerPhone}" NOT found in approved list.`);
-                  throw new Error("Phone number not recognized.");
-             }
-             console.log(`(Buy Now) Phone "${buyerPhone}" IS found in approved list.`);
-
+            if (!Array.isArray(currentApprovedNumbers) || currentApprovedNumbers.length === 0) throw new Error("Verification system offline.");
+            if (!currentApprovedNumbers.includes(buyerPhone)) {
+                 console.log(`(Buy Now) Phone "${buyerPhone}" NOT found.`);
+                 throw new Error("Phone number not recognized.");
+            }
+            console.log(`(Buy Now) Phone "${buyerPhone}" IS found.`);
 
             const itemDoc = await transaction.get(itemRef);
             if (!itemDoc.exists()) throw new Error("Auction item not found.");
             const itemData = itemDoc.data();
 
-            // Conditions check
             if (itemData.status !== 'active') throw new Error("Item is no longer available.");
             if (!itemData.buyItNowPrice || itemData.buyItNowPrice !== buyPrice) throw new Error("Buy Now price unavailable/changed.");
             const now = Timestamp.now();
             const endTime = itemData.endTime;
             if (endTime && endTime.toMillis() < now.toMillis()) throw new Error("Auction has already ended.");
-             // Allow Buy Now even if currentBid >= startBid, but not if currentBid >= buyPrice
-             const currentBid = itemData.currentBid ?? itemData.startBid ?? 0;
+            const currentBid = itemData.currentBid ?? itemData.startBid ?? 0;
             if (currentBid >= buyPrice) throw new Error("Bid already met/exceeded Buy Now price.");
 
-            // Mark as sold - Set endTime to now to stop timers immediately
+            // Mark as sold - Set endTime to now
             transaction.update(itemRef, { status: 'awaiting_payment', currentBid: buyPrice, highBidder: buyerName, endTime: now });
 
-            // Add bid record
             const bidsRef = collection(itemRef, 'bids');
             const buyNowBidRef = doc(bidsRef);
             transaction.set(buyNowBidRef, { name: buyerName, phone: buyerPhone, amount: buyPrice, timestamp: now, status: 'buy_now' });
@@ -656,10 +679,14 @@ async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhoneRaw) {
     } catch (error) {
         console.error("Error during Buy Now:", error);
         alert(`Could not complete purchase: ${error.message}`);
+        // Re-enable button on failure
+         if(buyButton) buyButton.textContent = `Buy Now for $${buyPrice.toFixed(2)}`; buyButton.disabled = false;
+
     }
+    // No finally needed here, success handles UI via snapshot
 }
 // --- End UPDATED handleBuyNow ---
 
-/* Build Timestamp: Thu Oct 23 2025 13:23:00 GMT-0600 (Mountain Daylight Time) */
+/* Build Timestamp: Thu Oct 23 2025 13:30:00 GMT-0600 (Mountain Daylight Time) */
 /* /auction.js */
 
