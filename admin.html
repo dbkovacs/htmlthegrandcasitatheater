@@ -145,6 +145,11 @@
             <div id="dashboard">
                 <div class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
                     <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Dashboard</h2>
+                    <!-- This div contains the buttons -->
+                    <div class="flex gap-4">
+                        <!-- This button was missing from the original file but present in the stray code -->
+                        <button id="logout-button" class="btn-velvet">Logout</button>
+                    </div>
                 </div>
 
                 <section id="homepage-mode-section" class="mb-12">
@@ -165,7 +170,8 @@
                     <section id="pending-section">
                         <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Pending Submissions</h3>
                         <div id="submissions-container" class="space-y-6">
-                            </div>
+                            <!-- Submissions loaded by admin.js -->
+                        </div>
                     </section>
 
                     <section id="approved-section">
@@ -174,7 +180,8 @@
                             <button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
                         </div>
                         <div id="approved-movies-container" class="space-y-6">
-                            </div>
+                            <!-- Approved movies loaded by admin.js -->
+                        </div>
                     </section>
                 </div>
             </div>
@@ -189,16 +196,10 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     
     <script type="module" src="admin.js"></script>
-<section id="approved-section">
-    <div class="flex justify-between items-center mb-4">
-        <h3 class="font-cinzel text-2xl text-brand-gold text-shadow">Approved & Scheduled</h3>
-
-        <div class="flex gap-4">
-            <button id="export-csv-button" class="btn-velvet">Export All to CSV</button>
-            <button id="logout-button" class="btn-velvet">Logout</button>
-        </div>
-        </div>
-    <div id="approved-movies-container" class="space-y-6">
-        ```
+    <!-- 
+      FIX: Removed the stray, malformed <section> and ``` tags 
+      that were outside the </html> tag.
+    -->
 </body>
 </html>
+<!-- Build Timestamp: 10/23/2025, 3:37:00 PM MDT -->

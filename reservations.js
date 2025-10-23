@@ -237,3 +237,5 @@ modalReserverNameInput.addEventListener('keydown', (e) => {
         submitReservation();
     }
 });
+
+/* Build Timestamp: 10/23/2025, 3:37:00 PM MDT */
