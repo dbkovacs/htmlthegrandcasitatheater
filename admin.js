@@ -31,7 +31,7 @@ const logoutButton = document.getElementById('logout-button');
 
 // VVV YOU MUST EDIT THIS LIST VVV
 // This list controls who can access the admin panel.
-const ADMIN_EMAILS = ['your-admin-email@gmail.com', 'another-admin@example.com'];
+const ADMIN_EMAILS = ['dbkovacs@gmail.com'];
 // ^^^ YOU MUST EDIT THIS LIST ^^^
 
 function checkAuth() {
