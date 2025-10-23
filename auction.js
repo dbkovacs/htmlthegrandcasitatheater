@@ -71,6 +71,7 @@ function initializePage() {
             setupFirebaseListener(); // NOW we can safely listen to data
             
             // Pre-fill name if it's a *real* user (not anonymous) and they have a display name
+            // This is just a convenience for the *first time* they open the modal
             if (!user.isAnonymous && user.displayName) {
                  bidderNameInput.value = user.displayName;
             }
@@ -281,6 +282,17 @@ function handleBidButtonClick(button) {
     bidAmountInput.min = minBid.toFixed(2);
     bidErrorMessage.textContent = '';
 
+    // --- MODIFICATION: Clear name/phone fields ---
+    // Pre-fill name only for *non-anonymous*, named users. Clear it otherwise.
+    if (auth.currentUser && !auth.currentUser.isAnonymous && auth.currentUser.displayName) {
+        bidderNameInput.value = auth.currentUser.displayName;
+    } else {
+        bidderNameInput.value = '';
+    }
+    bidderPhoneInput.value = ''; // Always clear phone for privacy
+    // --- END MODIFICATION ---
+
+
     // Update quick bid buttons
     quickBidMinButton.textContent = `Bid $${minBid.toFixed(2)}`;
     quickBidPlus1Button.textContent = `+ $1 ($${(minBid + 1).toFixed(2)})`;
@@ -335,6 +347,10 @@ async function handleHistoryButtonClick(button) {
 
         const historyHtml = snapshot.docs.map(doc => {
             const bid = doc.data();
+            // In a proxy system, we only show the *actual* bids placed, not the *max* bids.
+            // But since we store the max bid, we'll display that as per admin panel.
+            // For a true public view, you might only show *when* a bid was placed, not the amount.
+            // For this family project, showing the max bid in history is okay.
             return `
                 <div class="p-3 bg-brand-dark/50 rounded-lg">
                     <p class="font-semibold text-brand-gold">$${bid.amount.toFixed(2)} (Max Bid)</p>
@@ -433,6 +449,15 @@ async function placeBid(itemId, maxBid, name, phone) {
                 transaction.set(newBidRef, { name, phone, amount: maxBid, timestamp: serverTimestamp(), status: 'active' });
                 return; // Exit transaction
             }
+            
+            // --- Additional Check: Ensure bid is at least the *current* minimum bid ---
+            // This prevents a race condition if two users bid simultaneously
+            const minBid = (item.currentBid || item.startBid) + item.increment;
+             if (maxBid < minBid) {
+                 throw new Error(`Your bid must be at least $${minBid.toFixed(2)}.`);
+             }
+            // --- End Additional Check ---
+
 
             // --- Standard Proxy Bidding Logic ---
             const currentHighBidderMax = item.highBidderMaxBid || 0;
@@ -466,7 +491,9 @@ async function placeBid(itemId, maxBid, name, phone) {
                 transaction.set(newBidRef, { name, phone, amount: maxBid, timestamp: serverTimestamp(), status: 'active' });
                 
                 // Throw a custom error to inform the user they were outbid
-                throw new Error(`OUTBID:${(newCurrentBid + increment).toFixed(2)}`);
+                // The new minimum bid is the new current bid + increment
+                const newMinBidRequired = newCurrentBid + increment;
+                throw new Error(`OUTBID:${newMinBidRequired.toFixed(2)}`);
             }
         });
     } catch (error) {
@@ -485,3 +512,4 @@ function showToast(message) {
 
 // --- Start ---
 document.addEventListener('DOMContentLoaded', initializePage);
+/* Build Timestamp: 10/23/2025, 3:53:15 PM MDT */

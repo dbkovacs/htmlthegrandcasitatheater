@@ -109,7 +109,7 @@
             </div>
             <form id="bid-form" class="space-y-4">
                 <div>
-                    <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Bid Amount ($)</label>
+                    <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Your Max Bid ($)</label>
                     <input type="number" id="bid-amount" name="bid-amount" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
                     <!-- Quick Bid Increments -->
                     <div class="mt-2 flex justify-center gap-2">
@@ -127,6 +127,14 @@
                     <label for="bidder-phone" class="block text-sm font-medium text-gray-300 mb-1">Phone Number (for verification)</label>
                     <input type="tel" id="bidder-phone" name="bidder-phone" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 1234567890">
                 </div>
+
+                <!-- ADDED PROXY BID EXPLANATION -->
+                <div class="mt-4 p-3 bg-black/20 rounded-lg border border-yellow-300/10">
+                    <p class="text-xs text-gray-300 italic">
+                        <strong>How this works:</strong> This is a proxy bid. Enter the <span class="font-bold text-brand-gold">maximum</span> amount you're willing to pay. The system will automatically bid for you, one increment at a time, to keep you in the lead only up to your max bid.
+                    </p>
+                </div>
+                <!-- END ADDED EXPLANATION -->
 
                 <p id="bid-error-message" class="text-red-400 text-sm h-4 mb-2 text-center"></p>
 
@@ -158,4 +166,4 @@
     <script type="module" src="auction.js"></script>
 </body>
 </html>
-<!-- /auction.html -->
+<!-- Build Timestamp: 10/23/2025, 3:53:15 PM MDT -->
