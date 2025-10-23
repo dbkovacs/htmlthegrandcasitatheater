@@ -45,6 +45,19 @@
              font-size: 0.8rem;
              min-width: 60px; /* Ensure they have some width */
         }
+        /* Style for completed items section */
+        #completed-items-section .item-card {
+            opacity: 0.7; /* Make completed items slightly faded */
+        }
+        #completed-items-section .item-card:hover {
+            opacity: 1; /* Restore opacity on hover */
+            transform: none; /* Disable lift effect */
+            box-shadow: none; /* Disable hover shadow */
+        }
+         #completed-items-section .bid-button {
+             background-color: #4b5563; /* Gray background for disabled buttons */
+             cursor: not-allowed;
+         }
     </style>
 </head>
 <body class="bg-brand-dark text-white">
@@ -64,9 +77,9 @@
                         <a href="index.html" class="btn-velvet">Theater</a>
                         <a href="auction.html" class="btn-velvet primary">Auction</a>
                     </div>
-                    <!-- Sorting Dropdown -->
+                    <!-- Sorting Dropdown (Only applies to Active Items) -->
                     <div class="relative">
-                        <label for="sort-items" class="text-sm font-medium text-gray-300 mr-2">Sort by:</label>
+                        <label for="sort-items" class="text-sm font-medium text-gray-300 mr-2">Sort Active Items by:</label>
                         <select id="sort-items" name="sort-items" class="bg-black/30 border border-yellow-300/20 text-white rounded-lg p-2 focus:ring-1 focus:ring-yellow-300 focus:border-yellow-300 transition appearance-none pr-8">
                             <option value="endTimeAsc">Ending Soonest</option>
                             <option value="endTimeDesc">Newly Listed</option>
@@ -79,9 +92,20 @@
                     </div>
                 </nav>
 
+                <!-- Container for ACTIVE items -->
                 <div id="auction-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <p class="text-gray-400 col-span-full text-center">Loading auction items...</p>
+                    <p class="text-gray-400 col-span-full text-center">Loading active auction items...</p>
                 </div>
+
+                 <!-- === NEW SECTION FOR COMPLETED ITEMS === -->
+                <section id="completed-items-section" class="mt-16 pt-8 border-t border-yellow-300/10 hidden">
+                    <h2 class="font-cinzel text-3xl text-brand-gold text-shadow text-center mb-8">Completed Auctions</h2>
+                    <div id="completed-items-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Completed items will be loaded here by JS -->
+                    </div>
+                </section>
+                <!-- === END NEW SECTION === -->
+
             </main>
 
         </div>
@@ -110,7 +134,7 @@
             <form id="bid-form" class="space-y-4">
                 <div>
                     <label for="bid-amount" class="block text-sm font-medium text-gray-300 mb-1">Your Max Bid ($)</label>
-                    <input type="number" id="bid-amount" name="bid-amount" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
+                    <input type="number" id="bid-amount" name="bid-amount" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" step="0.01" min="0"> <!-- Added step/min -->
                     <!-- Quick Bid Increments -->
                     <div class="mt-2 flex justify-center gap-2">
                         <button type="button" id="quick-bid-min-button" class="btn-velvet btn-quick-increment">Bid $0.00</button>
@@ -166,4 +190,4 @@
     <script type="module" src="auction.js"></script>
 </body>
 </html>
-<!-- Build Timestamp: 10/23/2025, 3:53:15 PM MDT -->
+<!-- Build Timestamp: 10/23/2025, 4:24:00 PM MDT -->
