@@ -5,17 +5,33 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 
+// VVV YOU MUST EDIT THIS LIST VVV
+// This list controls who can access the admin panel.
+const ADMIN_EMAILS = ['dbkovacs@gmail.com'];
+// ^^^ YOU MUST EDIT THIS LIST ^^^
+
 // NEW: Authentication Guard
 function checkAuth() {
     onAuthStateChanged(auth, (user) => {
         if (!user) {
             // No user is signed in, redirect to login.
-            // IMPORTANT: You must create this login.html page.
             console.log("No user signed in. Redirecting to login.");
             window.location.href = 'login.html';
         } else {
-            // User is signed in.
-            console.log("Admin user authenticated:", user.email);
+            // User is signed in. NOW, check if they are an admin.
+            if (ADMIN_EMAILS.includes(user.email)) {
+                // User is an authorized admin
+                console.log("Admin user authenticated:", user.email);
+                // The original code already calls checkAuth() on DOMContentLoaded,
+                // so the rest of the page logic will execute.
+            } else {
+                // User is signed in but NOT an admin.
+                console.warn(`Unauthorized user signed in: ${user.email}. Signing out.`);
+                signOut(auth).then(() => {
+                    // Redirect to login with an error message
+                    window.location.href = 'login.html?error=auth';
+                });
+            }
         }
     });
 }

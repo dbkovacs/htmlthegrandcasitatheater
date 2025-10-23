@@ -29,6 +29,11 @@ const homepageModeDescription = document.getElementById('homepage-mode-descripti
 // --- ADD THIS AUTH GUARD ---
 const logoutButton = document.getElementById('logout-button');
 
+// VVV YOU MUST EDIT THIS LIST VVV
+// This list controls who can access the admin panel.
+const ADMIN_EMAILS = ['your-admin-email@gmail.com', 'another-admin@example.com'];
+// ^^^ YOU MUST EDIT THIS LIST ^^^
+
 function checkAuth() {
     onAuthStateChanged(auth, (user) => {
         if (!user) {
@@ -36,10 +41,20 @@ function checkAuth() {
             console.log("No user signed in. Redirecting to login.");
             window.location.href = 'login.html';
         } else {
-            // User is signed in.
-            console.log("Admin user authenticated:", user.email);
-            // Initialize the page *after* auth is confirmed
-            initializePage();
+            // User is signed in. NOW, check if they are an admin.
+            if (ADMIN_EMAILS.includes(user.email)) {
+                // User is an authorized admin
+                console.log("Admin user authenticated:", user.email);
+                // Initialize the page *after* auth is confirmed
+                initializePage();
+            } else {
+                // User is signed in but NOT an admin.
+                console.warn(`Unauthorized user signed in: ${user.email}. Signing out.`);
+                signOut(auth).then(() => {
+                    // Redirect to login with an error message
+                    window.location.href = 'login.html?error=auth';
+                });
+            }
         }
     });
 }
