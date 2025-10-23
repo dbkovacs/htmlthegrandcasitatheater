@@ -226,6 +226,14 @@ function renderCurrentMovie(movie) {
         };
     }
     actionsContainer.appendChild(reserveButton);
+
+    // --- ADDED AUCTION BUTTON ---
+    const auctionButton = document.createElement('a');
+    auctionButton.className = 'btn-velvet primary w-full text-center block'; // Match 'Watch Trailer' style
+    auctionButton.textContent = 'View Auction';
+    auctionButton.href = 'auction.html';
+    actionsContainer.appendChild(auctionButton);
+    // --- END ADDED AUCTION BUTTON ---
 }
 
 function renderComingSoon(upcomingMovies, pendingMovies) {
@@ -337,22 +345,7 @@ confirmAgeButton.addEventListener('click', () => {
 cancelAgeButton.addEventListener('click', () => {
     adultsOnlyModal.classList.add('hidden');
 });
-// ... existing code ...
-function renderCurrentMovie(movie) {
-// ... existing code ...
-    actionsContainer.appendChild(reserveButton);
 
-    // --- ADDED AUCTION BUTTON ---
-    const auctionButton = document.createElement('a');
-    auctionButton.className = 'btn-velvet primary w-full text-center block'; // Match 'Watch Trailer' style
-    auctionButton.textContent = 'View Auction';
-    auctionButton.href = 'auction.html';
-    actionsContainer.appendChild(auctionButton);
-    // --- END ADDED AUCTION BUTTON ---
-}
-
-function renderComingSoon(upcomingMovies, pendingMovies) {
-// ... existing code ...
 // --- Initialization ---
 function setBuildTimestamp() {
     const buildDate = new Date();
@@ -375,6 +368,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // This now kicks off the auth check
 });
 
-/*
- * Build Timestamp: 9/22/2025, 3:13:58 PM MDT
- */
+/* Build Timestamp: 10/23/2025, 3:37:00 PM MDT */
