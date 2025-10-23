@@ -2,11 +2,8 @@
 import { db } from './firebase-config.js';
 import { collection, doc, onSnapshot, orderBy, runTransaction, query, where, getDocs, getDoc, addDoc, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- START: Family Verification ---
-let knownFamilyNumbers = [];
-// --- END: Family Verification ---
-
 // --- Global State ---
+// REMOVED: let knownFamilyNumbers = []; // We will check inside transaction now
 let currentSort = 'endTimeAsc'; // Default sort order
 let allItems = []; // To store fetched items for in-memory sorting
 let unsubscribe = null; // To hold the listener cancellation function
@@ -37,8 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quickBidPlus10Button = document.getElementById('quick-bid-plus-10-button');
     const bidAmountInput = document.getElementById('bid-amount'); // Reference needed for quick bids
 
-    // Fetch auction settings (like phone numbers) from Firestore
-    fetchAuctionSettings();
+    // REMOVED: fetchAuctionSettings(); // No longer needed at page load
 
     if (!itemsContainer) {
         console.error('Error: Auction items container not found.');
@@ -82,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  const buyerName = prompt("Please enter your name:");
                  const buyerPhone = prompt("Please enter your phone number for verification:");
                  if (buyerName && buyerPhone) {
-                     handleBuyNow(itemId, buyPrice, buyerName, buyerPhone.replace(/\D/g, ''));
+                     // Pass the raw phone input, cleaning happens inside handleBuyNow
+                     handleBuyNow(itemId, buyPrice, buyerName, buyerPhone);
                  } else {
                      alert("Name and phone number are required to Buy Now.");
                  }
@@ -128,19 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
         quickBidMinButton.textContent = `Bid $${minBid.toFixed(2)}`;
         quickBidMinButton.dataset.bidValue = minBid.toFixed(2);
 
-        // Calculate increments based on the validIncrement
-        const plus1 = minBid + validIncrement;
-        const plus5 = minBid + (validIncrement * 5);
-        const plus10 = minBid + (validIncrement * 10);
+        // --- Correct Quick Bid Calculations ---
+        // Increments should be added to the *current* input value, or the min bid if empty
+        // We'll handle the calculation logic in the event listeners directly.
+        quickBidPlus1Button.textContent = `+ $${(validIncrement * 1).toFixed(2)}`;
+        quickBidPlus1Button.dataset.incrementValue = (validIncrement * 1);
 
-        quickBidPlus1Button.textContent = `Bid $${plus1.toFixed(2)}`;
-        quickBidPlus1Button.dataset.bidValue = plus1.toFixed(2);
+        quickBidPlus5Button.textContent = `+ $${(validIncrement * 5).toFixed(2)}`;
+        quickBidPlus5Button.dataset.incrementValue = (validIncrement * 5);
 
-        quickBidPlus5Button.textContent = `Bid $${plus5.toFixed(2)}`;
-        quickBidPlus5Button.dataset.bidValue = plus5.toFixed(2);
-
-        quickBidPlus10Button.textContent = `Bid $${plus10.toFixed(2)}`;
-        quickBidPlus10Button.dataset.bidValue = plus10.toFixed(2);
+        quickBidPlus10Button.textContent = `+ $${(validIncrement * 10).toFixed(2)}`;
+        quickBidPlus10Button.dataset.incrementValue = (validIncrement * 10);
+        // --- End Corrected Calculations ---
 
 
         // Clear old error messages
@@ -154,19 +150,23 @@ document.addEventListener('DOMContentLoaded', () => {
         bidForm.reset();
     };
 
-    // Quick Bid Button Click Handlers (sets the input value)
+    // --- UPDATED Quick Bid Button Click Handlers ---
+    function handleQuickBidIncrement(button) {
+        const incrementAmount = parseFloat(button.dataset.incrementValue || 0);
+        const currentInputValue = parseFloat(bidAmountInput.value || bidAmountInput.min || 0);
+        const newBidValue = currentInputValue + incrementAmount;
+        // Ensure it meets the minimum bid requirement
+        const minBidRequired = parseFloat(bidAmountInput.min || 0);
+        bidAmountInput.value = Math.max(newBidValue, minBidRequired).toFixed(2);
+    }
+
     quickBidMinButton.addEventListener('click', () => {
         bidAmountInput.value = quickBidMinButton.dataset.bidValue;
     });
-    quickBidPlus1Button.addEventListener('click', () => {
-        bidAmountInput.value = quickBidPlus1Button.dataset.bidValue;
-    });
-     quickBidPlus5Button.addEventListener('click', () => {
-        bidAmountInput.value = quickBidPlus5Button.dataset.bidValue;
-    });
-     quickBidPlus10Button.addEventListener('click', () => {
-        bidAmountInput.value = quickBidPlus10Button.dataset.bidValue;
-    });
+    quickBidPlus1Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus1Button));
+    quickBidPlus5Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus5Button));
+    quickBidPlus10Button.addEventListener('click', () => handleQuickBidIncrement(quickBidPlus10Button));
+     // --- End UPDATED Quick Bid Handlers ---
 
 
     // Handle bid form submission
@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         historyModal.classList.remove('hidden');
 
         try {
+            // Index should handle this query now
             const bidsQuery = query(
                 collection(db, 'auctionItems', itemId, 'bids'),
                 where('status', '!=', 'rejected'), // Exclude rejected bids
@@ -226,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(`Error fetching bid history for ${itemId}:`, error);
-            modalContent.innerHTML = '<p class="text-red-400">Could not load bid history.</p>';
+            modalContent.innerHTML = '<p class="text-red-400">Could not load bid history. Check console for index errors.</p>';
         }
     }
     closeHistoryModal.onclick = () => historyModal.classList.add('hidden');
@@ -322,9 +323,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (endTime instanceof Date && !isNaN(endTime)) {
                     timeLeft = endTime > now ? formatTimeLeft(endTime - now) : 'Bidding Ended';
                     canBid = endTime > now && itemStatus === 'active';
-                } else {
-                    timeLeft = 'No End Time Set';
-                    canBid = itemStatus === 'active'; // Allow bidding if active without end time
+                } else if (!endTime && itemStatus === 'active') { // Handle active items with no end time
+                    timeLeft = 'Bidding Open Indefinitely';
+                    canBid = true; // Allow bidding if active without end time
+                } else { // Handle items with invalid end times or non-active status without end times
+                    timeLeft = itemStatus !== 'active' ? itemStatus.replace('_', ' ').toUpperCase() : 'Invalid Date';
+                    canBid = false;
                 }
 
                 const modelInfoHtml = (item.modelNumber && item.modelUrl)
@@ -342,13 +346,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 let statusColor = 'text-green-400';
                 if (itemStatus !== 'active') {
                     statusDisplay = itemStatus.replace('_', ' ').toUpperCase();
-                    statusColor = 'text-yellow-400';
+                    statusColor = 'text-yellow-400'; // awaiting_payment or paid
+                    canBid = false; // Ensure bidding is off if not active
                 } else if (!canBid && endTime) { // Ended naturally
                     statusDisplay = 'Bidding Ended';
                     statusColor = 'text-red-400';
                 } else if (!endTime && itemStatus === 'active') { // Active but no end time
-                    statusDisplay = 'Bidding Open';
+                    statusDisplay = 'Bidding Open'; // Changed from 'Indefinitely'
                     statusColor = 'text-green-400';
+                } else if (canBid && endTime) { // Active and counting down
+                     statusDisplay = timeLeft; // Will be updated by timer
+                     statusColor = 'text-green-400';
                 }
 
                 itemElement.innerHTML = `
@@ -372,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${canBid ? `
                         <div class="mt-4 flex flex-col items-center gap-2">
                             <div class="flex justify-between items-center gap-4 w-full">
-                                <button class="bid-button flex-1" data-item-id="${itemId}" data-item-title="${title}" data-current-bid="${currentBidValue}" data-increment="${incrementValue}">Place Bid</button>
+                                <button class="bid-button flex-1" data-item-id="${itemId}">Place Bid</button> <!-- Removed extra data, retrieve from allItems -->
                                 <button class="history-button text-xs text-blue-400 hover:underline" data-item-id="${itemId}" data-item-title="${title}">View History</button>
                             </div>
                             ${buyNowHtml}
@@ -427,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 timerSpanElement.className = timerSpanElement.className.replace(/text-(green|yellow)-400/, 'text-red-400'); // Ensure red
                 clearInterval(itemTimers[itemId]);
                 delete itemTimers[itemId];
-                // Remove buttons if they exist
+                // Remove buttons if they exist and change status text
                  const card = timerSpanElement.closest('.item-card');
                  if (card) {
                     card.querySelector('.bid-button')?.remove();
@@ -459,25 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Helper & Utility Functions ---
 
-async function fetchAuctionSettings() {
-    try {
-        const settingsRef = doc(db, 'settings', 'auction');
-        const docSnap = await getDoc(settingsRef);
-        if (docSnap.exists()) {
-            knownFamilyNumbers = docSnap.data().approvedNumbers || [];
-            console.log(`Loaded ${knownFamilyNumbers.length} approved phone numbers.`);
-            if (knownFamilyNumbers.length === 0) {
-                 console.warn("Auction settings 'approvedNumbers' array is empty in Firestore.");
-            }
-        } else {
-            console.error("CRITICAL: 'settings/auction' document not found in Firestore. Bidder verification will fail.");
-            knownFamilyNumbers = []; // Ensure it's an empty array on failure
-        }
-    } catch (error) {
-        console.error("Error fetching auction settings:", error);
-        knownFamilyNumbers = []; // Ensure it's an empty array on error
-    }
-}
+// REMOVED: fetchAuctionSettings() // No longer needed
 
 function formatTimeLeft(ms) {
     if (ms <= 0) return 'Bidding Ended';
@@ -495,20 +485,18 @@ function formatTimeLeft(ms) {
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
-    // Always show seconds if time is less than a minute or exactly 0 (briefly before ending)
+    // Show seconds only if less than a minute remaining
     if (days === 0 && hours === 0 && minutes === 0) {
-         parts.push(`${seconds}s`);
-    } else if (minutes > 0 && seconds > 0) { // Only show seconds if minutes are also shown
-         parts.push(`${seconds}s`);
+        parts.push(`${seconds}s`);
     }
 
-
-    return parts.join(' ') || '0s';
+    return parts.join(' ') || '0s'; // Handle case where all parts might be zero briefly
 }
 
 
-// --- Bidding and Buy Now Logic --- (Functions remain largely the same, but include defensive checks)
+// --- Bidding and Buy Now Logic ---
 
+// --- UPDATED placeBid ---
 async function placeBid(itemId, increment) {
     const bidAmountInput = document.getElementById('bid-amount');
     const bidderNameInput = document.getElementById('bidder-name');
@@ -522,7 +510,8 @@ async function placeBid(itemId, increment) {
 
     const newBidAmount = parseFloat(bidAmountInput.value);
     const bidderName = bidderNameInput.value.trim();
-    const bidderPhone = bidderPhoneInput.value.replace(/\D/g, ''); // Clean phone number
+    // Clean phone number right away
+    const bidderPhone = bidderPhoneInput.value.replace(/\D/g, '');
 
     // Basic client-side checks
     if (!bidderName || !bidderPhone || isNaN(newBidAmount) || newBidAmount <= 0) {
@@ -534,15 +523,31 @@ async function placeBid(itemId, increment) {
 
     try {
         const itemRef = doc(db, 'auctionItems', itemId);
+        const settingsRef = doc(db, 'settings', 'auction'); // Define settingsRef here
 
         await runTransaction(db, async (transaction) => {
-            // Verify phone number *inside* transaction
-            const settingsRef = doc(db, 'settings', 'auction');
+            // Get settings *inside* transaction
             const settingsSnap = await transaction.get(settingsRef);
             const currentApprovedNumbers = settingsSnap.exists() ? settingsSnap.data().approvedNumbers || [] : [];
 
-            if (currentApprovedNumbers.length === 0) throw new Error("Verification system offline.");
-            if (!currentApprovedNumbers.includes(bidderPhone)) throw new Error("Phone number not recognized.");
+            // Add detailed logging
+            console.log(`Checking phone: "${bidderPhone}" against list:`, currentApprovedNumbers);
+
+            if (!Array.isArray(currentApprovedNumbers)) {
+                 console.error("approvedNumbers in Firestore is not an array:", currentApprovedNumbers);
+                 throw new Error("Verification system error (data format).");
+            }
+            if (currentApprovedNumbers.length === 0) {
+                 console.warn("approvedNumbers array in Firestore is empty.");
+                 throw new Error("Verification system offline (no numbers).");
+            }
+            // Perform the check
+            if (!currentApprovedNumbers.includes(bidderPhone)) {
+                 console.log(`Phone "${bidderPhone}" NOT found in approved list.`);
+                 throw new Error("Phone number not recognized.");
+            }
+             console.log(`Phone "${bidderPhone}" IS found in approved list.`);
+
 
             // Get current item data
             const itemDoc = await transaction.get(itemRef);
@@ -561,7 +566,11 @@ async function placeBid(itemId, increment) {
             if (newBidAmount <= currentBid) throw new Error(`Bid must be > $${currentBid.toFixed(2)}.`);
             const minBid = currentBid + validIncrement;
             if (newBidAmount < minBid) throw new Error(`Minimum bid is now $${minBid.toFixed(2)}.`);
-            if (item.buyItNowPrice && newBidAmount >= item.buyItNowPrice) throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}).`);
+            // Check against Buy Now price *if* it exists
+            if (item.buyItNowPrice && newBidAmount >= item.buyItNowPrice) {
+                 throw new Error(`Bid meets/exceeds Buy Now ($${item.buyItNowPrice.toFixed(2)}). Use Buy Now instead.`);
+            }
+
 
             // Writes
             const bidsRef = collection(itemRef, 'bids');
@@ -583,23 +592,41 @@ async function placeBid(itemId, increment) {
         submitButton.textContent = 'Submit Bid';
     }
 }
+// --- End UPDATED placeBid ---
 
 
-async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhone) {
-    // Quick client-side check (more robustly checked in transaction)
-    if (!knownFamilyNumbers.includes(buyerPhone)) {
-        alert("Phone number not recognized. Please use a family number.");
+// --- UPDATED handleBuyNow ---
+async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhoneRaw) {
+    // Clean phone number immediately
+    const buyerPhone = buyerPhoneRaw.replace(/\D/g, '');
+
+     // Basic client-side checks
+    if (!buyerName || !buyerPhone) {
+        alert("Valid name and phone number required.");
         return;
     }
 
+
     const itemRef = doc(db, 'auctionItems', itemId);
+    const settingsRef = doc(db, 'settings', 'auction'); // Define settingsRef here
+
     try {
         await runTransaction(db, async (transaction) => {
-            // Re-verify phone number inside transaction
-            const settingsRef = doc(db, 'settings', 'auction');
+             // Get settings *inside* transaction
             const settingsSnap = await transaction.get(settingsRef);
             const currentApprovedNumbers = settingsSnap.exists() ? settingsSnap.data().approvedNumbers || [] : [];
-            if (!currentApprovedNumbers.includes(buyerPhone)) throw new Error("Phone number not recognized.");
+
+             // Add detailed logging
+            console.log(`(Buy Now) Checking phone: "${buyerPhone}" against list:`, currentApprovedNumbers);
+
+             if (!Array.isArray(currentApprovedNumbers)) throw new Error("Verification system error.");
+             if (currentApprovedNumbers.length === 0) throw new Error("Verification system offline.");
+             if (!currentApprovedNumbers.includes(buyerPhone)) {
+                  console.log(`(Buy Now) Phone "${buyerPhone}" NOT found in approved list.`);
+                  throw new Error("Phone number not recognized.");
+             }
+             console.log(`(Buy Now) Phone "${buyerPhone}" IS found in approved list.`);
+
 
             const itemDoc = await transaction.get(itemRef);
             if (!itemDoc.exists()) throw new Error("Auction item not found.");
@@ -615,7 +642,7 @@ async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhone) {
              const currentBid = itemData.currentBid ?? itemData.startBid ?? 0;
             if (currentBid >= buyPrice) throw new Error("Bid already met/exceeded Buy Now price.");
 
-            // Mark as sold
+            // Mark as sold - Set endTime to now to stop timers immediately
             transaction.update(itemRef, { status: 'awaiting_payment', currentBid: buyPrice, highBidder: buyerName, endTime: now });
 
             // Add bid record
@@ -631,5 +658,8 @@ async function handleBuyNow(itemId, buyPrice, buyerName, buyerPhone) {
         alert(`Could not complete purchase: ${error.message}`);
     }
 }
-/* Build Timestamp: Thu Oct 23 2025 13:06:00 GMT-0600 (Mountain Daylight Time) */
+// --- End UPDATED handleBuyNow ---
+
+/* Build Timestamp: Thu Oct 23 2025 13:23:00 GMT-0600 (Mountain Daylight Time) */
 /* /auction.js */
+
