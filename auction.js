@@ -264,7 +264,11 @@ function handleImageClick(imgElement) {
 
 function handleBidButtonClick(button) {
     const card = button.closest('.item-card');
-    const { itemId, itemTitle, currentBid, increment, startBid, notExceedBid } = card.dataset;
+    // --- THIS IS THE FIX ---
+    // The variable `notToExceedBid` was missing from this destructuring assignment,
+    // causing the ReferenceError when it was used to build the currentItemData object.
+    const { itemId, itemTitle, currentBid, increment, startBid, notToExceedBid } = card.dataset;
+    // --- END FIX ---
 
     const minBid = (parseFloat(currentBid) || parseFloat(startBid)) + parseFloat(increment);
 
@@ -274,7 +278,7 @@ function handleBidButtonClick(button) {
         minBid: minBid,
         increment: parseFloat(increment),
         currentBid: parseFloat(currentBid),
-        notToExceedBid: notExceedBid ? parseFloat(notToExceedBid) : null
+        notToExceedBid: notToExceedBid ? parseFloat(notToExceedBid) : null
     };
 
     bidModalTitle.textContent = `Bid on: ${itemTitle}`;
@@ -512,4 +516,4 @@ function showToast(message) {
 
 // --- Start ---
 document.addEventListener('DOMContentLoaded', initializePage);
-/* Build Timestamp: 10/23/2025, 3:53:15 PM MDT */
+/* Build Timestamp: 10/23/2025, 4:03:00 PM MDT */
