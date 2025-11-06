@@ -234,6 +234,14 @@ function renderCurrentMovie(movie) {
     auctionButton.href = 'auction.html';
     actionsContainer.appendChild(auctionButton);
     // --- END ADDED AUCTION BUTTON ---
+
+    // --- ADDED SANTA SIGNUP BUTTON ---
+    const santaButton = document.createElement('a');
+    santaButton.className = 'btn-velvet primary w-full text-center block'; // Match 'Watch Trailer' style
+    santaButton.textContent = 'Book Santa Photos';
+    santaButton.href = 'santa-signup.html';
+    actionsContainer.appendChild(santaButton);
+    // --- END ADDED SANTA SIGNUP BUTTON ---
 }
 
 function renderComingSoon(upcomingMovies, pendingMovies) {
@@ -368,4 +376,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // This now kicks off the auth check
 });
 
-/* Build Timestamp: 10/23/2025, 3:37:00 PM MDT */
+/* Build Timestamp: 11/6/2025, 11:57:00 AM MST */
