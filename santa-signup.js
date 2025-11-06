@@ -7,7 +7,7 @@ import {
     onSnapshot, 
     serverTimestamp, 
     query, 
-    where
+    where // 'where' is no longer used in the query but kept in case
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
@@ -94,13 +94,21 @@ function setupSlotListener() {
     // Generate the master list of slots first
     generateAllSlots();
 
-    // Listen for documents in the 'santaSignups' collection FOR THAT DAY
-    const q = query(collection(db, "santaSignups"), where("partyDate", "==", PARTY_DATE_YYYY_MM_DD));
+    // === FIX FOR PERMISSIONS ERROR ===
+    // We listen to the *entire* collection (which 'allow list: true' permits)
+    // and then filter the results on the client-side.
+    // This avoids a server-side query that requires a custom index.
+    const q = query(collection(db, "santaSignups"));
     
     if (unsubscribeSlots) unsubscribeSlots(); // Stop previous listener if any
     
     unsubscribeSlots = onSnapshot(q, (snapshot) => {
-        const takenSlotISOs = snapshot.docs.map(doc => doc.id); // Doc ID is the ISO string
+        // CLIENT-SIDE FILTERING:
+        // Filter the docs to only include those for the current party date
+        const takenSlotISOs = snapshot.docs
+            .filter(doc => doc.data().partyDate === PARTY_DATE_YYYY_MM_DD)
+            .map(doc => doc.id); // Doc ID is the ISO string
+            
         console.log("Taken slots:", takenSlotISOs);
         renderTimeSlots(takenSlotISOs);
     }, (error) => {
@@ -247,4 +255,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/6/2025, 11:30:00 AM MST */
+/* Build Timestamp: 11/6/2025, 12:36:00 PM MST */
