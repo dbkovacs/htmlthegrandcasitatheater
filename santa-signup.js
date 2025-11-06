@@ -95,7 +95,7 @@ function setupSlotListener() {
     generateAllSlots();
 
     // === FIX FOR PERMISSIONS ERROR ===
-    // We listen to the *entire* collection (which 'allow list: true' permits)
+    // We listen to the *entire* collection (which 'allow read: true' permits)
     // and then filter the results on the client-side.
     // This avoids a server-side query that requires a custom index.
     const q = query(collection(db, "santaSignups"));
@@ -112,8 +112,20 @@ function setupSlotListener() {
         console.log("Taken slots:", takenSlotISOs);
         renderTimeSlots(takenSlotISOs);
     }, (error) => {
-        console.error("Error listening to time slots:", error);
-        timeSlotContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error loading time slots. Please refresh.</p>';
+        // --- ENHANCED ERROR LOGGING ---
+        console.error("Full Firebase Error (santa-signup.js):", error); // Log the full error
+        let errorMsg = "Error loading time slots. Please refresh the page.";
+        
+        if (error.code === 'missing-or-insufficient-permissions' || error.code === 'permission-denied') {
+            errorMsg = "A configuration error occurred. Please contact the administrator. (Error: Permissions)";
+        } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
+             errorMsg = "A database index is required. Please contact the administrator.";
+        }
+        
+        if (timeSlotContainer) {
+            timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">${errorMsg}</p>`;
+        }
+        // --- END ENHANCED LOGGING ---
     });
 }
 
@@ -255,4 +267,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/6/2025, 12:36:00 PM MST */
+/* Build Timestamp: 11/6/2025, 12:51:00 PM MST */

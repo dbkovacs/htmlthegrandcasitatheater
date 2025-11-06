@@ -179,8 +179,24 @@ async function loadSubmissions() {
             }
         });
     } catch (error) {
-        console.error("Error loading submissions:", error);
-        submissionsContainer.innerHTML = '<p class="text-red-400">Error loading submissions.</p>';
+        // --- ENHANCED ERROR LOGGING ---
+        console.error("Full Firebase Error (admin.js - loadSubmissions):", error);
+        if (error.code === 'failed-precondition' && error.message.includes('index')) {
+            const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
+            const indexUrl = (urlMatch && urlMatch[0]) ? urlMatch[0].replace('"', '') : '#';
+            let friendlyMessage = `
+                <div class="p-4 bg-red-900/30 rounded-lg border border-red-500/50">
+                    <p class="font-bold mb-2 text-lg text-red-300">Configuration Required: Database Index Missing</p>
+                    <p class="text-sm text-gray-400">The 'Pending Submissions' query needs a new database index.</p>
+                    <p class="text-sm mt-2">Click the button below to create it automatically in your Firebase console:</p>
+                    <a href="${indexUrl}" target="_blank" class="inline-block mt-4 px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors">Create Index Now</a>
+                </div>
+            `;
+            submissionsContainer.innerHTML = friendlyMessage;
+        } else {
+            submissionsContainer.innerHTML = `<p class="text-red-400">Error loading submissions: ${error.message}</p>`;
+        }
+        // --- END ENHANCED LOGGING ---
     }
 }
 
@@ -297,8 +313,24 @@ async function loadApprovedMovies() {
             approvedMoviesContainer.appendChild(card);
         });
     } catch (error) {
-        console.error("Error loading approved movies:", error);
-        approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading movies. Check the console for details.</p>`;
+        // --- ENHANCED ERROR LOGGING ---
+        console.error("Full Firebase Error (admin.js - loadApprovedMovies):", error);
+        if (error.code === 'failed-precondition' && error.message.includes('index')) {
+            const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
+            const indexUrl = (urlMatch && urlMatch[0]) ? urlMatch[0].replace('"', '') : '#';
+            let friendlyMessage = `
+                <div class="p-4 bg-red-900/30 rounded-lg border border-red-500/50">
+                    <p class="font-bold mb-2 text-lg text-red-300">Configuration Required: Database Index Missing</p>
+                    <p class="text-sm text-gray-400">The 'Approved & Scheduled' query (which sorts by 'status' and 'showDate') needs a new database index.</p>
+                    <p class="text-sm mt-2">Click the button below to create it automatically in your Firebase console:</p>
+                    <a href="${indexUrl}" target="_blank" class="inline-block mt-4 px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors">Create Index Now</a>
+                </div>
+            `;
+            approvedMoviesContainer.innerHTML = friendlyMessage;
+        } else {
+            approvedMoviesContainer.innerHTML = `<p class="text-red-400">Error loading approved movies: ${error.message}</p>`;
+        }
+        // --- END ENHANCED LOGGING ---
     }
 }
 
@@ -763,3 +795,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // --- END ---
 
+/* Build Timestamp: 11/6/2025, 12:51:00 PM MST */

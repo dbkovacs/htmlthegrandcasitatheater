@@ -117,12 +117,13 @@ async function loadPageData() {
         contentWrapper.style.opacity = '1';
 
     } catch (error) {
-        console.error("Error loading movie data:", error);
-        // This is line 97 from your error log
+        // --- ENHANCED ERROR LOGGING ---
+        console.error("Full Firebase Error (app.js):", error); // Log the full error object
+
         if (error.code === 'failed-precondition' && error.message.includes('index')) {
             const urlMatch = error.message.match(/(https:\/\/console\.firebase\.google\.com\S+)/);
             if (urlMatch && urlMatch[0]) {
-                const indexUrl = urlMatch[0];
+                const indexUrl = urlMatch[0].replace('"', ''); // Clean up potential trailing quotes
                 const friendlyMessage = `
                     <p class="font-bold mb-2 text-lg">Configuration Required: Database Index Missing</p>
                     <p class="text-sm">This is a one-time setup. The current query needs a composite index to work efficiently.</p>
@@ -139,6 +140,7 @@ async function loadPageData() {
          else {
             showError(`Error loading movie data (${error.code}). Please try again later.`);
         }
+        // --- END ENHANCED ERROR LOGGING ---
     }
 }
 // --- END MODIFIED Main Function ---
@@ -312,7 +314,9 @@ function showError(msg) {
     errorMessage.innerHTML = msg;
     errorContainer.classList.remove('hidden');
     contentWrapper.style.opacity = '1'; // Show content wrapper even on error to display 'pick movie'
-    mainContent.remove();
+    if (mainContent) {
+        mainContent.remove();
+    }
 }
 
 // --- Utility Functions ---
@@ -376,4 +380,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // This now kicks off the auth check
 });
 
-/* Build Timestamp: 11/6/2025, 11:57:00 AM MST */
+/* Build Timestamp: 11/6/2025, 12:51:00 PM MST */
