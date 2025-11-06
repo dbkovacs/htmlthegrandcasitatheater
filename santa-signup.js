@@ -21,8 +21,8 @@ const PARTY_DATE_YYYY_MM_DD = "2025-12-14";
 
 // Set the start and end times for the party (24-hour format)
 // Example: 9:00 AM = 9, 5:00 PM = 17
-const PARTY_START_HOUR = 9; // 9:00 AM
-const PARTY_END_HOUR = 17; // 5:00 PM (slots will run *until* 5:00 PM)
+const PARTY_START_HOUR = 17; // 9:00 AM
+const PARTY_END_HOUR = 19; // 5:00 PM (slots will run *until* 5:00 PM)
 
 // Set the duration of each time slot in minutes
 const SLOT_DURATION_MINUTES = 15;
