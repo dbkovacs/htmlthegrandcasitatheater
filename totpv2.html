@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP/HOTP Algorithm Explained</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Use Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* 3. Set custom fonts */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* We'll use Roboto Mono for code/hex values */
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* Custom style for the highlighted step */
+        .step-highlight {
+            border: 2px solid #34d399; /* emerald-400 */
+            box-shadow: 0 4px 15px -2px rgba(52, 211, 153, 0.2);
+        }
+        /* Custom styles for breaking words */
+        .word-break {
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 h-full flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-4xl mx-auto">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">TOTP Algorithm Explained</h1>
+            <p class="text-lg text-gray-400 mt-2">See how a Shared Secret and Time become a 6-digit code.</p>
+        </header>
+
+        <!-- Main Container -->
+        <div class="bg-gray-800 shadow-2xl rounded-2xl p-6 sm:p-8">
+
+            <!-- Inputs Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label for="shared-secret" class="block text-sm font-medium text-gray-300 mb-2">1. Shared Secret (Base32)</label>
+                    <div class="flex">
+                        <input type="text" id="shared-secret" class="font-mono p-3 bg-gray-900 border border-gray-700 rounded-l-md w-full text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none" value="JBSWY3DPEHPK3PXP">
+                        <button id="random-secret" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-3 rounded-r-md whitespace-nowrap">New</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="time-step" class="block text-sm font-medium text-gray-300 mb-2">Time Step (Seconds)</label>
+                    <input type="number" id="time-step" class="font-mono p-3 bg-gray-900 border border-gray-700 rounded-md w-full text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none" value="30" readonly>
+                </div>
+            </div>
+
+            <!-- Final Code Display -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-white mb-3 text-center">Generated TOTP Code:</h2>
+                <div class="bg-gray-900 rounded-lg p-6 text-center">
+                    <div id="totp-code" class="text-5xl sm:text-6xl font-bold tracking-wider text-emerald-400 font-mono">
+                        --- ---
+                    </div>
+                    <!-- Progress Bar for time step -->
+                    <div class="w-full bg-gray-700 rounded-full h-2.5 mt-6">
+                        <div id="time-progress" class="bg-emerald-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="text-sm text-gray-400 mt-2 font-mono">
+                        Time remaining in interval: <span id="time-remaining">--</span>s
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Math Breakdown -->
+            <h2 class="text-2xl font-semibold text-white mb-6 border-b border-gray-700 pb-3">The Math: Step-by-Step</h2>
+            
+            <div class="space-y-6">
+
+                <!-- Step 1: Inputs -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 transition-all">
+                    <h3 class="text-lg font-semibold text-emerald-400 mb-3">Step 1: Process Inputs</h3>
+                    <p class="text-sm text-gray-400 mb-4">Convert the Base32 secret to Hex and get the current Unix time.</p>
+                    <div class="font-mono text-sm space-y-2">
+                        <p><span class="text-gray-500 w-32 inline-block">Secret (Base32):</span> <span id="s1-secret-b32" class="text-white word-break"></span></p>
+                        <p><span class="text-gray-500 w-32 inline-block">Secret (Hex):</span> <span id="s1-secret-hex" class="text-white word-break"></span></p>
+                        <p><span class="text-gray-500 w-32 inline-block">Unix Time (s):</span> <span id="s1-unix-time" class="text-white"></span></p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Counter -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 transition-all">
+                    <h3 class="text-lg font-semibold text-emerald-400 mb-3">Step 2: Calculate Counter ($C$)</h3>
+                    <p class="text-sm text-gray-400 mb-4">The counter is the number of time-steps that have passed since the Unix epoch.</p>
+                    <p class="font-mono text-sm bg-gray-900 p-3 rounded-md mb-4">$C = \lfloor \text{UnixTime} / \text{TimeStep} \rfloor$</p>
+                    <div class="font-mono text-sm space-y-2">
+                        <p><span class="text-gray-500 w-48 inline-block">Calculation:</span> <span id="s2-counter-calc" class="text-white"></span></p>
+                        <p><span class="text-gray-500 w-48 inline-block">Counter ($C$) (Decimal):</span> <span id="s2-counter-dec" class="text-white"></span></p>
+                        <p class="text-gray-400 text-xs mt-2 mb-2 pt-2 border-t border-gray-700">For HMAC, the counter must be a 64-bit (8-byte) value:</p>
+                        <p><span class="text-gray-500 w-48 inline-block">Counter ($C$) (Hex, 8-byte):</span> <span id="s2-counter-hex" class="text-white word-break"></span></p>
+                    </div>
+                </div>
+
+                <!-- Step 3: HMAC-SHA1 -->
+                <div class="bg-gray-800 rounded-lg p-5 transition-all step-highlight">
+                    <h3 class="text-lg font-semibold text-emerald-400 mb-3">Step 3: Generate HMAC-SHA1 Hash</h3>
+                    <p class="text-sm text-gray-400 mb-4">This is the core of the algorithm. We hash the <strong>8-byte Counter</strong> using the <strong>Secret</strong> as the key.</p>
+                    <p class="font-mono text-sm bg-gray-900 p-3 rounded-md mb-4">$Hash = \text{HMAC-SHA1}(\text{Secret}, \text{Counter})$</p>
+                    <div class="font-mono text-sm space-y-2">
+                        <p><span class="text-gray-500 w-24 inline-block align-top">Key (Secret):</span> <span id="s3-secret-hex" class="text-white word-break"></span></p>
+                        <p><span class="text-gray-500 w-24 inline-block align-top">Message (Counter):</span> <span id="s3-counter-hex" class="text-white word-break"></span></p>
+                        <p class="text-gray-400 text-xs mt-2 mb-2 pt-2 border-t border-gray-700">The result is a 20-byte (160-bit) SHA-1 hash:</p>
+                        <p><span class="text-gray-500 w-24 inline-block align-top">Result (Hash):</span> <span id="s3-hash" class="text-white word-break"></span></p>
+                    </div>
+                </div>
+
+                <!-- Step 4: Dynamic Truncation -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 transition-all">
+                    <h3 class="text-lg font-semibold text-emerald-400 mb-3">Step 4: Dynamic Truncation</h3>
+                    <p class="text-sm text-gray-400 mb-4">We need to convert the 20-byte hash into a 31-bit integer.</p>
+                    <div class="font-mono text-sm space-y-2">
+                        <p class="text-gray-400 text-xs mb-2">a. Get the last 4 bits (nibble) of the hash. This is our <strong>Offset</strong> (0-15).</p>
+                        <p><span class="text-gray-500 w-32 inline-block">Last Byte of Hash:</span> <span id="s4-last-byte" class="text-white"></span></e></p>
+                        <p><span class="text-gray-500 w-32 inline-block">Offset (Decimal):</span> <span id="s4-offset-calc" class="text-white"></span></p>
+                        
+                        <p class="text-gray-400 text-xs pt-2 mt-2 border-t border-gray-700">b. Select 4 bytes from the hash starting at the <strong>Offset</strong>.</p>
+                        <p><span class="text-gray-500 w-32 inline-block">4 Bytes (Hex):</span> <span id="s4-four-bytes" class="text-white"></span></p>
+                        
+                        <p class="text-gray-400 text-xs pt-2 mt-2 border-t border-gray-700">c. Convert 4 bytes to a number and remove the first bit (to avoid signed values).</p>
+                        <p><span class="text-gray-500 w-32 inline-block">31-bit Integer:</span> <span id="s4-31bit-int" class="text-white"></span></p>
+                    </div>
+                </div>
+
+                <!-- Step 5: Final Code -->
+                <div class="bg-gray-800 border border-gray-700 rounded-lg p-5 transition-all">
+                    <h3 class="text-lg font-semibold text-emerald-400 mb-3">Step 5: Generate 6-Digit Code</h3>
+                    <p class="text-sm text-gray-400 mb-4">Get the last 6 digits of the 31-bit integer.</p>
+                    <p class="font-mono text-sm bg-gray-900 p-3 rounded-md mb-4">$Code = \text{31-bit\_Integer} \mod 1,000,000$</e></p>
+                    <div class="font-mono text-sm space-y-2">
+                        <p><span class="text-gray-500 w-32 inline-block">Calculation:</span> <span id="s5-mod-calc" class="text-white"></span></p>
+                        <p><span class="text-gray-500 w-32 inline-block">Final Code (Padded):</span> <span id="s5-final-code" class="text-white font-bold text-lg"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center text-gray-600 text-sm mt-8 pb-8">
+            This demonstrates the HOTP (RFC 4226) and TOTP (RFC 6238) algorithms entirely in your browser.
+        </footer>
+    </div>
+
+    <!-- 5. JavaScript Logic -->
+    <script type="module">
+        // --- DOM Elements ---
+        const secretInput = document.getElementById('shared-secret');
+        const randomBtn = document.getElementById('random-secret');
+        const totpCodeEl = document.getElementById('totp-code');
+        const timeProgressEl = document.getElementById('time-progress');
+        const timeRemainingEl = document.getElementById('time-remaining');
+
+        // Step 1 Elements
+        const s1_secret_b32 = document.getElementById('s1-secret-b32');
+        const s1_secret_hex = document.getElementById('s1-secret-hex');
+        const s1_unix_time = document.getElementById('s1-unix-time');
+        
+        // Step 2 Elements
+        const s2_counter_calc = document.getElementById('s2-counter-calc');
+        const s2_counter_dec = document.getElementById('s2-counter-dec');
+        const s2_counter_hex = document.getElementById('s2-counter-hex');
+
+        // Step 3 Elements
+        const s3_secret_hex = document.getElementById('s3-secret-hex');
+        const s3_counter_hex = document.getElementById('s3-counter-hex');
+        const s3_hash = document.getElementById('s3-hash');
+
+        // Step 4 Elements
+        const s4_last_byte = document.getElementById('s4-last-byte');
+        const s4_offset_calc = document.getElementById('s4-offset-calc');
+        const s4_four_bytes = document.getElementById('s4-four-bytes');
+        const s4_31bit_int = document.getElementById('s4-31bit-int');
+
+        // Step 5 Elements
+        const s5_mod_calc = document.getElementById('s5-mod-calc');
+        const s5_final_code = document.getElementById('s5-final-code');
+        
+        // --- Base32 & Hex Utilities ---
+        
+        const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        
+        function base32toHex(base32) {
+            base32 = base32.replace(/=+$/, '').toUpperCase();
+            if (!/^[A-Z2-7]+$/.test(base32)) {
+                return null; // Invalid characters
+            }
+
+            let bits = "";
+            for (let i = 0; i < base32.length; i++) {
+                let val = base32Chars.indexOf(base32.charAt(i));
+                bits += val.toString(2).padStart(5, '0');
+            }
+
+            let hex = "";
+            for (let i = 0; i + 8 <= bits.length; i += 8) {
+                let chunk = bits.substr(i, 8);
+                hex += parseInt(chunk, 2).toString(16).padStart(2, '0');
+            }
+            return hex;
+        }
+
+        function generateRandomBase32() {
+            let result = '';
+            const crypto = window.crypto || window.msCrypto; // For IE 11
+            let randomValues = new Uint8Array(10); // 10 bytes = 80 bits = 16 base32 chars
+            crypto.getRandomValues(randomValues);
+            
+            for (let i = 0; i < randomValues.length; i++) {
+                 // Use 5 bits from each byte, but this is simpler:
+                 result += base32Chars.charAt(randomValues[i] & 31); // & 31 gets last 5 bits
+                 if(result.length >= 16) break;
+                 // To be more correct, we'd pack the bits, but this is fine for a demo.
+                 // Let's just generate 16 random chars
+            }
+            // Simple random generation
+            result = '';
+            for (let i = 0; i < 16; i++) {
+                 result += base32Chars.charAt(Math.floor(Math.random() * 32));
+            }
+            return result;
+        }
+
+        function hexToBytes(hex) {
+            let bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes.buffer;
+        }
+
+        function bytesToHex(buffer) {
+            return Array.from(new Uint8Array(buffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        function numberTo8ByteHex(num) {
+            let buffer = new ArrayBuffer(8); // 8 bytes for 64-bit
+            let view = new DataView(buffer);
+            // Use BigInt to handle 64-bit number, 'false' for Big Endian
+            view.setBigUint64(0, BigInt(num), false); 
+            return bytesToHex(buffer);
+        }
+
+        // --- Crypto (HMAC-SHA1) ---
+        async function hmacSha1(secretHex, messageHex) {
+            const crypto = window.crypto.subtle;
+            
+            try {
+                const keyBytes = hexToBytes(secretHex);
+                const messageBytes = hexToBytes(messageHex);
+
+                const key = await crypto.importKey(
+                    "raw",
+                    keyBytes,
+                    { name: "HMAC", hash: "SHA-1" },
+                    false,
+                    ["sign"]
+                );
+                
+                const signature = await crypto.sign("HMAC", key, messageBytes);
+                return bytesToHex(signature);
+
+            } catch (error) {
+                console.error("Crypto error:", error);
+                return null;
+            }
+        }
+
+        // --- Main TOTP Logic ---
+        async function calculateTOTP() {
+            try {
+                // --- Step 1: Inputs ---
+                const secretB32 = secretInput.value;
+                const secretHex = base32toHex(secretB32);
+                if (!secretHex) {
+                    totpCodeEl.textContent = "INVALID SECRET";
+                    return;
+                }
+                const timeStep = 30; // Standard TOTP time step
+                const unixTime = Math.floor(Date.now() / 1000);
+                
+                s1_secret_b32.textContent = secretB32;
+                s1_secret_hex.textContent = secretHex.match(/.{1,2}/g).join(' ');
+                s1_unix_time.textContent = unixTime.toLocaleString();
+
+                // --- Step 2: Counter ---
+                const counter = Math.floor(unixTime / timeStep);
+                const counterHex = numberTo8ByteHex(counter);
+                
+                s2_counter_calc.textContent = `floor(${unixTime} / ${timeStep}) = ${counter}`;
+                s2_counter_dec.textContent = counter.toLocaleString();
+                s2_counter_hex.textContent = counterHex.match(/.{1,2}/g).join(' ');
+
+                // --- Step 3: HMAC-SHA1 ---
+                const hash = await hmacSha1(secretHex, counterHex);
+                if (!hash) {
+                    totpCodeEl.textContent = "CRYPTO FAILED";
+                    return;
+                }
+                
+                s3_secret_hex.textContent = secretHex.match(/.{1,2}/g).join(' ');
+                s3_counter_hex.textContent = counterHex.match(/.{1,2}/g).join(' ');
+                s3_hash.textContent = hash.match(/.{1,2}/g).join(' ');
+
+                // --- Step 4: Dynamic Truncation ---
+                // a. Get Offset
+                const lastByteHex = hash.substring(hash.length - 2); // e.g., "a9"
+                const lastByte = parseInt(lastByteHex, 16); // e.g., 169
+                const offset = lastByte & 0x0f; // & 00001111, e.g., 9
+                
+                s4_last_byte.textContent = lastByteHex;
+                s4_offset_calc.textContent = `${lastByteHex} & 0x0F = ${offset}`;
+
+                // b. Select 4 bytes
+                const fourBytesHex = hash.substring(offset * 2, offset * 2 + 8);
+                s4_four_bytes.textContent = fourBytesHex.match(/.{1,2}/g).join(' ');
+
+                // c. Convert to 31-bit integer
+                const fourBytesInt = parseInt(fourBytesHex, 16);
+                const truncatedInt = fourBytesInt & 0x7FFFFFFF; // Mask first bit
+                
+                s4_31bit_int.textContent = `${fourBytesInt.toLocaleString()} & 0x7FFFFFFF = ${truncatedInt.toLocaleString()}`;
+
+                // --- Step 5: Final Code ---
+                const mod = 1_000_000; // 6 digits
+                const code = truncatedInt % mod;
+                
+                s5_mod_calc.textContent = `${truncatedInt.toLocaleString()} % 1,000,000 = ${code}`;
+                
+                const paddedCode = code.toString().padStart(6, '0');
+                s5_final_code.textContent = paddedCode;
+
+                // --- Update Main Display ---
+                totpCodeEl.textContent = `${paddedCode.substring(0, 3)} ${paddedCode.substring(3, 6)}`;
+                
+            } catch (err) {
+                console.error(err);
+                totpCodeEl.textContent = "ERROR";
+            }
+        }
+        
+        function updateClock() {
+            const timeStep = 30;
+            const unixTime = Math.floor(Date.now() / 1000);
+            const remaining = timeStep - (unixTime % timeStep);
+            
+            timeRemainingEl.textContent = remaining;
+            timeProgressEl.style.width = `${(remaining / timeStep) * 100}%`;
+
+            // If a new interval has started, recalculate
+            if (remaining === timeStep) {
+                calculateTOTP();
+            }
+            // Update time display every second regardless
+            s1_unix_time.textContent = unixTime.toLocaleString();
+        }
+
+        // --- Event Listeners ---
+        secretInput.addEventListener('input', calculateTOTP);
+        randomBtn.addEventListener('click', () => {
+            secretInput.value = generateRandomBase32();
+            calculateTOTP();
+        });
+
+        // --- Initial Load ---
+        setInterval(updateClock, 1000);
+        calculateTOTP();
+        
+    </script>
+</body>
+</html>

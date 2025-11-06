@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP/HMAC Demo</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use the Inter font family as requested */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* A little extra style for the code display */
+        #totp-code {
+            letter-spacing: 0.15em;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white text-gray-900 rounded-xl shadow-2xl p-8 w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-center mb-4 text-blue-700">Live TOTP Generator Demo</h1>
+        <p class="text-gray-600 text-center mb-6">
+            This tool demonstrates how authenticator apps work. It uses the **Shared Secret** (which you provide) and the **Current Time** to generate a 6-digit code using the HMAC-SHA1 algorithm.
+        </p>
+
+        <!-- 1. Shared Secret Input -->
+        <div class="mb-4">
+            <label for="secret-input" class="block text-sm font-medium text-gray-700 mb-2">
+                Enter Your Shared Secret:
+            </label>
+            <input 
+                type="text" 
+                id="secret-input"
+                value="MySharedSecret123"
+                class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                placeholder="e.g., JBSWY3DPEHPK3PXP"
+            >
+        </div>
+
+        <!-- 2. Live Time Display -->
+        <div class="mb-4 p-3 bg-gray-100 rounded-lg text-center">
+            <div class="text-sm font-medium text-gray-600">Current UTC Time</div>
+            <div id="current-time" class="text-lg font-semibold text-gray-900 font-mono">Loading...</div>
+        </div>
+
+        <!-- 3. Generated Code Display -->
+        <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg text-center my-6">
+            <div class="text-sm font-medium text-blue-800 mb-2">Generated 6-Digit Code</div>
+            <div id="totp-code" class="text-5xl font-bold text-blue-700 font-mono">
+                ------
+            </div>
+
+            <!-- 3b. Progress Bar for 30-second window -->
+            <div class="w-full bg-blue-200 rounded-full h-2.5 mt-5 overflow-hidden">
+                <div 
+                    id="progress-bar" 
+                    class="bg-blue-600 h-2.5 rounded-full" 
+                    style="width: 100%; transition: width 1s linear;">
+                </div>
+            </div>
+            <div id="time-remaining" class="text-xs text-blue-600 mt-2 font-medium">
+                New code in 30s
+            </div>
+        </div>
+
+        <!-- 4. Explanation of "The Math" -->
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <h2 class="text-2xl font-semibold mb-3 text-center">How This Code Is Calculated</h2>
+            <p class="text-gray-600 text-center mb-4">
+                The algorithm combines the secret and a time-based counter.
+            </p>
+            <div class="bg-gray-100 rounded-lg p-4 space-y-3 font-mono text-sm text-gray-800">
+                <div>
+                    <span class="font-semibold text-gray-500">1. Time Step (Counter):</span>
+                    <br>
+                    <span id="math-counter" class="text-blue-600 font-bold">...</span>
+                    <span class="text-gray-500 text-xs block">(Total 30-second intervals since Jan 1, 1970)</span>
+                </div>
+                <div>
+                    <span class="font-semibold text-gray-500">2. Shared Secret:</span>
+                    <br>
+                    <span id="math-secret" class="text-red-600 font-bold break-all">...</span>
+                </div>
+                <div class="pt-2">
+                    <span class="font-semibold text-gray-900">3. The "Mixing" (HMAC):</span>
+                    <br>
+                    <code class="text-xs">
+                        hash = HMAC-SHA1(<span class="text-red-600">Secret</span>, <span class="text-blue-600">Counter</span>)
+                    </code>
+                </div>
+                <div>
+                    <span class="font-semibold text-gray-900">4. The Result:</span>
+                    <br>
+                    <code class="text-xs">
+                        code = Truncate(hash) % 1,000,000
+                    </code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const secretInput = document.getElementById('secret-input');
+            const totpDisplay = document.getElementById('totp-code');
+            const currentTimeDisplay = document.getElementById('current-time');
+            const progressBar = document.getElementById('progress-bar');
+            const timeRemainingDisplay = document.getElementById('time-remaining');
+            
+            const mathCounterDisplay = document.getElementById('math-counter');
+            const mathSecretDisplay = document.getElementById('math-secret');
+
+            // --- TOTP Constants ---
+            const TIME_STEP = 30; // 30-second intervals
+            let lastCounter = null;
+
+            /**
+             * Core TOTP Generation Logic
+             * Uses the Web Crypto API to perform HMAC-SHA1
+             */
+            async function generateTOTP(secret) {
+                if (!secret) {
+                    return "------";
+                }
+
+                try {
+                    // 1. Get the current time counter
+                    const unixTime = Math.floor(Date.now() / 1000);
+                    const counter = Math.floor(unixTime / TIME_STEP);
+                    
+                    // Update the math display
+                    mathCounterDisplay.textContent = counter.toLocaleString();
+                    mathSecretDisplay.textContent = secret;
+
+                    // 2. Prepare the inputs for the Crypto API
+                    // The counter must be an 8-byte buffer
+                    const counterBuffer = new ArrayBuffer(8);
+                    const counterView = new DataView(counterBuffer);
+                    // Use setBigUint64 to handle large counter numbers safely
+                    counterView.setBigUint64(0, BigInt(counter));
+
+                    // The secret must be converted to a buffer
+                    const secretBuffer = new TextEncoder().encode(secret);
+
+                    // 3. Import the secret as a crypto key
+                    const key = await window.crypto.subtle.importKey(
+                        'raw',
+                        secretBuffer,
+                        { name: 'HMAC', hash: 'SHA-1' },
+                        false,
+                        ['sign']
+                    );
+
+                    // 4. Calculate the HMAC-SHA1 hash
+                    // This returns a 20-byte (160-bit) hash
+                    const hmacResult = await window.crypto.subtle.sign(
+                        'HMAC',
+                        key,
+                        counterBuffer
+                    );
+
+                    // 5. Dynamic Truncation
+                    // This is the clever part of the algorithm
+                    const hmacBytes = new Uint8Array(hmacResult);
+                    
+                    // Get the last 4 bits of the hash to use as an offset
+                    const offset = hmacBytes[hmacBytes.length - 1] & 0x0F;
+                    
+                    // Get 4 bytes from the hash starting at the offset
+                    const dataView = new DataView(hmacResult);
+                    const truncatedHash = (dataView.getInt32(offset) & 0x7FFFFFFF);
+
+                    // 6. Modulo to get 6 digits
+                    const code = truncatedHash % 1000000;
+
+                    // 7. Pad with leading zeros (e.g., "123" -> "000123")
+                    return String(code).padStart(6, '0');
+
+                } catch (error) {
+                    console.error("Crypto Error:", error);
+                    return "Error";
+                }
+            }
+
+            /**
+             * Main update function, called on new interval or input change
+             */
+            async function updateCode() {
+                const secret = secretInput.value;
+                const code = await generateTOTP(secret);
+                totpDisplay.textContent = code;
+            }
+
+            /**
+             * Ticker function, runs every second to update time and progress
+             */
+            function tick() {
+                const now = new Date();
+                currentTimeDisplay.textContent = now.toUTCString();
+
+                const unixTime = Math.floor(now.getTime() / 1000);
+                const secondsRemaining = TIME_STEP - (unixTime % TIME_STEP);
+                const counter = Math.floor(unixTime / TIME_STEP);
+
+                // Update progress bar
+                const progressPercent = (secondsRemaining / TIME_STEP) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+                
+                // Update time remaining text
+                timeRemainingDisplay.textContent = `New code in ${secondsRemaining}s`;
+
+                // Check if we have entered a new time-step window
+                if (counter !== lastCounter) {
+                    lastCounter = counter;
+                    // Time to generate a new code!
+                    updateCode();
+                }
+            }
+
+            // --- Event Listeners ---
+            
+            // Generate a new code whenever the user types
+            secretInput.addEventListener('input', () => {
+                // We update the counter to "null" to force an *immediate*
+                // regeneration of the code with the new secret.
+                lastCounter = null;
+                tick(); 
+            });
+
+            // Start the 1-second interval timer
+            setInterval(tick, 1000);
+            
+            // Run on load
+            tick();
+        });
+    </script>
+</body>
+</html>
