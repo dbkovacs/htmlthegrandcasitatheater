@@ -183,17 +183,28 @@ santaSignupForm.addEventListener('submit', async (e) => {
     submitButton.disabled = true;
     submitButton.textContent = "Booking...";
 
-    // Collect photo combinations
-    const comboInputs = document.querySelectorAll('#photo-combinations-container input');
-    const photoCombinations = Array.from(comboInputs)
-        .map(input => input.value.trim())
-        .filter(value => value.length > 0); // Only save non-empty strings
+    // === MODIFIED: Collect photo combinations as objects ===
+    const photoComboRows = document.querySelectorAll('.photo-combo-row');
+    const photoCombinations = [];
+    photoComboRows.forEach(row => {
+        const textInput = row.querySelector('input[type="text"]');
+        const santaCheckbox = row.querySelector('input[type="checkbox"]');
+        const description = textInput.value.trim();
+
+        if (description.length > 0) { // Only save non-empty strings
+            photoCombinations.push({
+                description: description,
+                withSanta: santaCheckbox.checked
+            });
+        }
+    });
+    // === END MODIFICATION ===
 
     const bookingData = {
         submitterName: submitterName,
         familyMembers: familyMembers,
-        includeSanta: document.getElementById('include-santa').checked,
-        photoCombinations: photoCombinations,
+        // 'includeSanta' field is removed
+        photoCombinations: photoCombinations, // This now holds the array of objects
         slotLabel: selectedSlotInfo.label,
         partyDate: PARTY_DATE_YYYY_MM_DD, // Store the date for querying
         bookedAt: serverTimestamp(),
@@ -236,4 +247,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/6/2025, 11:11:00 AM MST */
+/* Build Timestamp: 11/6/2025, 11:30:00 AM MST */

@@ -131,24 +131,56 @@
                             <p class="text-xs text-gray-400 mt-1">List all family members who will be in the photos.</p>
                         </div>
 
-                        <div class="relative">
-                            <div class="flex items-center">
-                                <input id="include-santa" name="include-santa" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
-                                <label for="include-santa" class="ml-3 block text-lg font-medium text-gray-100">Include Santa in photos?</label>
-                            </div>
-                        </div>
+                        <!-- === REMOVED Single "Include Santa" Checkbox === -->
                         
+                        <!-- === MODIFIED Photo Combinations Section === -->
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Photo Combinations (Up to 5)</label>
-                            <p class="text-xs text-gray-400 mb-2">List the different photo groups you'd like. This helps us move quickly!</p>
-                            <div id="photo-combinations-container" class="space-y-2">
-                                <input type="text" name="photo-combo-1" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., The whole family + Santa">
-                                <input type="text" name="photo-combo-2" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., Just the kids + Santa">
-                                <input type="text" name="photo-combo-3" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., The whole family (no Santa)">
-                                <input type="text" name="photo-combo-4" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., John & Jane">
-                                <input type="text" name="photo-combo-5" class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., Jackie & Jim">
+                            <p class="text-xs text-gray-400 mb-2">List the different photo groups you'd like and check the box if that group includes Santa.</p>
+                            <div id="photo-combinations-container" class="space-y-3">
+                                <!-- Shot 1 -->
+                                <div class="flex items-center gap-3 photo-combo-row">
+                                    <input type="text" name="photo-combo-text-1" class="flex-1 w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., The whole family">
+                                    <div class="flex items-center" title="With Santa?">
+                                        <input id="photo-combo-santa-1" name="photo-combo-santa-1" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
+                                        <label for="photo-combo-santa-1" class="ml-2 text-sm text-gray-300">w/ Santa</label>
+                                    </div>
+                                </div>
+                                <!-- Shot 2 -->
+                                <div class="flex items-center gap-3 photo-combo-row">
+                                    <input type="text" name="photo-combo-text-2" class="flex-1 w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., Just the kids">
+                                    <div class="flex items-center" title="With Santa?">
+                                        <input id="photo-combo-santa-2" name="photo-combo-santa-2" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
+                                        <label for="photo-combo-santa-2" class="ml-2 text-sm text-gray-300">w/ Santa</label>
+                                    </div>
+                                </div>
+                                <!-- Shot 3 -->
+                                <div class="flex items-center gap-3 photo-combo-row">
+                                    <input type="text" name="photo-combo-text-3" class="flex-1 w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="">
+                                    <div class="flex items-center" title="With Santa?">
+                                        <input id="photo-combo-santa-3" name="photo-combo-santa-3" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
+                                        <label for="photo-combo-santa-3" class="ml-2 text-sm text-gray-300">w/ Santa</label>
+                                    </div>
+                                </div>
+                                <!-- Shot 4 -->
+                                <div class="flex items-center gap-3 photo-combo-row">
+                                    <input type="text" name="photo-combo-text-4" class="flex-1 w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="">
+                                    <div class="flex items-center" title="With Santa?">
+                                        <input id="photo-combo-santa-4" name="photo-combo-santa-4" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
+                                        <label for="photo-combo-santa-4" class="ml-2 text-sm text-gray-300">w/ Santa</label>
+                                    </div>
+                                </div>
+                                <!-- Shot 5 -->
+                                <div class="flex items-center gap-3 photo-combo-row">
+                                    <input type="text" name="photo-combo-text-5" class="flex-1 w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-2 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="">
+                                    <div class="flex items-center" title="With Santa?">
+                                        <input id="photo-combo-santa-5" name="photo-combo-santa-5" type="checkbox" class="h-5 w-5 rounded text-yellow-300 bg-black/30 border-yellow-300/20 focus:ring-yellow-300">
+                                        <label for="photo-combo-santa-5" class="ml-2 text-sm text-gray-300">w/ Santa</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        <!-- === END MODIFIED SECTION === -->
 
                     </div>
 
@@ -174,4 +206,4 @@
 
 </body>
 </html>
-<!-- Build Timestamp: 11/6/2025, 11:22:15 AM MST -->
+<!-- Build Timestamp: 11/6/2025, 11:30:00 AM MST -->
