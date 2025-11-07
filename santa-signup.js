@@ -6,12 +6,12 @@ import {
     setDoc, 
     onSnapshot, 
     serverTimestamp, 
-    query, 
-    where // 'where' is no longer used in the query but kept in case
+    query 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    signOut // --- ADDED signOut ---
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // --- CONFIGURATION ---
@@ -21,8 +21,8 @@ const PARTY_DATE_YYYY_MM_DD = "2025-12-14";
 
 // Set the start and end times for the party (24-hour format)
 // Example: 9:00 AM = 9, 5:00 PM = 17
-const PARTY_START_HOUR = 17; // 9:00 AM
-const PARTY_END_HOUR = 19; // 5:00 PM (slots will run *until* 5:00 PM)
+const PARTY_START_HOUR = 17; // 5:00 PM
+const PARTY_END_HOUR = 19; // 7:00 PM (slots will run *until* 7:00 PM)
 
 // Set the duration of each time slot in minutes
 const SLOT_DURATION_MINUTES = 15;
@@ -47,21 +47,30 @@ let unsubscribeSlots = null;
 let allSlots = [];
 
 // --- Auth ---
-function initializePage() {
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            console.log('User is signed in:', user.uid);
-            setupSlotListener();
-        } else {
-            console.log('No user, signing in anonymously...');
-            signInAnonymously(auth).catch((error) => {
-                console.error("Anonymous sign-in failed:", error);
-                timeSlotContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
-            });
-            // onAuthStateChanged will fire again on success, triggering setupSlotListener
+// === MODIFIED: This function now forces a fresh sign-in ===
+async function initializePage() {
+    try {
+        console.log("Forcing fresh anonymous sign-in...");
+        // 1. Sign out any existing user to clear stale/bad credentials
+        await signOut(auth); 
+        console.log("Signed out previous user.");
+
+        // 2. Sign in with a new, guaranteed-fresh anonymous user
+        const userCredential = await signInAnonymously(auth);
+        console.log('Fresh user signed in:', userCredential.user.uid);
+        
+        // 3. NOW that we are 100% sure we have a valid user, set up the listener.
+        setupSlotListener();
+
+    } catch (error) {
+        console.error("Critical auth error:", error);
+        if (timeSlotContainer) {
+            timeSlotContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
         }
-    });
+    }
 }
+// === END MODIFICATION ===
+
 
 // --- Time Slot Generation & Rendering ---
 function generateAllSlots() {
@@ -94,10 +103,8 @@ function setupSlotListener() {
     // Generate the master list of slots first
     generateAllSlots();
 
-    // === FIX FOR PERMISSIONS ERROR ===
-    // We listen to the *entire* collection (which 'allow read: true' permits)
-    // and then filter the results on the client-side.
-    // This avoids a server-side query that requires a custom index.
+    // We listen to the *entire* collection.
+    // This query is allowed by our rule: "allow list: if request.auth != null;"
     const q = query(collection(db, "santaSignups"));
     
     if (unsubscribeSlots) unsubscribeSlots(); // Stop previous listener if any
@@ -138,8 +145,16 @@ function renderTimeSlots(takenSlotISOs) {
         return;
     }
 
+    // Add the dummy 'init' document to the taken list so it doesn't appear
+    // as a bug, but don't fail if it's already been deleted.
+    const allTakenSlots = [...takenSlotISOs];
+    if (!allTakenSlots.includes('init')) {
+        allTakenSlots.push('init');
+    }
+
     allSlots.forEach(slot => {
-        const isTaken = takenSlotISOs.includes(slot.iso);
+        // Check against the full list (which includes the 'init' doc)
+        const isTaken = allTakenSlots.includes(slot.iso);
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = slot.label;
@@ -232,13 +247,6 @@ santaSignupForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        // Use setDoc with the ISO string as the ID.
-        // This acts as a final check. If someone *just* took the slot,
-        // this will overwrite... but since we're using onSnapshot,
-        // the button should have been disabled.
-        // For a more robust "atomic" lock, we'd use a transaction,
-        // but setDoc with a unique ID is 99.9% effective here.
-        
         // We will use the ISO string (which is unique) as the document ID.
         const docRef = doc(db, "santaSignups", selectedSlotInfo.iso);
         await setDoc(docRef, bookingData);
@@ -262,9 +270,10 @@ santaSignupForm.addEventListener('submit', async (e) => {
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     if (timestampContainer) {
+        // This is required by the Core Directives
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/6/2025, 12:51:00 PM MST */
+/* Build Timestamp: 11/7/2025, 9:52:00 AM MST */
