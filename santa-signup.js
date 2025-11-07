@@ -6,12 +6,12 @@ import {
     setDoc, 
     onSnapshot, 
     serverTimestamp, 
-    query 
+    query // Keep query just in case, though not used for main listener
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
     onAuthStateChanged,
-    signOut // --- ADDED signOut ---
+    signOut 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // --- CONFIGURATION ---
@@ -43,11 +43,11 @@ const bookedSlotDisplay = document.getElementById('booked-slot-display');
 
 // --- State ---
 let selectedSlotInfo = null; // { iso: "...", label: "..." }
-let unsubscribeSlots = null;
+let unsubscribeSlots = null; // This will now be a function that unsubscribes from *all* doc listeners
 let allSlots = [];
 
 // --- Auth ---
-// === MODIFIED: This function now forces a fresh sign-in ===
+// This function forces a fresh sign-in to ensure auth is valid
 async function initializePage() {
     try {
         console.log("Forcing fresh anonymous sign-in...");
@@ -69,7 +69,6 @@ async function initializePage() {
         }
     }
 }
-// === END MODIFICATION ===
 
 
 // --- Time Slot Generation & Rendering ---
@@ -99,44 +98,66 @@ function formatTime(date) {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
+// === *** THIS IS THE FIX *** ===
+// This function was modified to listen to individual documents
+// instead of the whole collection, bypassing the 'list' permission error.
 function setupSlotListener() {
     // Generate the master list of slots first
     generateAllSlots();
 
-    // We listen to the *entire* collection.
-    // This query is allowed by our rule: "allow list: if request.auth != null;"
-    const q = query(collection(db, "santaSignups"));
+    // Stop previous listeners if any
+    if (unsubscribeSlots) unsubscribeSlots(); 
     
-    if (unsubscribeSlots) unsubscribeSlots(); // Stop previous listener if any
-    
-    unsubscribeSlots = onSnapshot(q, (snapshot) => {
-        // CLIENT-SIDE FILTERING:
-        // Filter the docs to only include those for the current party date
-        const takenSlotISOs = snapshot.docs
-            .filter(doc => doc.data().partyDate === PARTY_DATE_YYYY_MM_DD)
-            .map(doc => doc.id); // Doc ID is the ISO string
+    const unsubscribers = [];
+    const takenSlotISOs = new Set(); // Use a Set for efficient tracking
+
+    allSlots.forEach(slot => {
+        // We listen to each document individually.
+        // This uses the "get" permission, not the "list" permission.
+        const docRef = doc(db, "santaSignups", slot.iso);
+        
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                // Document exists, slot is taken
+                takenSlotISOs.add(slot.iso);
+            } else {
+                // Document does not exist, slot is available
+                takenSlotISOs.delete(slot.iso);
+            }
             
-        console.log("Taken slots:", takenSlotISOs);
-        renderTimeSlots(takenSlotISOs);
-    }, (error) => {
-        // --- ENHANCED ERROR LOGGING ---
-        console.error("Full Firebase Error (santa-signup.js):", error); // Log the full error
-        let errorMsg = "Error loading time slots. Please refresh the page.";
+            // Re-render the entire slot list.
+            // This is slightly less efficient than a collection query but necessary
+            // to work around the permissions error.
+            renderTimeSlots(takenSlotISOs);
+
+        }, (error) => {
+            // Log error for this specific document, but don't crash all listeners
+            console.error(`Error listening to doc ${slot.iso}:`, error);
+            
+            // The console error "Missing or insufficient permissions" will be caught here
+            // for each document if 'get' is not allowed.
+            // Since the rules say 'allow get: if true', this *shouldn't* fail,
+            // but we'll add a general error message just in case.
+            if (timeSlotContainer && !timeSlotContainer.innerHTML.includes("Error loading")) {
+                 timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading time slots. Please refresh. (Code: ${error.code})</p>`;
+            }
+        });
         
-        if (error.code === 'missing-or-insufficient-permissions' || error.code === 'permission-denied') {
-            errorMsg = "A configuration error occurred. Please contact the administrator. (Error: Permissions)";
-        } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
-             errorMsg = "A database index is required. Please contact the administrator.";
-        }
-        
-        if (timeSlotContainer) {
-            timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">${errorMsg}</p>`;
-        }
-        // --- END ENHANCED LOGGING ---
+        unsubscribers.push(unsubscribe);
     });
+
+    // Create a single function to unsubscribe from all doc listeners
+    unsubscribeSlots = () => {
+        unsubscribers.forEach(unsub => unsub());
+    };
+    
+    // Initial render (will be empty but sets up the structure)
+    // The listeners will populate it as they fire.
+    renderTimeSlots(takenSlotISOs);
 }
 
-function renderTimeSlots(takenSlotISOs) {
+// === MODIFIED to accept a Set ===
+function renderTimeSlots(takenSlotISOs_Set) { // Now accepts a Set
     if (!timeSlotContainer) return;
     timeSlotContainer.innerHTML = ''; // Clear existing
 
@@ -146,15 +167,14 @@ function renderTimeSlots(takenSlotISOs) {
     }
 
     // Add the dummy 'init' document to the taken list so it doesn't appear
-    // as a bug, but don't fail if it's already been deleted.
-    const allTakenSlots = [...takenSlotISOs];
-    if (!allTakenSlots.includes('init')) {
-        allTakenSlots.push('init');
-    }
+    const allTakenSlots = new Set(takenSlotISOs_Set); // Copy the set
+    allTakenSlots.add('init'); // Add 'init' doc to the set
 
     allSlots.forEach(slot => {
-        // Check against the full list (which includes the 'init' doc)
-        const isTaken = allTakenSlots.includes(slot.iso);
+        // === MODIFICATION: Use .has() for Set lookup (faster than Array.includes) ===
+        const isTaken = allTakenSlots.has(slot.iso); 
+        // === END MODIFICATION ===
+        
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = slot.label;
@@ -172,6 +192,8 @@ function renderTimeSlots(takenSlotISOs) {
         timeSlotContainer.appendChild(button);
     });
 }
+// === *** END OF THE FIX *** ===
+
 
 // --- UI Interaction ---
 function handleSlotClick(e) {
@@ -248,6 +270,7 @@ santaSignupForm.addEventListener('submit', async (e) => {
 
     try {
         // We will use the ISO string (which is unique) as the document ID.
+        // This maps to the 'allow create: if request.auth != null' rule.
         const docRef = doc(db, "santaSignups", selectedSlotInfo.iso);
         await setDoc(docRef, bookingData);
 
@@ -261,6 +284,8 @@ santaSignupForm.addEventListener('submit', async (e) => {
 
     } catch (error) {
         console.error("Error booking slot:", error);
+        // This error will fire if the user tries to book a slot
+        // that was *just* taken (i.e., setDoc fails)
         formErrorMessage.textContent = "Could not book slot. It might have been taken. Please refresh and try again.";
         submitButton.disabled = false;
         submitButton.textContent = "Book My Time Slot";
@@ -276,4 +301,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/7/2025, 9:52:00 AM MST */
+/* Build Timestamp: 11/7/2025, 10:01:00 AM MST */
