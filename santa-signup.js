@@ -6,7 +6,7 @@ import {
     setDoc, 
     onSnapshot, 
     serverTimestamp, 
-    query // Keep query just in case, though not used for main listener
+    query // Keep query
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
@@ -98,66 +98,49 @@ function formatTime(date) {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-// === *** THIS IS THE FIX *** ===
-// This function was modified to listen to individual documents
-// instead of the whole collection, bypassing the 'list' permission error.
+// === *** FIX REVERTED *** ===
+// This function is now reverted to the *original* logic
+// to query the entire collection at once.
+// This relies on the `allow list: if request.auth != null;` rule.
 function setupSlotListener() {
     // Generate the master list of slots first
     generateAllSlots();
 
-    // Stop previous listeners if any
-    if (unsubscribeSlots) unsubscribeSlots(); 
+    // We listen to the *entire* collection.
+    // This query is allowed by your rule: "allow list: if request.auth != null;"
+    const q = query(collection(db, "santaSignups"));
     
-    const unsubscribers = [];
-    const takenSlotISOs = new Set(); // Use a Set for efficient tracking
-
-    allSlots.forEach(slot => {
-        // We listen to each document individually.
-        // This uses the "get" permission, not the "list" permission.
-        const docRef = doc(db, "santaSignups", slot.iso);
-        
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                // Document exists, slot is taken
-                takenSlotISOs.add(slot.iso);
-            } else {
-                // Document does not exist, slot is available
-                takenSlotISOs.delete(slot.iso);
-            }
+    if (unsubscribeSlots) unsubscribeSlots(); // Stop previous listener if any
+    
+    unsubscribeSlots = onSnapshot(q, (snapshot) => {
+        // CLIENT-SIDE FILTERING:
+        // Filter the docs to only include those for the current party date
+        const takenSlotISOs = snapshot.docs
+            .filter(doc => doc.data().partyDate === PARTY_DATE_YYYY_MM_DD)
+            .map(doc => doc.id); // Doc ID is the ISO string
             
-            // Re-render the entire slot list.
-            // This is slightly less efficient than a collection query but necessary
-            // to work around the permissions error.
-            renderTimeSlots(takenSlotISOs);
-
-        }, (error) => {
-            // Log error for this specific document, but don't crash all listeners
-            console.error(`Error listening to doc ${slot.iso}:`, error);
-            
-            // The console error "Missing or insufficient permissions" will be caught here
-            // for each document if 'get' is not allowed.
-            // Since the rules say 'allow get: if true', this *shouldn't* fail,
-            // but we'll add a general error message just in case.
-            if (timeSlotContainer && !timeSlotContainer.innerHTML.includes("Error loading")) {
-                 timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">Error loading time slots. Please refresh. (Code: ${error.code})</p>`;
-            }
-        });
+        console.log("Taken slots:", takenSlotISOs);
+        renderTimeSlots(takenSlotISOs);
+    }, (error) => {
+        // --- ENHANCED ERROR LOGGING ---
+        console.error("Full Firebase Error (santa-signup.js):", error); // Log the full error
+        let errorMsg = "Error loading time slots. Please refresh the page.";
         
-        unsubscribers.push(unsubscribe);
+        if (error.code === 'missing-or-insufficient-permissions' || error.code === 'permission-denied') {
+            errorMsg = "A configuration error occurred. Please contact the administrator. (Error: Permissions)";
+        } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
+             errorMsg = "A database index is required. Please contact the administrator.";
+        }
+        
+        if (timeSlotContainer) {
+            timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">${errorMsg}</p>`;
+        }
+        // --- END ENHANCED LOGGING ---
     });
-
-    // Create a single function to unsubscribe from all doc listeners
-    unsubscribeSlots = () => {
-        unsubscribers.forEach(unsub => unsub());
-    };
-    
-    // Initial render (will be empty but sets up the structure)
-    // The listeners will populate it as they fire.
-    renderTimeSlots(takenSlotISOs);
 }
 
-// === MODIFIED to accept a Set ===
-function renderTimeSlots(takenSlotISOs_Set) { // Now accepts a Set
+// === MODIFIED to accept an Array ===
+function renderTimeSlots(takenSlotISOs) { // Now accepts an Array
     if (!timeSlotContainer) return;
     timeSlotContainer.innerHTML = ''; // Clear existing
 
@@ -167,12 +150,14 @@ function renderTimeSlots(takenSlotISOs_Set) { // Now accepts a Set
     }
 
     // Add the dummy 'init' document to the taken list so it doesn't appear
-    const allTakenSlots = new Set(takenSlotISOs_Set); // Copy the set
-    allTakenSlots.add('init'); // Add 'init' doc to the set
+    const allTakenSlots = [...takenSlotISOs]; // Copy the array
+    if (!allTakenSlots.includes('init')) {
+        allTakenSlots.push('init'); // Add 'init' doc to the array
+    }
 
     allSlots.forEach(slot => {
-        // === MODIFICATION: Use .has() for Set lookup (faster than Array.includes) ===
-        const isTaken = allTakenSlots.has(slot.iso); 
+        // === MODIFICATION: Use .includes() for Array lookup ===
+        const isTaken = allTakenSlots.includes(slot.iso); 
         // === END MODIFICATION ===
         
         const button = document.createElement('button');
@@ -192,7 +177,7 @@ function renderTimeSlots(takenSlotISOs_Set) { // Now accepts a Set
         timeSlotContainer.appendChild(button);
     });
 }
-// === *** END OF THE FIX *** ===
+// === *** END OF REVERT *** ===
 
 
 // --- UI Interaction ---
@@ -301,4 +286,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initializePage(); // Start auth check
 });
 
-/* Build Timestamp: 11/7/2025, 10:01:00 AM MST */
+/* Build Timestamp: 11/7/2025, 10:05:00 AM MST */
