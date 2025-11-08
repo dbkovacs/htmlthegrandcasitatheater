@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Public Content ---
+    // Anyone can read movies, settings, and layouts
+    match /movies/{movieId} {
+      allow read: if true;
+      
+      // Anyone can create a new movie (for signups)
+      allow create: if true;
+      
+      // Only authenticated admins can update or delete movies
+      allow update, delete: if request.auth != null; // TODO: Restrict to admin emails
+
+      // Anyone can create a reservation
+      match /reservations/{reservationId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      // Only admins can change settings
+      allow write: if request.auth != null; // TODO: Restrict to admin emails
+    }
+
+    match /layouts/{layoutId} {
+      allow read: if true;
+      allow write: if request.auth != null; // TODO: Restrict to admin emails
+    }
+
+    // --- Auction Rules ---
+    match /auctionItems/{itemId} {
+      // Anyone can read the auction items
+      allow read: if true;
+      
+      // Only admins can create, update, or delete items
+      allow create, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+
+      // --- Bids Subcollection ---
+      match /bids/{bidId} {
+        // Anyone can create a bid
+        allow create: if true; 
+        
+        // ONLY authenticated admins can read or write bids
+        allow read, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+      }
+    }
+
+    // --- Santa Signup Rules ---
+
+    // This is the public list of taken slots.
+    match /publicSantaConfig/{dateId} {
+      // Allow read ONLY if the user is authenticated (including anonymous)
+      allow read: if request.auth != null;
+      
+      // ONLY allow an authenticated user (our anonymous transaction) to write
+      allow write: if request.auth != null;
+    }
+
+    // This is the private list of approved phone numbers.
+    match /familyPhoneList/{listId} {
+      // Allow read ONLY if the user is authenticated (for the transaction)
+      allow read: if request.auth != null;
+
+      // Only an admin should be able to write/update this list
+      allow write: if request.auth != null; // TODO: Restrict to admin emails
+    }
+
+    // This is the private booking information.
+    match /santaBookings/{bookingId} {
+      // Allow create ONLY if the user is authenticated (for the transaction)
+      allow create: if request.auth != null;
+
+      // Only an admin should be able to read or modify bookings
+      allow read, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+    }
+
+  }
+}
