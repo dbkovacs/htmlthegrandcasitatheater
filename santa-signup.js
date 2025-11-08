@@ -88,6 +88,9 @@ function setupPublicSlotListener() {
 
     const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
     
+    // DEBUGGING: Log the exact path we are trying to read
+    console.log(`Attempting to listen to document at path: ${publicSlotsRef.path}`);
+
     unsubscribePublicSlots = onSnapshot(publicSlotsRef, (doc) => {
         if (doc.exists()) {
             const data = doc.data();
@@ -307,4 +310,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPublicSlotListener();
 });
 
-/* Build Timestamp: 11/8/2025, 10:27:00 AM MST */
+/* Build Timestamp: 11/8/2025, 10:57:00 AM MST */
