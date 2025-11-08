@@ -1,36 +1,33 @@
 /* /santa-signup.js */
 import { db, auth } from './firebase-config.js';
 import { 
-    collection, 
     doc, 
-    setDoc, 
-    onSnapshot, 
+    runTransaction,
     serverTimestamp, 
-    query // Keep query
+    onSnapshot,
+    getDoc,
+    collection,
+    setDoc // We need setDoc for the transaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
-    onAuthStateChanged,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // --- CONFIGURATION ---
 // Set the date of the party
-// IMPORTANT: Use YYYY-MM-DD format.
+// This *MUST* match the Document ID you create in 'publicSantaConfig'
 const PARTY_DATE_YYYY_MM_DD = "2025-12-14"; 
 
-// Set the start and end times for the party (24-hour format)
-// Example: 9:00 AM = 9, 5:00 PM = 17
 const PARTY_START_HOUR = 17; // 5:00 PM
-const PARTY_END_HOUR = 19; // 7:00 PM (slots will run *until* 7:00 PM)
-
-// Set the duration of each time slot in minutes
+const PARTY_END_HOUR = 19; // 7:00 PM
 const SLOT_DURATION_MINUTES = 15;
 // --- END CONFIGURATION ---
 
 // --- DOM References ---
 const timestampContainer = document.getElementById('build-timestamp');
 const timeSlotContainer = document.getElementById('time-slot-container');
+const slotErrorMessage = document.getElementById('slot-error-message');
 const timeSlotFieldset = document.getElementById('time-slot-fieldset');
 const photoDetailsFieldset = document.getElementById('photo-details-fieldset');
 const selectedTimeDisplay = document.getElementById('selected-time-display');
@@ -41,39 +38,19 @@ const formErrorMessage = document.getElementById('form-error-message');
 const successMessageContainer = document.getElementById('success-message-container');
 const bookedSlotDisplay = document.getElementById('booked-slot-display');
 
+// Form Fields
+const familyPhoneInput = document.getElementById('family-phone');
+const submitterNameInput = document.getElementById('submitter-name');
+const familyMembersInput = document.getElementById('family-members');
+
 // --- State ---
 let selectedSlotInfo = null; // { iso: "...", label: "..." }
-let unsubscribeSlots = null; // This will now be a function that unsubscribes from *all* doc listeners
-let allSlots = [];
-
-// --- Auth ---
-// This function forces a fresh sign-in to ensure auth is valid
-async function initializePage() {
-    try {
-        console.log("Forcing fresh anonymous sign-in...");
-        // 1. Sign out any existing user to clear stale/bad credentials
-        await signOut(auth); 
-        console.log("Signed out previous user.");
-
-        // 2. Sign in with a new, guaranteed-fresh anonymous user
-        const userCredential = await signInAnonymously(auth);
-        console.log('Fresh user signed in:', userCredential.user.uid);
-        
-        // 3. NOW that we are 100% sure we have a valid user, set up the listener.
-        setupSlotListener();
-
-    } catch (error) {
-        console.error("Critical auth error:", error);
-        if (timeSlotContainer) {
-            timeSlotContainer.innerHTML = '<p class="text-red-400 col-span-full text-center">Error connecting to service. Please refresh.</p>';
-        }
-    }
-}
-
+let unsubscribePublicSlots = null;
+let allSlots = []; // Master list of generated slots
 
 // --- Time Slot Generation & Rendering ---
 function generateAllSlots() {
-    allSlots = [];
+    allSlots = []; // Clear and regenerate
     const partyDate = new Date(`${PARTY_DATE_YYYY_MM_DD}T00:00:00`);
     let currentSlotTime = new Date(partyDate.getTime());
     currentSlotTime.setHours(PARTY_START_HOUR, 0, 0, 0);
@@ -98,67 +75,52 @@ function formatTime(date) {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-// === *** FIX REVERTED *** ===
-// This function is now reverted to the *original* logic
-// to query the entire collection at once.
-// This relies on the `allow list: if request.auth != null;` rule.
-function setupSlotListener() {
+/**
+ * NEW: Public Slot Listener
+ * This function listens to a *publicly readable* document
+ * to get the list of taken slots. No auth is required.
+ */
+function setupPublicSlotListener() {
     // Generate the master list of slots first
     generateAllSlots();
 
-    // We listen to the *entire* collection.
-    // This query is allowed by your rule: "allow list: if request.auth != null;"
-    const q = query(collection(db, "santaSignups"));
+    if (unsubscribePublicSlots) unsubscribePublicSlots(); // Stop previous listener
+
+    const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
     
-    if (unsubscribeSlots) unsubscribeSlots(); // Stop previous listener if any
-    
-    unsubscribeSlots = onSnapshot(q, (snapshot) => {
-        // CLIENT-SIDE FILTERING:
-        // Filter the docs to only include those for the current party date
-        const takenSlotISOs = snapshot.docs
-            .filter(doc => doc.data().partyDate === PARTY_DATE_YYYY_MM_DD)
-            .map(doc => doc.id); // Doc ID is the ISO string
-            
-        console.log("Taken slots:", takenSlotISOs);
-        renderTimeSlots(takenSlotISOs);
+    unsubscribePublicSlots = onSnapshot(publicSlotsRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            const takenSlotISOs = data.takenSlots || [];
+            renderTimeSlots(takenSlotISOs);
+            slotErrorMessage.textContent = '';
+        } else {
+            // This happens if the 'publicSantaConfig/YYYY-MM-DD' doc isn't created
+            console.error("CRITICAL: Public config document not found.");
+            slotErrorMessage.textContent = "Error: Could not load slot configuration.";
+            timeSlotContainer.innerHTML = ''; // Clear spinner
+        }
     }, (error) => {
-        // --- ENHANCED ERROR LOGGING ---
-        console.error("Full Firebase Error (santa-signup.js):", error); // Log the full error
-        let errorMsg = "Error loading time slots. Please refresh the page.";
-        
-        if (error.code === 'missing-or-insufficient-permissions' || error.code === 'permission-denied') {
-            errorMsg = "A configuration error occurred. Please contact the administrator. (Error: Permissions)";
-        } else if (error.code === 'failed-precondition' && error.message.includes('index')) {
-             errorMsg = "A database index is required. Please contact the administrator.";
-        }
-        
-        if (timeSlotContainer) {
-            timeSlotContainer.innerHTML = `<p class="text-red-400 col-span-full text-center">${errorMsg}</p>`;
-        }
-        // --- END ENHANCED LOGGING ---
+        console.error("Error listening to public slots:", error);
+        slotErrorMessage.textContent = "Error connecting to slot server.";
+        timeSlotContainer.innerHTML = ''; // Clear spinner
     });
 }
 
-// === MODIFIED to accept an Array ===
-function renderTimeSlots(takenSlotISOs) { // Now accepts an Array
+/**
+ * Renders the time slot buttons based on the list of taken slot ISOs.
+ */
+function renderTimeSlots(takenSlotISOs) {
     if (!timeSlotContainer) return;
-    timeSlotContainer.innerHTML = ''; // Clear existing
+    timeSlotContainer.innerHTML = ''; // Clear spinner/existing
 
     if (allSlots.length === 0) {
         timeSlotContainer.innerHTML = '<p class="text-gray-400 col-span-full text-center">No time slots have been configured.</p>';
         return;
     }
 
-    // Add the dummy 'init' document to the taken list so it doesn't appear
-    const allTakenSlots = [...takenSlotISOs]; // Copy the array
-    if (!allTakenSlots.includes('init')) {
-        allTakenSlots.push('init'); // Add 'init' doc to the array
-    }
-
     allSlots.forEach(slot => {
-        // === MODIFICATION: Use .includes() for Array lookup ===
-        const isTaken = allTakenSlots.includes(slot.iso); 
-        // === END MODIFICATION ===
+        const isTaken = takenSlotISOs.includes(slot.iso);
         
         const button = document.createElement('button');
         button.type = 'button';
@@ -177,7 +139,6 @@ function renderTimeSlots(takenSlotISOs) { // Now accepts an Array
         timeSlotContainer.appendChild(button);
     });
 }
-// === *** END OF REVERT *** ===
 
 
 // --- UI Interaction ---
@@ -188,15 +149,13 @@ function handleSlotClick(e) {
         label: target.dataset.label
     };
     
-    // Show selected time
     selectedTimeDisplay.textContent = selectedSlotInfo.label;
 
-    // Show/Hide fieldsets
     timeSlotFieldset.classList.add('hidden');
     photoDetailsFieldset.classList.remove('hidden');
     
     // Focus the first input of the new section
-    document.getElementById('submitter-name').focus();
+    familyPhoneInput.focus();
 }
 
 backToSlotsButton.addEventListener('click', () => {
@@ -213,9 +172,16 @@ santaSignupForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    const submitterName = document.getElementById('submitter-name').value.trim();
-    const familyMembers = document.getElementById('family-members').value.trim();
+    // Get all form data
+    const familyPhone = familyPhoneInput.value.trim().replace(/\D/g, ''); // Clean phone
+    const submitterName = submitterNameInput.value.trim();
+    const familyMembers = familyMembersInput.value.trim();
 
+    // Validation
+    if (familyPhone.length < 10) {
+        formErrorMessage.textContent = "Please enter a valid 10-digit family phone number.";
+        return;
+    }
     if (!submitterName || !familyMembers) {
         formErrorMessage.textContent = "Please fill out your name and the family members attending.";
         return;
@@ -223,9 +189,9 @@ santaSignupForm.addEventListener('submit', async (e) => {
 
     formErrorMessage.textContent = "";
     submitButton.disabled = true;
-    submitButton.textContent = "Booking...";
+    submitButton.innerHTML = '<div class="spinner"></div>'; // Show spinner
 
-    // === MODIFIED: Collect photo combinations as objects ===
+    // Collect photo combinations
     const photoComboRows = document.querySelectorAll('.photo-combo-row');
     const photoCombinations = [];
     photoComboRows.forEach(row => {
@@ -233,57 +199,112 @@ santaSignupForm.addEventListener('submit', async (e) => {
         const santaCheckbox = row.querySelector('input[type="checkbox"]');
         const description = textInput.value.trim();
 
-        if (description.length > 0) { // Only save non-empty strings
+        if (description.length > 0) {
             photoCombinations.push({
                 description: description,
                 withSanta: santaCheckbox.checked
             });
         }
     });
-    // === END MODIFICATION ===
 
     const bookingData = {
         submitterName: submitterName,
         familyMembers: familyMembers,
-        // 'includeSanta' field is removed
-        photoCombinations: photoCombinations, // This now holds the array of objects
+        familyPhone: familyPhone, // Include verified phone
+        photoCombinations: photoCombinations,
         slotLabel: selectedSlotInfo.label,
-        partyDate: PARTY_DATE_YYYY_MM_DD, // Store the date for querying
+        partyDate: PARTY_DATE_YYYY_MM_DD,
         bookedAt: serverTimestamp(),
-        userId: auth.currentUser ? auth.currentUser.uid : 'anonymous'
+        // userId will be added within the transaction
     };
 
+    let user;
     try {
-        // We will use the ISO string (which is unique) as the document ID.
-        // This maps to the 'allow create: if request.auth != null' rule.
-        const docRef = doc(db, "santaSignups", selectedSlotInfo.iso);
-        await setDoc(docRef, bookingData);
+        // 1. Sign in anonymously. This is required to read the phone list.
+        const userCredential = await signInAnonymously(auth);
+        user = userCredential.user;
+        bookingData.userId = user.uid; // Add the auth UID to the data
 
-        // Success!
+        // 2. Run the secure transaction
+        await runTransaction(db, async (transaction) => {
+            // Define all document references
+            const phoneListRef = doc(db, "familyPhoneList", "all_numbers");
+            const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
+            const newBookingRef = doc(db, "santaBookings", selectedSlotInfo.iso);
+
+            // --- Read Phase ---
+            // a. Read the private family phone list
+            const phoneListDoc = await transaction.get(phoneListRef);
+            if (!phoneListDoc.exists()) {
+                throw new Error("CONFIG_ERROR: Family phone list not found.");
+            }
+            
+            // b. Read the public slot tracker
+            const publicSlotsDoc = await transaction.get(publicSlotsRef);
+            if (!publicSlotsDoc.exists()) {
+                throw new Error("CONFIG_ERROR: Public slot config not found.");
+            }
+
+            // --- Validation Phase ---
+            // a. Check if phone is on the list
+            const allowedPhones = phoneListDoc.data().phones || [];
+            if (!allowedPhones.includes(familyPhone)) {
+                throw new Error("VERIFICATION_FAILED");
+            }
+
+            // b. Check if slot is already taken
+            const takenSlots = publicSlotsDoc.data().takenSlots || [];
+            if (takenSlots.includes(selectedSlotInfo.iso)) {
+                throw new Error("SLOT_TAKEN");
+            }
+
+            // --- Write Phase (All checks passed) ---
+            // a. Write the private booking data
+            transaction.set(newBookingRef, bookingData);
+            
+            // b. Update the public list of taken slots
+            const newTakenSlots = [...takenSlots, selectedSlotInfo.iso];
+            transaction.update(publicSlotsRef, { takenSlots: newTakenSlots });
+        });
+
+        // 3. Transaction Succeeded
         santaSignupForm.classList.add('hidden');
         successMessageContainer.classList.remove('hidden');
         bookedSlotDisplay.textContent = `Your slot: ${selectedSlotInfo.label}`;
         
-        // Stop listening, we're done.
-        if (unsubscribeSlots) unsubscribeSlots();
+        if (unsubscribePublicSlots) unsubscribePublicSlots(); // Stop listening
 
     } catch (error) {
         console.error("Error booking slot:", error);
-        // This error will fire if the user tries to book a slot
-        // that was *just* taken (i.e., setDoc fails)
-        formErrorMessage.textContent = "Could not book slot. It might have been taken. Please refresh and try again.";
+        // Handle custom transaction errors
+        if (error.message === "VERIFICATION_FAILED") {
+            formErrorMessage.textContent = "Phone number not found on the family list. Please try again.";
+        } else if (error.message === "SLOT_TAKEN") {
+            formErrorMessage.textContent = "Sorry, that slot was just booked by someone else. Please go back and pick a new time.";
+        } else if (error.message.startsWith("CONFIG_ERROR")) {
+            formErrorMessage.textContent = "A configuration error occurred. Please contact the administrator.";
+        } else {
+            formErrorMessage.textContent = "Could not book slot. Please refresh and try again.";
+        }
+        
+    } finally {
+        // 4. Always sign out the temporary anonymous user
+        if (user) {
+            await signOut(auth);
+        }
+        // Restore button
         submitButton.disabled = false;
-        submitButton.textContent = "Book My Time Slot";
+        submitButton.innerHTML = "Book My Time Slot";
     }
 });
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     if (timestampContainer) {
-        // This is required by the Core Directives
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
-    initializePage(); // Start auth check
+    // Start the public listener. No auth required.
+    setupPublicSlotListener();
 });
 
-/* Build Timestamp: 11/7/2025, 10:05:00 AM MST */
+/* Build Timestamp: 11/8/2025, 10:27:00 AM MST */

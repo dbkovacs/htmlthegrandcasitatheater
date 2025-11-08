@@ -14,27 +14,21 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa Party Signup - The Grand Casita Family Hub</title>
+    <title>Santa Photo Signup - The Grand Casita Family Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="layout-styles.css">
 
-    <!-- === NEW STYLES FOR BACKGROUND PHOTO === -->
     <style>
         body {
-            /* * === YOUR PHOTO HERE ===
-             * Replace the URL below with a link to your own photo from a previous event.
-             * This placeholder is 1920x1080.
-             */
             background-image: url('https://firebasestorage.googleapis.com/v0/b/thegrandcasitatheater.firebasestorage.app/o/posters%2Fbackground2025-11-06_11-24-27.jpg?alt=media&token=1541ca5b-349f-412a-9dc1-bca0a34050ea');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
 
-        /* This overlay darkens and blurs the background photo */
         body::before {
             content: '';
             position: fixed;
@@ -42,38 +36,42 @@
             left: 0;
             right: 0;
             bottom: 0;
-            /* This uses the brand dark color but with transparency */
             background-color: rgba(56, 0, 0, 0.7); 
-            /* This creates the blur effect */
             backdrop-filter: blur(8px); 
-            /* Place the overlay behind the content */
             z-index: -1;
         }
 
-        /* Ensure the main container sits on top of the blurred background */
         .container {
             position: relative;
             z-index: 1;
         }
-    </style>
-    <!-- === END NEW STYLES === -->
 
+        /* --- NEW SPINNER --- */
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fde047; /* text-brand-gold */
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-brand-dark text-white">
 
-    <!-- The 'container' class is now used to layer content above the blur -->
     <div class="container mx-auto px-4 py-8 md:py-16 max-w-3xl">
 
-        <!-- === MODIFIED HEADER WITH MORE DESCRIPTION === -->
         <header class="text-center mb-12">
             <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Santa Photo Signup</h1>
-            <p class="text-xl text-gray-300 mt-2">Book your family's 15-minute photo slot for the upcoming party!</p>
+            <p class="text-xl text-gray-300 mt-2">Book your family's 15-minute photo slot!</p>
             <p class="text-lg text-gray-400 mt-4 max-w-2xl mx-auto">
-                Welcome! This is where you can reserve your private 15-minute time slot with Santa.
-                Please review the available times below and select one that works best for your family.
+                Welcome! Review the available times below and select one that works best for your family.
             </p>
         </header>
-        <!-- === END MODIFIED HEADER === -->
 
         <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
             
@@ -92,24 +90,27 @@
                 <fieldset id="time-slot-fieldset">
                     <h2 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Step 1: Choose Your Time Slot</h2>
                     <div class="p-4 bg-black/20 border border-yellow-300/10 rounded-lg">
-                        <!-- === MODIFIED DESCRIPTION === -->
                         <p class="text-sm text-gray-300 mb-4">
-                            Please select one 15-minute time slot for your family.
-                            These slots are updated live. If a button is gray and crossed out, that time has already been booked by another family.
-                            Once you pick a time, you'll be asked for your photo details.
+                            Please select one 15-minute time slot.
+                            These slots are updated live. Grayed-out times are already booked.
                         </p>
-                        <!-- === END MODIFIED DESCRIPTION === -->
                         <div id="time-slot-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            <!-- Time slots will be injected here by santa-signup.js -->
-                            <p class="text-gray-400 col-span-full text-center">Loading available time slots...</p>
+                            <!-- Loading Spinner -->
+                            <div class="col-span-full py-8">
+                                <div class="spinner"></div>
+                                <p class="text-center text-gray-400 mt-2">Loading available slots...</p>
+                            </div>
                         </div>
+                        <p id="slot-error-message" class="text-red-400 text-center text-sm h-4 mt-2"></p>
                     </div>
                 </fieldset>
 
                 <!-- Step 2: Photo & Family Details -->
                 <fieldset id="photo-details-fieldset" class="hidden space-y-6">
                     <h2 class="font-cinzel text-2xl text-brand-gold text-shadow mb-2">Step 2: Plan Your Photos</h2>
-                    <div classs="p-4 bg-black/20 border border-yellow-300/10 rounded-lg">
+                    
+                    <!-- Selected Time Display -->
+                    <div class="p-4 bg-black/20 border border-yellow-300/10 rounded-lg">
                         <div class="flex justify-between items-center p-3 bg-brand-dark rounded-lg border border-yellow-300/20">
                             <div>
                                 <span class="text-gray-400 text-sm">Your Selected Slot:</span>
@@ -119,7 +120,17 @@
                         </div>
                     </div>
                     
+                    <!-- Form Fields -->
                     <div class="p-4 bg-black/20 border border-yellow-300/10 rounded-lg space-y-6">
+                        
+                        <!-- --- NEW PHONE VERIFICATION FIELD --- -->
+                        <div>
+                            <label for="family-phone" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Family Phone Number (for Verification)</label>
+                            <input type="tel" name="family-phone" id="family-phone" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., 1234567890">
+                            <p class="text-xs text-gray-400 mt-1">Used to verify you're part of the family list.</p>
+                        </div>
+                        <!-- --- END NEW FIELD --- -->
+
                         <div>
                             <label for="submitter-name" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Your Name (for booking)</label>
                             <input type="text" name="submitter-name" id="submitter-name" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition">
@@ -128,12 +139,10 @@
                         <div>
                             <label for="family-members" class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Family Members Attending</label>
                             <input type="text" name="family-members" id="family-members" required class="w-full bg-black/30 border-yellow-300/20 text-white rounded-lg p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-300 transition" placeholder="e.g., John, Jane, Jackie, and Jim">
-                            <p class="text-xs text-gray-400 mt-1">List all family members who will be in the photos.</p>
+                            <p class="text-xs text-gray-400 mt-1">List all members for the photographer's shoot list.</p>
                         </div>
 
-                        <!-- === REMOVED Single "Include Santa" Checkbox === -->
-                        
-                        <!-- === MODIFIED Photo Combinations Section === -->
+                        <!-- Photo Combinations Section -->
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2 font-cinzel tracking-wider">Photo Combinations (Up to 5)</label>
                             <p class="text-xs text-gray-400 mb-2">List the different photo groups you'd like and check the box if that group includes Santa.</p>
@@ -180,13 +189,11 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- === END MODIFIED SECTION === -->
-
                     </div>
 
                     <!-- Submit Button -->
-                    <div class="border-t border-yellow-300/10 pt-6">
-                        <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg">
+                    <div classs="border-t border-yellow-300/10 pt-6">
+                        <button type="submit" id="submitButton" class="btn-velvet primary w-full text-lg h-16 flex items-center justify-center">
                             Book My Time Slot
                         </button>
                     </div>
@@ -206,4 +213,4 @@
 
 </body>
 </html>
-<!-- Build Timestamp: 11/7/2025, 10:01:00 AM MST -->
+<!-- Build Timestamp: 11/8/2025, 10:27:00 AM MST -->
