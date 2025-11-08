@@ -7,11 +7,12 @@ import {
     onSnapshot,
     getDoc,
     collection,
-    setDoc // We need setDoc for the transaction
+    setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     signInAnonymously, 
-    signOut 
+    signOut,
+    onAuthStateChanged // CORRECTED: Import onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // --- CONFIGURATION ---
@@ -78,7 +79,7 @@ function formatTime(date) {
 /**
  * NEW: Public Slot Listener
  * This function listens to a *publicly readable* document
- * to get the list of taken slots. No auth is required.
+ * to get the list of taken slots.
  */
 function setupPublicSlotListener() {
     // Generate the master list of slots first
@@ -89,7 +90,7 @@ function setupPublicSlotListener() {
     const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
     
     // DEBUGGING: Log the exact path we are trying to read
-    console.log(`Attempting to listen to document at path: ${publicSlotsRef.path}`);
+    console.log(`Attaching public slot listener to: ${publicSlotsRef.path}`);
 
     unsubscribePublicSlots = onSnapshot(publicSlotsRef, (doc) => {
         if (doc.exists()) {
@@ -104,8 +105,9 @@ function setupPublicSlotListener() {
             timeSlotContainer.innerHTML = ''; // Clear spinner
         }
     }, (error) => {
+        // This is where the "Missing or insufficient permissions" error was happening
         console.error("Error listening to public slots:", error);
-        slotErrorMessage.textContent = "Error connecting to slot server.";
+        slotErrorMessage.textContent = `Error connecting to slot server: ${error.message}`;
         timeSlotContainer.innerHTML = ''; // Clear spinner
     });
 }
@@ -221,11 +223,14 @@ santaSignupForm.addEventListener('submit', async (e) => {
         // userId will be added within the transaction
     };
 
-    let user;
+    // --- CORRECTED: Get user from auth state, don't sign in/out ---
+    const user = auth.currentUser;
+
     try {
-        // 1. Sign in anonymously. This is required to read the phone list.
-        const userCredential = await signInAnonymously(auth);
-        user = userCredential.user;
+        // 1. Check if user is authenticated (from the onAuthStateChanged listener)
+        if (!user) {
+            throw new Error("Authentication session expired. Please refresh the page and try again.");
+        }
         bookingData.userId = user.uid; // Add the auth UID to the data
 
         // 2. Run the secure transaction
@@ -287,14 +292,13 @@ santaSignupForm.addEventListener('submit', async (e) => {
         } else if (error.message.startsWith("CONFIG_ERROR")) {
             formErrorMessage.textContent = "A configuration error occurred. Please contact the administrator.";
         } else {
-            formErrorMessage.textContent = "Could not book slot. Please refresh and try again.";
+            formErrorMessage.textContent = `Could not book slot: ${error.message}`;
         }
         
     } finally {
-        // 4. Always sign out the temporary anonymous user
-        if (user) {
-            await signOut(auth);
-        }
+        // --- CORRECTED: Removed the signOut() call ---
+        // The user stays signed in anonymously for the session.
+        
         // Restore button
         submitButton.disabled = false;
         submitButton.innerHTML = "Book My Time Slot";
@@ -302,28 +306,36 @@ santaSignupForm.addEventListener('submit', async (e) => {
 });
 
 // --- Initialization ---
-// --- MODIFIED: Wrap listener setup in an anonymous auth function ---
-async function initializePage() {
+// --- CORRECTED: Replaced initializePage with onAuthStateChanged ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Set build timestamp immediately
     if (timestampContainer) {
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
-    
-    try {
-        // Sign in anonymously first. This shouldn't be required for "allow read;"
-        // but will ensure we have an auth context, which can help with tricky rules.
-        await signInAnonymously(auth);
-        console.log("Signed in anonymously for slot listening.");
-        
-        // Now that we are authenticated, set up the listener.
-        setupPublicSlotListener();
 
-    } catch (error) {
-        console.error("Error signing in anonymously for listener:", error);
-        slotErrorMessage.textContent = "Error initializing connection.";
-    }
-}
+    // 2. Set up the auth state listener
+    // This listener fires once on load, and any time the auth state changes.
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 3a. User is authenticated (from our signInAnonymously call)
+            // We are confirmed to have request.auth != null
+            console.log("Authenticated with user ID:", user.uid);
+            
+            // 4. NOW it's safe to attach the Firestore listener
+            setupPublicSlotListener(); 
+            
+        } else {
+            // 3b. No user. Sign in anonymously.
+            // This will trigger the onAuthStateChanged listener to run *again*,
+            // but this time it will enter the `if (user)` block.
+            console.log("No user, signing in anonymously...");
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously for listener:", error);
+                if(slotErrorMessage) slotErrorMessage.textContent = "Error initializing connection.";
+            });
+        }
+    });
+});
+// --- END CORRECTION ---
 
-document.addEventListener('DOMContentLoaded', initializePage);
-// --- END MODIFICATION ---
-
-/* Build Timestamp: 11/8/2025, 11:03:00 AM MST */
+/* Build Timestamp: 11/8/2025, 11:25:00 AM MST */
