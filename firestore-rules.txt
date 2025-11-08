@@ -1,50 +1,61 @@
 rules_version = '2';
+
+// Helper function to check for admin email
+function isAdmin() {
+  // VVV YOU MUST EDIT THIS LIST VVV
+  let ADMIN_EMAILS = ['dbkovacs@gmail.com'];
+  // ^^^ YOU MUST EDIT THIS LIST ^^^
+  return request.auth != null && request.auth.token.email in ADMIN_EMAILS;
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Public Content ---
-    // Anyone can read movies, settings, and layouts
     match /movies/{movieId} {
+      // Anyone can read movie info
       allow read: if true;
-      
-      // Anyone can create a new movie (for signups)
+      // Anyone can create a new movie suggestion (for signups)
       allow create: if true;
-      
-      // Only authenticated admins can update or delete movies
-      allow update, delete: if request.auth != null; // TODO: Restrict to admin emails
+      // Only admins can approve, update, or delete movies
+      allow update, delete: if isAdmin();
 
-      // Anyone can create a reservation
+      // --- Reservations Subcollection ---
       match /reservations/{reservationId} {
-        allow read, write: if true;
+        // Anyone with an anonymous ID can read or create a reservation
+        allow read, create: if request.auth != null;
+        // Only admins can update or delete a reservation
+        allow update, delete: if isAdmin();
       }
     }
 
     match /settings/{settingId} {
+      // Anyone can read settings (e.g., homepage mode)
       allow read: if true;
       // Only admins can change settings
-      allow write: if request.auth != null; // TODO: Restrict to admin emails
+      allow write: if isAdmin();
     }
 
     match /layouts/{layoutId} {
+      // Anyone can read seating layouts
       allow read: if true;
-      allow write: if request.auth != null; // TODO: Restrict to admin emails
+      // Only admins can change layouts
+      allow write: if isAdmin();
     }
 
     // --- Auction Rules ---
     match /auctionItems/{itemId} {
       // Anyone can read the auction items
       allow read: if true;
-      
       // Only admins can create, update, or delete items
-      allow create, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+      allow create, update, delete: if isAdmin();
 
       // --- Bids Subcollection ---
       match /bids/{bidId} {
-        // Anyone can create a bid
-        allow create: if true; 
-        
-        // ONLY authenticated admins can read or write bids
-        allow read, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+        // Any anonymous user can create (place) a bid
+        allow create: if request.auth != null;
+        // Only admins can read, update, or delete bids
+        allow read, update, delete: if isAdmin();
       }
     }
 
@@ -52,9 +63,9 @@ service cloud.firestore {
 
     // This is the public list of taken slots.
     match /publicSantaConfig/{dateId} {
-      // Allow read ONLY if the user is authenticated (including anonymous)
-      allow read: if request.auth != null;
-      
+      // **THIS IS THE BUG FIX**
+      // Allow ANYONE (even before auth) to read the list of taken slots.
+      allow read: if true;
       // ONLY allow an authenticated user (our anonymous transaction) to write
       allow write: if request.auth != null;
     }
@@ -63,18 +74,16 @@ service cloud.firestore {
     match /familyPhoneList/{listId} {
       // Allow read ONLY if the user is authenticated (for the transaction)
       allow read: if request.auth != null;
-
       // Only an admin should be able to write/update this list
-      allow write: if request.auth != null; // TODO: Restrict to admin emails
+      allow write: if isAdmin();
     }
 
     // This is the private booking information.
     match /santaBookings/{bookingId} {
       // Allow create ONLY if the user is authenticated (for the transaction)
       allow create: if request.auth != null;
-
       // Only an admin should be able to read or modify bookings
-      allow read, update, delete: if request.auth != null; // TODO: Restrict to admin emails
+      allow read, update, delete: if isAdmin();
     }
 
   }
