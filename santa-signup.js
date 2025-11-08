@@ -302,12 +302,28 @@ santaSignupForm.addEventListener('submit', async (e) => {
 });
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- MODIFIED: Wrap listener setup in an anonymous auth function ---
+async function initializePage() {
     if (timestampContainer) {
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
-    // Start the public listener. No auth required.
-    setupPublicSlotListener();
-});
+    
+    try {
+        // Sign in anonymously first. This shouldn't be required for "allow read;"
+        // but will ensure we have an auth context, which can help with tricky rules.
+        await signInAnonymously(auth);
+        console.log("Signed in anonymously for slot listening.");
+        
+        // Now that we are authenticated, set up the listener.
+        setupPublicSlotListener();
 
-/* Build Timestamp: 11/8/2025, 10:57:00 AM MST */
+    } catch (error) {
+        console.error("Error signing in anonymously for listener:", error);
+        slotErrorMessage.textContent = "Error initializing connection.";
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initializePage);
+// --- END MODIFICATION ---
+
+/* Build Timestamp: 11/8/2025, 11:03:00 AM MST */
