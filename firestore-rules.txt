@@ -30,10 +30,18 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      // Anyone can read settings (e.g., homepage mode)
-      allow read: if true;
-      // Only admins can change settings
+      // Anyone can read *public* settings (e.g., homepage mode)
+      allow read: if settingId == 'homepage';
+      // Only admins can change *any* setting
       allow write: if isAdmin();
+
+      // --- NEW RULE ---
+      // Allow authenticated users to read the 'auction' doc (for phone list)
+      // This is safe because it's inside a transaction that requires auth
+      match /auction/{docId} {
+          allow read: if request.auth != null;
+      }
+      // --- END NEW RULE ---
     }
 
     match /layouts/{layoutId} {
@@ -63,20 +71,13 @@ service cloud.firestore {
 
     // This is the public list of taken slots.
     match /publicSantaConfig/{dateId} {
-      // **THIS IS THE BUG FIX**
       // Allow ANYONE (even before auth) to read the list of taken slots.
       allow read: if true;
       // ONLY allow an authenticated user (our anonymous transaction) to write
       allow write: if request.auth != null;
     }
 
-    // This is the private list of approved phone numbers.
-    match /familyPhoneList/{listId} {
-      // Allow read ONLY if the user is authenticated (for the transaction)
-      allow read: if request.auth != null;
-      // Only an admin should be able to write/update this list
-      allow write: if isAdmin();
-    }
+    // --- REMOVED OBSOLETE familyPhoneList rules ---
 
     // This is the private booking information.
     match /santaBookings/{bookingId} {

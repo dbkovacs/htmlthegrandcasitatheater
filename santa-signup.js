@@ -236,7 +236,12 @@ santaSignupForm.addEventListener('submit', async (e) => {
         // 2. Run the secure transaction
         await runTransaction(db, async (transaction) => {
             // Define all document references
-            const phoneListRef = doc(db, "familyPhoneList", "all_numbers");
+            
+            // --- UPDATED PATH ---
+            // const phoneListRef = doc(db, "familyPhoneList", "all_numbers");
+            const phoneListRef = doc(db, "settings", "auction");
+            // --- END UPDATED PATH ---
+
             const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
             const newBookingRef = doc(db, "santaBookings", selectedSlotInfo.iso);
 
@@ -255,7 +260,12 @@ santaSignupForm.addEventListener('submit', async (e) => {
 
             // --- Validation Phase ---
             // a. Check if phone is on the list
-            const allowedPhones = phoneListDoc.data().phones || [];
+            
+            // --- UPDATED FIELD NAME ---
+            // const allowedPhones = phoneListDoc.data().phones || [];
+            const allowedPhones = phoneListDoc.data().approvedNumbers || [];
+            // --- END UPDATED FIELD NAME ---
+
             if (!allowedPhones.includes(familyPhone)) {
                 throw new Error("VERIFICATION_FAILED");
             }
@@ -337,5 +347,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // --- END CORRECTION ---
-
-/* Build Timestamp: 11/8/2025, 11:25:00 AM MST */
