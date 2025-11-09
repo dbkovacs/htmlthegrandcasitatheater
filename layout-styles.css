@@ -424,6 +424,21 @@ body {
     opacity: 0.7;
 }
 
+/* --- NEW SPINNER (for santa-signup.js) --- */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fde047; /* text-brand-gold */
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* --- END NEW SPINNER --- */
+
 /* NEW: Santa Gallery Styles */
 .santa-gallery-grid {
     display: grid;
@@ -453,4 +468,4 @@ body {
 
 
 /* NOTE: All datepicker styles have been moved to datepicker-theme.css */
-/* Build Timestamp: 11/8/2025, 10:27:00 AM MST */
+/* Build Timestamp: 11/8/2025, 4:09:00 PM MST */

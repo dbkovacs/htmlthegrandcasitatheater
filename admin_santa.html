@@ -1,0 +1,120 @@
+<!-- /admin_santa.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7KP0BL67YF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-7KP0BL67YF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Admin - The Grand Casita Family Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="layout-styles.css">
+    <style>
+        /* Re-using auction admin styles for consistency */
+        .booking-card-admin-container {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(253, 224, 71, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .booking-view, .booking-edit-form {
+            padding: 1rem;
+        }
+        .booking-card-admin {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .booking-card-admin .delete-button,
+        .booking-card-admin .edit-button {
+            font-family: 'Cinzel', serif;
+            padding: 0.2rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .booking-card-admin .delete-button { background-color: #7f1d1d; color: #fecaca; }
+        .booking-card-admin .delete-button:hover { background-color: #b91c1c; color: white;}
+        .booking-card-admin .edit-button { background-color: #14532d; color: #dcfce7;}
+        .booking-card-admin .edit-button:hover { background-color: #166534; color: white;}
+
+        /* Styles for edit form */
+        .booking-edit-form label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #d1d5db;
+            margin-bottom: 0.25rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+        }
+        .booking-edit-form input, .booking-edit-form textarea {
+            width: 100%;
+            background-color: rgba(0,0,0,0.3);
+            border: 1px solid rgba(252, 211, 77, 0.2);
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .booking-edit-form input:focus, .booking-edit-form textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #fcd34d;
+            border-color: #fcd34d;
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-white">
+
+    <div class="container mx-auto px-4 py-8 md:py-16 max-w-7xl">
+
+        <header class="text-center mb-12">
+            <h1 class="font-cinzel text-4xl md:text-6xl text-brand-gold text-shadow">Santa Signup Admin</h1>
+        </header>
+
+        <main class="bg-brand-card p-8 rounded-2xl shadow-2xl shadow-black/50 border-2 border-yellow-300/10">
+            <div id="dashboard">
+                <nav class="flex flex-col md:flex-row justify-between md:items-center mb-8 border-b border-yellow-300/10 pb-4 gap-4">
+                    <h2 class="font-cinzel text-3xl text-brand-gold text-shadow">Booking Dashboard</h2>
+                    <div class="flex flex-wrap justify-center items-center gap-4">
+                        <button id="print-shot-list-button" class="btn-velvet primary text-sm py-2 px-3">Print Shot List</button>
+                        <a href="santa-signup.html" class="btn-velvet text-sm py-2 px-3">Santa Signup Page</a>
+                        <a href="admin.html" class="btn-velvet text-sm py-2 px-3">Theater Admin</a>
+                        <a href="admin_auction.html" class="btn-velvet text-sm py-2 px-3">Auction Admin</a>
+                        <button id="logout-button" class="btn-velvet text-sm py-2 px-3">Logout</button>
+                    </div>
+                </nav>
+
+                <section id="manage-bookings-section">
+                    <h3 class="font-cinzel text-2xl text-brand-gold text-shadow mb-4">Manage Bookings</h3>
+                    <div id="manage-bookings-container" class="space-y-4">
+                        <!-- Bookings will be loaded here by JS -->
+                        <p class="text-gray-400">Loading bookings...</p>
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+
+        <footer class="text-center p-4 text-xs text-gray-400 mt-8">
+            <p><a href="index.html" class="hover:text-yellow-300">Back to Main Page</a></p>
+            <p id="build-timestamp" class="mt-2"></p>
+        </footer>
+    </div>
+
+    <script type="module" src="admin_santa.js"></script>
+
+</body>
+</html>
+<!-- Build Timestamp: 11/8/2025, 4:09:00 PM MST -->
