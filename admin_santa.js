@@ -1,472 +1,368 @@
-/* /admin_santa.js */
+/* /santa-signup.js */
 import { db, auth } from './firebase-config.js';
 import { 
-    collection, 
-    onSnapshot, 
     doc, 
-    deleteDoc, 
-    updateDoc, 
-    query, 
-    orderBy,
     runTransaction,
-    documentId // <-- ADDED THIS IMPORT
+    serverTimestamp, 
+    onSnapshot,
+    getDoc,
+    collection,
+    setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
-    onAuthStateChanged, 
-    signOut 
+    signInAnonymously, 
+    signOut,
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// VVV YOU MUST EDIT THIS LIST VVV
-// This list controls who can access the admin panel.
-const ADMIN_EMAILS = ['dbkovacs@gmail.com'];
-// ^^^ YOU MUST EDIT THIS LIST ^^^
-
 // --- CONFIGURATION ---
-// This *MUST* match the Document ID from 'santa-signup.js'
+// Set the date of the party
+// This *MUST* match the Document ID you create in 'publicSantaConfig'
 const PARTY_DATE_YYYY_MM_DD = "2025-12-14"; 
+
+const PARTY_START_HOUR = 18; // 6:00 PM
+const PARTY_START_MINUTE = 30; // 6:30 PM
+const PARTY_END_HOUR = 19; // 7:00 PM
+const PARTY_END_MINUTE = 50; // 7:50 PM
+const SLOT_DURATION_MINUTES = 10;
 // --- END CONFIGURATION ---
 
-
-// --- Global State ---
-let allBookings = []; // To store bookings for the print function
-
 // --- DOM References ---
-const manageBookingsContainer = document.getElementById('manage-bookings-container');
 const timestampContainer = document.getElementById('build-timestamp');
-const logoutButton = document.getElementById('logout-button');
-const printShotListButton = document.getElementById('print-shot-list-button');
+const timeSlotContainer = document.getElementById('time-slot-container');
+const slotErrorMessage = document.getElementById('slot-error-message');
+const timeSlotFieldset = document.getElementById('time-slot-fieldset');
+const photoDetailsFieldset = document.getElementById('photo-details-fieldset');
+const selectedTimeDisplay = document.getElementById('selected-time-display');
+const backToSlotsButton = document.getElementById('back-to-slots-button');
+const santaSignupForm = document.getElementById('santaSignupForm');
+const submitButton = document.getElementById('submitButton');
+const formErrorMessage = document.getElementById('form-error-message');
+const successMessageContainer = document.getElementById('success-message-container');
+const bookedSlotDisplay = document.getElementById('booked-slot-display');
 
-// --- Authentication Guard ---
-function checkAuth() {
-    onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            console.log("No user signed in. Redirecting to login.");
-            window.location.href = 'login.html';
+// Form Fields
+const familyPhoneInput = document.getElementById('family-phone');
+const submitterNameInput = document.getElementById('submitter-name');
+const familyMembersInput = document.getElementById('family-members');
+
+// --- State ---
+let selectedSlotInfo = null; // { iso: "...", label: "..." }
+let unsubscribePublicSlots = null;
+let allSlots = []; // Master list of generated slots
+let isAuthReady = false; // --- NEW: Track auth state ---
+let currentUser = null; // --- NEW: Store current user ---
+
+// --- Time Slot Generation & Rendering ---
+function generateAllSlots() {
+    allSlots = []; // Clear and regenerate
+    // --- FIX: Ensure date parsing is consistent, use local time ---
+    // We assume the YYYY-MM-DD is in the server's/host's local timezone.
+    const [year, month, day] = PARTY_DATE_YYYY_MM_DD.split('-').map(Number);
+    // Create date in local time
+    const partyDate = new Date(year, month - 1, day);
+    // --- END FIX ---
+    
+    let currentSlotTime = new Date(partyDate.getTime());
+    currentSlotTime.setHours(PARTY_START_HOUR, PARTY_START_MINUTE, 0, 0);
+
+    const endSlotTime = new Date(partyDate.getTime());
+    endSlotTime.setHours(PARTY_END_HOUR, PARTY_END_MINUTE, 0, 0);
+
+    while (currentSlotTime < endSlotTime) {
+        const slotStart = new Date(currentSlotTime.getTime());
+        const slotEnd = new Date(slotStart.getTime() + SLOT_DURATION_MINUTES * 60000);
+        
+        allSlots.push({
+            iso: slotStart.toISOString(),
+            label: `${formatTime(slotStart)} - ${formatTime(slotEnd)}`
+        });
+        
+        currentSlotTime.setTime(slotEnd.getTime());
+    }
+}
+
+function formatTime(date) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+/**
+ * NEW: Public Slot Listener
+ * This function listens to a *publicly readable* document
+ * to get the list of taken slots.
+ */
+function setupPublicSlotListener() {
+    // --- NEW: Guard to wait for auth ---
+    if (!isAuthReady) {
+        console.log("Auth not ready, deferring slot listener setup.");
+        return;
+    }
+    // --- END NEW ---
+
+    // Generate the master list of slots first
+    generateAllSlots();
+
+    if (unsubscribePublicSlots) unsubscribePublicSlots(); // Stop previous listener
+
+    const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
+    
+    // DEBUGGING: Log the exact path we are trying to read
+    console.log(`Attaching public slot listener to: ${publicSlotsRef.path}`);
+
+    unsubscribePublicSlots = onSnapshot(publicSlotsRef, (doc) => {
+        if (doc.exists()) {
+            const data = doc.data();
+            const takenSlotISOs = data.takenSlots || [];
+            renderTimeSlots(takenSlotISOs);
+            slotErrorMessage.textContent = '';
         } else {
-            if (!ADMIN_EMAILS.includes(user.email)) {
-                console.warn(`Unauthorized user signed in: ${user.email}. Signing out.`);
-                signOut(auth).then(() => {
-                    window.location.href = 'login.html?error=auth';
-                });
-            } else {
-                console.log("Admin user authenticated:", user.email);
-                // Initialize page only after auth confirmed
-                initializePage();
+            // This happens if the 'publicSantaConfig/YYYY-MM-DD' doc isn't created
+            console.error("CRITICAL: Public config document not found.");
+            slotErrorMessage.textContent = "Error: Could not load slot configuration.";
+            if (timeSlotContainer) timeSlotContainer.innerHTML = ''; // Clear spinner
+        }
+    }, (error) => {
+        // This is where the "Missing or insufficient permissions" error was happening
+        console.error("Error listening to public slots:", error);
+        slotErrorMessage.textContent = `Error connecting to slot server: ${error.message}`;
+        if (timeSlotContainer) timeSlotContainer.innerHTML = ''; // Clear spinner
+    });
+}
+
+/**
+ * Renders the time slot buttons based on the list of taken slot ISOs.
+ */
+function renderTimeSlots(takenSlotISOs) {
+    if (!timeSlotContainer) return;
+    timeSlotContainer.innerHTML = ''; // Clear spinner/existing
+
+    if (allSlots.length === 0) {
+        timeSlotContainer.innerHTML = '<p class="text-gray-400 col-span-full text-center">No time slots have been configured.</p>';
+        return;
+    }
+
+    allSlots.forEach(slot => {
+        const isTaken = takenSlotISOs.includes(slot.iso);
+        
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = slot.label;
+        button.dataset.iso = slot.iso;
+        button.dataset.label = slot.label;
+        
+        if (isTaken) {
+            button.className = 'time-slot-btn taken';
+            button.disabled = true;
+        } else {
+            button.className = 'time-slot-btn available';
+            button.addEventListener('click', handleSlotClick);
+        }
+        
+        timeSlotContainer.appendChild(button);
+    });
+}
+
+
+// --- UI Interaction ---
+function handleSlotClick(e) {
+    const target = e.currentTarget;
+    selectedSlotInfo = {
+        iso: target.dataset.iso,
+        label: target.dataset.label
+    };
+    
+    if (selectedTimeDisplay) selectedTimeDisplay.textContent = selectedSlotInfo.label;
+
+    if (timeSlotFieldset) timeSlotFieldset.classList.add('hidden');
+    if (photoDetailsFieldset) photoDetailsFieldset.classList.remove('hidden');
+    
+    // Focus the first input of the new section
+    if (familyPhoneInput) familyPhoneInput.focus();
+}
+
+if (backToSlotsButton) {
+    backToSlotsButton.addEventListener('click', () => {
+        selectedSlotInfo = null;
+        if (timeSlotFieldset) timeSlotFieldset.classList.remove('hidden');
+        if (photoDetailsFieldset) photoDetailsFieldset.classList.add('hidden');
+    });
+}
+
+// --- Form Submission ---
+if (santaSignupForm) {
+    santaSignupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedSlotInfo) {
+            formErrorMessage.textContent = "An error occurred. Please go back and re-select your time.";
+            return;
+        }
+
+        // Get all form data
+        const familyPhone = familyPhoneInput.value.trim().replace(/\D/g, ''); // Clean phone
+        const submitterName = submitterNameInput.value.trim();
+        const familyMembers = familyMembersInput.value.trim();
+
+        // Validation
+        if (familyPhone.length < 10) {
+            formErrorMessage.textContent = "Please enter a valid 10-digit family phone number.";
+            return;
+        }
+        if (!submitterName || !familyMembers) {
+            formErrorMessage.textContent = "Please fill out your name and the family members attending.";
+            return;
+        }
+
+        formErrorMessage.textContent = "";
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<div class="spinner"></div>'; // Show spinner
+
+        // Collect photo combinations
+        const photoComboRows = document.querySelectorAll('.photo-combo-row');
+        const photoCombinations = [];
+        photoComboRows.forEach(row => {
+            const textInput = row.querySelector('input[type="text"]');
+            const santaCheckbox = row.querySelector('input[type="checkbox"]');
+            if (textInput && santaCheckbox) {
+                const description = textInput.value.trim();
+                if (description.length > 0) {
+                    photoCombinations.push({
+                        description: description,
+                        withSanta: santaCheckbox.checked
+                    });
+                }
             }
+        });
+
+        const bookingData = {
+            submitterName: submitterName,
+            familyMembers: familyMembers,
+            familyPhone: familyPhone, // Include verified phone
+            photoCombinations: photoCombinations,
+            slotLabel: selectedSlotInfo.label,
+            partyDate: PARTY_DATE_YYYY_MM_DD,
+            bookedAt: serverTimestamp(),
+            // userId will be added within the transaction
+        };
+
+        // --- CORRECTED: Get user from auth state ---
+        const user = currentUser; // Use the stored user
+
+        try {
+            // 1. Check if user is authenticated (from the onAuthStateChanged listener)
+            if (!user) {
+                throw new Error("Authentication session expired. Please refresh the page and try again.");
+            }
+            bookingData.userId = user.uid; // Add the auth UID to the data
+
+            // 2. Run the secure transaction
+            await runTransaction(db, async (transaction) => {
+                // Define all document references
+                
+                // --- UPDATED PATH ---
+                const phoneListRef = doc(db, "settings", "auction");
+                // --- END UPDATED PATH ---
+
+                const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
+                const newBookingRef = doc(db, "santaBookings", selectedSlotInfo.iso);
+
+                // --- Read Phase ---
+                // a. Read the private family phone list
+                const phoneListDoc = await transaction.get(phoneListRef);
+                if (!phoneListDoc.exists()) {
+                    throw new Error("CONFIG_ERROR: Family phone list not found.");
+                }
+                
+                // b. Read the public slot tracker
+                const publicSlotsDoc = await transaction.get(publicSlotsRef);
+                if (!publicSlotsDoc.exists()) {
+                    throw new Error("CONFIG_ERROR: Public slot config not found.");
+                }
+
+                // --- Validation Phase ---
+                // a. Check if phone is on the list
+                
+                // --- UPDATED FIELD NAME ---
+                const allowedPhones = phoneListDoc.data().approvedNumbers || [];
+                // --- END UPDATED FIELD NAME ---
+
+                if (!allowedPhones.includes(familyPhone)) {
+                    throw new Error("VERIFICATION_FAILED");
+                }
+
+                // b. Check if slot is already taken
+                const takenSlots = publicSlotsDoc.data().takenSlots || [];
+                if (takenSlots.includes(selectedSlotInfo.iso)) {
+                    throw new Error("SLOT_TAKEN");
+                }
+
+                // --- Write Phase (All checks passed) ---
+                // a. Write the private booking data
+                transaction.set(newBookingRef, bookingData);
+                
+                // b. Update the public list of taken slots
+                const newTakenSlots = [...takenSlots, selectedSlotInfo.iso];
+                transaction.update(publicSlotsRef, { takenSlots: newTakenSlots });
+            });
+
+            // 3. Transaction Succeeded
+            santaSignupForm.classList.add('hidden');
+            if (successMessageContainer) successMessageContainer.classList.remove('hidden');
+            if (bookedSlotDisplay) bookedSlotDisplay.textContent = `Your slot: ${selectedSlotInfo.label}`;
+            
+            if (unsubscribePublicSlots) unsubscribePublicSlots(); // Stop listening
+
+        } catch (error) {
+            console.error("Error booking slot:", error);
+            // Handle custom transaction errors
+            if (error.message === "VERIFICATION_FAILED") {
+                formErrorMessage.textContent = "Phone number not found on the family list. Please try again.";
+            } else if (error.message === "SLOT_TAKEN") {
+                formErrorMessage.textContent = "Sorry, that slot was just booked by someone else. Please go back and pick a new time.";
+            } else if (error.message.startsWith("CONFIG_ERROR")) {
+                formErrorMessage.textContent = "A configuration error occurred. Please contact the administrator.";
+            } else {
+                formErrorMessage.textContent = `Could not book slot: ${error.message}`;
+            }
+            
+        } finally {
+            // --- CORRECTED: Removed the signOut() call ---
+            
+            // Restore button
+            submitButton.disabled = false;
+            submitButton.innerHTML = "Book My Time Slot";
         }
     });
 }
 
-// --- Page Initialization ---
-function initializePage() {
-    // Logout Button
-    logoutButton.addEventListener('click', () => {
-        signOut(auth).catch((error) => console.error("Sign out error:", error));
-        // checkAuth listener will handle redirect
-    });
-
-    // Print Button
-    printShotListButton.addEventListener('click', () => printShotList());
-
-    // Event Delegation for all booking card actions
-    manageBookingsContainer.addEventListener('click', async function(event) {
-        const target = event.target;
-        const container = target.closest('.booking-card-admin-container');
-        if (!container) return;
-
-        const bookingId = container.dataset.bookingId;
-        const slotLabel = container.dataset.slotLabel;
-
-        // Handle Delete Booking
-        if (target.matches('.delete-button')) {
-            deleteBooking(bookingId, slotLabel);
-        }
-
-        // Handle Edit Button
-        if (target.matches('.edit-button')) {
-             const view = container.querySelector('.booking-view');
-             const editForm = container.querySelector('.booking-edit-form');
-             if(view) view.classList.add('hidden');
-             if(editForm) editForm.classList.remove('hidden');
-        }
-
-        // Handle Cancel Edit Button
-        if (target.matches('.cancel-edit-button')) {
-             const view = container.querySelector('.booking-view');
-             const editForm = container.querySelector('.booking-edit-form');
-             if(view) view.classList.remove('hidden');
-             if(editForm) editForm.classList.add('hidden');
-        }
-
-        // Handle Save Edit Button
-        if (target.matches('.save-edit-button')) {
-            saveBookingChanges(bookingId, container);
-        }
-    });
-
-    // Load existing bookings
-    // We order by the document ID, which is the ISO timestamp, so it sorts by time
-    const q = query(collection(db, 'santaBookings'), orderBy(documentId(), 'asc'));
-    
-    onSnapshot(q, (snapshot) => {
-        allBookings = snapshot.docs; // Store for printing
-
-        if (manageBookingsContainer) {
-            manageBookingsContainer.innerHTML = ''; // Clear previous
-
-            if (snapshot.empty) {
-                manageBookingsContainer.innerHTML = '<p class="text-gray-400">No Santa bookings found.</p>';
-                return;
-            }
-
-            snapshot.docs.forEach((doc) => {
-                const booking = doc.data();
-                const bookingId = doc.id;
-                const card = createBookingCard(bookingId, booking);
-                manageBookingsContainer.appendChild(card);
-            });
-        }
-    }, (error) => {
-        console.error("Error fetching bookings: ", error);
-        if (manageBookingsContainer) {
-             manageBookingsContainer.innerHTML = '<p class="text-red-400">Could not load bookings. Check Firestore rules and console.</p>';
-        }
-    });
-
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Set build timestamp immediately
     if (timestampContainer) {
         timestampContainer.textContent = `Build: ${new Date().toLocaleString()}`;
     }
-} // End initializePage
 
-// --- Helper Functions ---
-
-/**
- * Creates the HTML element for a single booking card
- */
-function createBookingCard(bookingId, booking) {
-    const cardElement = document.createElement('div');
-    cardElement.className = 'booking-card-admin-container';
-    cardElement.dataset.bookingId = bookingId;
-    cardElement.dataset.slotLabel = booking.slotLabel || 'Unknown Slot';
-
-    // --- Format Photo Combinations for display ---
-    let photoListHtml = '<p class="text-gray-400 italic">No photo requests.</p>';
-    if (booking.photoCombinations && booking.photoCombinations.length > 0) {
-        photoListHtml = '<ul class="list-disc list-inside text-sm text-gray-300">';
-        booking.photoCombinations.forEach(combo => {
-            photoListHtml += `<li>${combo.description} ${combo.withSanta ? '<strong>(w/ Santa)</strong>' : ''}</li>`;
-        });
-        photoListHtml += '</ul>';
-    }
-
-    // --- Create View Mode ---
-    const viewHtml = `
-        <div class="booking-view">
-            <div class="booking-card-admin">
-                <div>
-                    <h4 class="font-bold text-lg text-brand-gold">${booking.slotLabel || 'Booking'}</h4>
-                    <p class="text-sm"><strong>Booked by:</strong> ${booking.submitterName || 'N/A'}</p>
-                    <p class="text-sm text-gray-400"><strong>Family:</strong> ${booking.familyMembers || 'N/A'}</p>
-                    <p class="text-sm text-gray-400"><strong>Phone:</strong> ${booking.familyPhone || 'N/A'}</p>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <button class="edit-button text-xs">Edit</button>
-                    <button class="delete-button text-xs">Delete</button>
-                </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-yellow-300/10">
-                <h5 class="font-cinzel text-md text-brand-gold mb-2">Photo Shot List</h5>
-                ${photoListHtml}
-            </div>
-        </div>
-    `;
-
-    // --- Create Edit Form ---
-    const editHtml = `
-        <div class="booking-edit-form hidden p-4 space-y-4 bg-black/30 rounded-b-lg">
-            <h4 class="font-bold text-lg text-brand-gold">Editing: ${booking.slotLabel}</h4>
+    // 2. Set up the auth state listener
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 3a. User is authenticated
+            console.log("Authenticated with user ID:", user.uid);
+            isAuthReady = true; // --- NEW: Mark auth as ready
+            currentUser = user; // --- NEW: Store user
             
-            <div>
-                <label for="edit-submitter-name-${bookingId}">Submitter Name</label>
-                <input type="text" id="edit-submitter-name-${bookingId}" class="edit-submitter-name" value="${booking.submitterName || ''}">
-            </div>
+            // 4. NOW it's safe to attach the Firestore listener
+            setupPublicSlotListener(); 
             
-            <div>
-                <label for="edit-family-members-${bookingId}">Family Members Attending</label>
-                <input type="text" id="edit-family-members-${bookingId}" class="edit-family-members" value="${booking.familyMembers || ''}">
-            </div>
-
-            <div>
-                <label for="edit-photo-combos-${bookingId}">Photo Combinations (Edit as JSON)</label>
-                <textarea id="edit-photo-combos-${bookingId}" class="edit-photo-combos font-mono text-xs" rows="6">${JSON.stringify(booking.photoCombinations || [], null, 2)}</textarea>
-                <p class="text-xs text-gray-400 mt-1">Edit the JSON array directly. Be careful!</p>
-            </div>
-
-            <div class="flex gap-4 pt-2">
-                <button class="btn-velvet primary flex-1 save-edit-button text-sm py-2">Save Changes</button>
-                <button class="btn-velvet flex-1 cancel-edit-button text-sm py-2">Cancel</button>
-            </div>
-        </div>
-    `;
-
-    cardElement.innerHTML = viewHtml + editHtml;
-    return cardElement;
-}
-
-/**
- * Saves changes from the edit form to Firestore
- */
-async function saveBookingChanges(bookingId, container) {
-    const editForm = container.querySelector('.booking-edit-form');
-    if (!editForm) return;
-
-    const saveButton = editForm.querySelector('.save-edit-button');
-    saveButton.disabled = true;
-    saveButton.textContent = 'Saving...';
-
-    const newName = editForm.querySelector('.edit-submitter-name').value;
-    const newFamily = editForm.querySelector('.edit-family-members').value;
-    const combosText = editForm.querySelector('.edit-photo-combos').value;
-
-    let newPhotoCombos;
-    try {
-        newPhotoCombos = JSON.parse(combosText);
-        if (!Array.isArray(newPhotoCombos)) {
-            throw new Error("Input is not a valid JSON array.");
-        }
-    } catch (jsonError) {
-        alert(`Error: Invalid JSON format for Photo Combinations. ${jsonError.message}`);
-        saveButton.disabled = false;
-        saveButton.textContent = 'Save Changes';
-        return;
-    }
-
-    const updatedData = {
-        submitterName: newName,
-        familyMembers: newFamily,
-        photoCombinations: newPhotoCombos
-    };
-
-    try {
-        await updateDoc(doc(db, 'santaBookings', bookingId), updatedData);
-        alert('Booking updated successfully!');
-        // Toggle view (onSnapshot will handle data refresh)
-        container.querySelector('.booking-view').classList.remove('hidden');
-        container.querySelector('.booking-edit-form').classList.add('hidden');
-    } catch (error) {
-        console.error("Error updating booking:", error);
-        alert("Failed to update booking. Check console.");
-    } finally {
-        saveButton.disabled = false;
-        saveButton.textContent = 'Save Changes';
-    }
-}
-
-/**
- * Deletes a booking from 'santaBookings' and frees up the slot in 'publicSantaConfig'
- */
-async function deleteBooking(bookingId, slotLabel) {
-    if (!confirm(`Are you sure you want to delete the booking for ${slotLabel}? This action cannot be undone and will make the time slot available again.`)) {
-        return;
-    }
-
-    // Define document references
-    const bookingRef = doc(db, 'santaBookings', bookingId);
-    const publicSlotsRef = doc(db, "publicSantaConfig", PARTY_DATE_YYYY_MM_DD);
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            // 1. Get the public config doc
-            const publicSlotsDoc = await transaction.get(publicSlotsRef);
-            if (!publicSlotsDoc.exists()) {
-                // This shouldn't happen, but good to check
-                throw new Error("Public slot config document not found. Cannot free slot.");
-            }
-
-            // 2. Delete the private booking
-            transaction.delete(bookingRef);
-
-            // 3. Update the public config to remove the slot
-            const takenSlots = publicSlotsDoc.data().takenSlots || [];
-            const newTakenSlots = takenSlots.filter(iso => iso !== bookingId);
-            transaction.update(publicSlotsRef, { takenSlots: newTakenSlots });
-        });
-
-        alert(`Booking for ${slotLabel} deleted successfully. The slot is now available.`);
-        // onSnapshot will automatically update the UI
-
-    } catch (error) {
-        console.error("Error deleting booking (transaction failed):", error);
-        alert(`Failed to delete booking: ${error.message}`);
-    }
-}
-
-/**
- * Generates a new, print-friendly window with the shot list
- */
-function printShotList() {
-    if (!allBookings || allBookings.length === 0) {
-        alert('No bookings to print.');
-        return;
-    }
-
-    const printWindow = window.open('', 'Print Shot List', 'height=800,width=600');
-    
-    printWindow.document.write('<html><head><title>Santa Photo Shot List</title>');
-    // Print Styles
-    printWindow.document.write(`
-        <style>
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                margin: 0.75in;
-                line-height: 1.5;
-                font-size: 12pt; /* Base font size for print */
-            }
-            h1 {
-                font-family: "Times New Roman", Times, serif;
-                font-size: 20pt;
-                text-align: center;
-                border-bottom: 2px solid #000;
-                padding-bottom: 10px;
-                margin-bottom: 0.3in;
-            }
-            .booking-entry {
-                margin-bottom: 0.25in;
-                page-break-inside: avoid;
-                border: 1px solid #aaa;
-                border-radius: 8px;
-                padding: 0.15in;
-            }
-            .entry-header {
-                display: flex;
-                align-items: flex-start; /* Align checkbox to top */
-                font-size: 14pt;
-                font-weight: bold;
-            }
-            .main-checkbox {
-                width: 22px;
-                height: 22px;
-                margin-right: 12px;
-                border: 2px solid #000;
-                flex-shrink: 0;
-                margin-top: 4px; /* Align with top of text */
-            }
-            .header-info {
-                display: flex;
-                flex-direction: column;
-            }
-            .header-info .time-slot {
-                font-size: 1.1em; /* ~15.4pt */
-                color: #000;
-            }
-            .header-info .family-members {
-                font-size: 0.9em; /* ~12.6pt */
-                font-weight: normal;
-                color: #333;
-                margin-top: 4px;
-            }
-            .shots-section {
-                margin-top: 0.15in;
-                padding-top: 0.1in;
-                border-top: 1px solid #ccc;
-                margin-left: 34px; /* Indent to align with header text */
-            }
-            .shots-section h3 {
-                font-size: 11pt;
-                font-weight: bold;
-                color: #333;
-                margin: 0 0 5px 0;
-            }
-            .shots-section ul {
-                margin: 0;
-                padding-left: 0;
-                list-style-type: none;
-            }
-            .shots-section li {
-                font-size: 12pt;
-                display: flex;
-                align-items: center;
-                margin-bottom: 5px;
-                color: #000;
-            }
-            .shot-checkbox {
-                width: 16px;
-                height: 16px;
-                margin-right: 10px;
-                border: 1px solid #555;
-                flex-shrink: 0;
-            }
-            @media print {
-                body { 
-                    margin: 0.5in; 
-                    font-size: 11pt; /* Base print font */
-                }
-                .booking-entry {
-                    border: 1px solid #999;
-                }
-                .main-checkbox, .shot-checkbox {
-                    border: 1px solid #000 !important;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-            }
-        </style>
-    `);
-    printWindow.document.write('</head><body>');
-    
-    printWindow.document.write('<h1>Santa Photo Shot List</h1>');
-
-    // Loop through sorted bookings (already sorted by time)
-    allBookings.forEach(doc => {
-        const booking = doc.data();
-        
-        printWindow.document.write('<div class="booking-entry">');
-        
-        // Main header with checkbox
-        printWindow.document.write(`
-            <div class="entry-header">
-                <span class="main-checkbox"></span>
-                <div class="header-info">
-                    <span class="time-slot">${booking.slotLabel} - ${booking.submitterName}</span>
-                    <span class="family-members">Family: ${booking.familyMembers || 'N/A'}</span>
-                </div>
-            </div>
-        `);
-        
-        // Shots section, indented
-        printWindow.document.write('<div class="shots-section">');
-        printWindow.document.write('<h3>Requested Shots:</h3>');
-        if (booking.photoCombinations && booking.photoCombinations.length > 0) {
-            printWindow.document.write('<ul>');
-            booking.photoCombinations.forEach(combo => {
-                const description = combo.description.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Sanitize
-                const santaText = combo.withSanta ? '<strong>(w/ Santa)</strong>' : '';
-                // Add a checkbox for each list item
-                printWindow.document.write(`
-                    <li>
-                        <span class="shot-checkbox"></span>
-                        <span>${description} ${santaText}</span>
-                    </li>
-                `);
-            });
-            printWindow.document.write('</ul>');
         } else {
-            printWindow.document.write('<p><em>No specific shots listed.</em></p>');
+            // 3b. No user. Sign in anonymously.
+            console.log("No user, signing in anonymously...");
+            isAuthReady = false; // Mark auth as not ready
+            currentUser = null;
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously for listener:", error);
+                if(slotErrorMessage) slotErrorMessage.textContent = "Error initializing connection.";
+            });
+            // The listener will re-run when sign-in is complete.
         }
-        printWindow.document.write('</div>'); // End .shots-section
-
-        printWindow.document.write('</div>'); // End .booking-entry
     });
-
-    printWindow.document.write('</body></html>');
-    
-    printWindow.document.close(); // Finish writing
-    printWindow.focus(); // Focus the new window
-    printWindow.print(); // Open the print dialog
-}
-
-
-// --- Initialization Trigger ---
-document.addEventListener('DOMContentLoaded', checkAuth); // Start auth check first
-
-/* Build Timestamp: 11/9/2025, 11:12:00 AM MST */
+});
+/* Build Timestamp: 11/9/2025, 11:21:00 AM MST */
