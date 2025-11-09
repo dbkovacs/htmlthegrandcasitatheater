@@ -8,7 +8,8 @@ import {
     updateDoc, 
     query, 
     orderBy,
-    runTransaction
+    runTransaction,
+    documentId // <-- ADDED THIS IMPORT
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { 
     onAuthStateChanged, 
@@ -406,4 +407,4 @@ function printShotList() {
 // --- Initialization Trigger ---
 document.addEventListener('DOMContentLoaded', checkAuth); // Start auth check first
 
-/* Build Timestamp: 11/8/2025, 4:09:00 PM MST */
+/* Build Timestamp: 11/9/2025, 11:02:00 AM MST */
