@@ -318,81 +318,94 @@ function printShotList() {
         <style>
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                margin: 20px;
+                margin: 0.75in;
                 line-height: 1.5;
+                font-size: 12pt; /* Base font size for print */
             }
             h1 {
                 font-family: "Times New Roman", Times, serif;
+                font-size: 20pt;
                 text-align: center;
                 border-bottom: 2px solid #000;
                 padding-bottom: 10px;
+                margin-bottom: 0.3in;
             }
             .booking-entry {
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 1px dashed #ccc;
+                margin-bottom: 0.25in;
                 page-break-inside: avoid;
+                border: 1px solid #aaa;
+                border-radius: 8px;
+                padding: 0.15in;
             }
-            .booking-entry:last-child {
-                border-bottom: none;
-            }
-            h2 {
-                font-family: "Times New Roman", Times, serif;
-                font-size: 1.4em; /* Slightly smaller */
-                margin-bottom: 8px;
-                background-color: #eee;
-                padding: 8px;
-                border-radius: 5px;
-            }
-            h3 {
-                font-size: 1.1em;
-                margin-top: 15px;
-                margin-bottom: 5px;
-                border-bottom: 1px solid #ddd;
-            }
-            p { margin: 3px 0; }
-            ul {
-                margin-top: 5px;
-                padding-left: 5px; /* Reduced padding */
-                list-style-type: none; /* Remove default bullets */
-            }
-            li {
-                margin-bottom: 5px; /* More spacing for checklist */
+            .entry-header {
                 display: flex;
-                align-items: center;
-            }
-            .checkbox {
-                width: 20px;
-                height: 20px;
-                margin-right: 10px;
-                border: 1px solid #555;
-                display: inline-block;
-                vertical-align: middle;
+                align-items: flex-start; /* Align checkbox to top */
+                font-size: 14pt;
+                font-weight: bold;
             }
             .main-checkbox {
-                width: 25px;
-                height: 25px;
+                width: 22px;
+                height: 22px;
                 margin-right: 12px;
                 border: 2px solid #000;
+                flex-shrink: 0;
+                margin-top: 4px; /* Align with top of text */
             }
-            label {
+            .header-info {
+                display: flex;
+                flex-direction: column;
+            }
+            .header-info .time-slot {
+                font-size: 1.1em; /* ~15.4pt */
+                color: #000;
+            }
+            .header-info .family-members {
+                font-size: 0.9em; /* ~12.6pt */
+                font-weight: normal;
+                color: #333;
+                margin-top: 4px;
+            }
+            .shots-section {
+                margin-top: 0.15in;
+                padding-top: 0.1in;
+                border-top: 1px solid #ccc;
+                margin-left: 34px; /* Indent to align with header text */
+            }
+            .shots-section h3 {
+                font-size: 11pt;
+                font-weight: bold;
+                color: #333;
+                margin: 0 0 5px 0;
+            }
+            .shots-section ul {
+                margin: 0;
+                padding-left: 0;
+                list-style-type: none;
+            }
+            .shots-section li {
+                font-size: 12pt;
                 display: flex;
                 align-items: center;
-                font-size: 1.1em;
+                margin-bottom: 5px;
+                color: #000;
+            }
+            .shot-checkbox {
+                width: 16px;
+                height: 16px;
+                margin-right: 10px;
+                border: 1px solid #555;
+                flex-shrink: 0;
             }
             @media print {
-                body { margin: 0.75in; }
-                h1 { margin-bottom: 0.3in; }
+                body { 
+                    margin: 0.5in; 
+                    font-size: 11pt; /* Base print font */
+                }
                 .booking-entry {
-                    border-bottom: 1px dashed #999;
+                    border: 1px solid #999;
                 }
-                .checkbox, .main-checkbox {
-                    border: 1px solid #000 !important; /* Ensure borders print */
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                h2 {
-                    background-color: #eee !important; /* Ensure background prints */
+                .main-checkbox, .shot-checkbox {
+                    border: 1px solid #000 !important;
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
                 }
@@ -409,16 +422,19 @@ function printShotList() {
         
         printWindow.document.write('<div class="booking-entry">');
         
-        // Add a main checkbox for the whole family
+        // Main header with checkbox
         printWindow.document.write(`
-            <label>
+            <div class="entry-header">
                 <span class="main-checkbox"></span>
-                <h2>${booking.slotLabel} - ${booking.submitterName}</h2>
-            </label>
+                <div class="header-info">
+                    <span class="time-slot">${booking.slotLabel} - ${booking.submitterName}</span>
+                    <span class="family-members">Family: ${booking.familyMembers || 'N/A'}</span>
+                </div>
+            </div>
         `);
         
-        printWindow.document.write(`<p style="margin-left: 37px;"><strong>Family Members:</strong> ${booking.familyMembers || 'N/A'}</p>`);
-        
+        // Shots section, indented
+        printWindow.document.write('<div class="shots-section">');
         printWindow.document.write('<h3>Requested Shots:</h3>');
         if (booking.photoCombinations && booking.photoCombinations.length > 0) {
             printWindow.document.write('<ul>');
@@ -428,7 +444,7 @@ function printShotList() {
                 // Add a checkbox for each list item
                 printWindow.document.write(`
                     <li>
-                        <span class="checkbox"></span>
+                        <span class="shot-checkbox"></span>
                         <span>${description} ${santaText}</span>
                     </li>
                 `);
@@ -437,8 +453,9 @@ function printShotList() {
         } else {
             printWindow.document.write('<p><em>No specific shots listed.</em></p>');
         }
+        printWindow.document.write('</div>'); // End .shots-section
 
-        printWindow.document.write('</div>');
+        printWindow.document.write('</div>'); // End .booking-entry
     });
 
     printWindow.document.write('</body></html>');
@@ -452,4 +469,4 @@ function printShotList() {
 // --- Initialization Trigger ---
 document.addEventListener('DOMContentLoaded', checkAuth); // Start auth check first
 
-/* Build Timestamp: 11/9/2025, 11:05:00 AM MST */
+/* Build Timestamp: 11/9/2025, 11:12:00 AM MST */
