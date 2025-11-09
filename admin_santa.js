@@ -319,7 +319,7 @@ function printShotList() {
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                 margin: 20px;
-                line-height: 1.6;
+                line-height: 1.5;
             }
             h1 {
                 font-family: "Times New Roman", Times, serif;
@@ -328,7 +328,7 @@ function printShotList() {
                 padding-bottom: 10px;
             }
             .booking-entry {
-                margin-bottom: 25px;
+                margin-bottom: 20px;
                 padding-bottom: 15px;
                 border-bottom: 1px dashed #ccc;
                 page-break-inside: avoid;
@@ -338,31 +338,63 @@ function printShotList() {
             }
             h2 {
                 font-family: "Times New Roman", Times, serif;
-                font-size: 1.5em;
-                margin-bottom: 5px;
+                font-size: 1.4em; /* Slightly smaller */
+                margin-bottom: 8px;
                 background-color: #eee;
-                padding: 5px;
+                padding: 8px;
                 border-radius: 5px;
             }
             h3 {
                 font-size: 1.1em;
-                margin-top: 10px;
+                margin-top: 15px;
                 margin-bottom: 5px;
                 border-bottom: 1px solid #ddd;
             }
-            p { margin: 2px 0; }
+            p { margin: 3px 0; }
             ul {
                 margin-top: 5px;
-                padding-left: 20px;
+                padding-left: 5px; /* Reduced padding */
+                list-style-type: none; /* Remove default bullets */
             }
             li {
-                margin-bottom: 3px;
+                margin-bottom: 5px; /* More spacing for checklist */
+                display: flex;
+                align-items: center;
+            }
+            .checkbox {
+                width: 20px;
+                height: 20px;
+                margin-right: 10px;
+                border: 1px solid #555;
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .main-checkbox {
+                width: 25px;
+                height: 25px;
+                margin-right: 12px;
+                border: 2px solid #000;
+            }
+            label {
+                display: flex;
+                align-items: center;
+                font-size: 1.1em;
             }
             @media print {
-                body { margin: 1in; }
-                h1 { margin-bottom: 0.5in; }
+                body { margin: 0.75in; }
+                h1 { margin-bottom: 0.3in; }
                 .booking-entry {
                     border-bottom: 1px dashed #999;
+                }
+                .checkbox, .main-checkbox {
+                    border: 1px solid #000 !important; /* Ensure borders print */
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                h2 {
+                    background-color: #eee !important; /* Ensure background prints */
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
                 }
             }
         </style>
@@ -371,14 +403,21 @@ function printShotList() {
     
     printWindow.document.write('<h1>Santa Photo Shot List</h1>');
 
-    // Loop through sorted bookings
+    // Loop through sorted bookings (already sorted by time)
     allBookings.forEach(doc => {
         const booking = doc.data();
         
         printWindow.document.write('<div class="booking-entry">');
         
-        printWindow.document.write(`<h2>${booking.slotLabel} - ${booking.submitterName}</h2>`);
-        printWindow.document.write(`<p><strong>Family Members:</strong> ${booking.familyMembers || 'N/A'}</p>`);
+        // Add a main checkbox for the whole family
+        printWindow.document.write(`
+            <label>
+                <span class="main-checkbox"></span>
+                <h2>${booking.slotLabel} - ${booking.submitterName}</h2>
+            </label>
+        `);
+        
+        printWindow.document.write(`<p style="margin-left: 37px;"><strong>Family Members:</strong> ${booking.familyMembers || 'N/A'}</p>`);
         
         printWindow.document.write('<h3>Requested Shots:</h3>');
         if (booking.photoCombinations && booking.photoCombinations.length > 0) {
@@ -386,7 +425,13 @@ function printShotList() {
             booking.photoCombinations.forEach(combo => {
                 const description = combo.description.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Sanitize
                 const santaText = combo.withSanta ? '<strong>(w/ Santa)</strong>' : '';
-                printWindow.document.write(`<li>${description} ${santaText}</li>`);
+                // Add a checkbox for each list item
+                printWindow.document.write(`
+                    <li>
+                        <span class="checkbox"></span>
+                        <span>${description} ${santaText}</span>
+                    </li>
+                `);
             });
             printWindow.document.write('</ul>');
         } else {
@@ -407,4 +452,4 @@ function printShotList() {
 // --- Initialization Trigger ---
 document.addEventListener('DOMContentLoaded', checkAuth); // Start auth check first
 
-/* Build Timestamp: 11/9/2025, 11:02:00 AM MST */
+/* Build Timestamp: 11/9/2025, 11:05:00 AM MST */
