@@ -23,7 +23,7 @@ const PARTY_DATE_YYYY_MM_DD = "2025-12-14";
 const PARTY_START_HOUR = 18; // 6:00 PM
 const PARTY_START_MINUTE = 30; // 6:30 PM
 const PARTY_END_HOUR = 19; // 7:00 PM
-const PARTY_END_MINUTE = 50; // 7:50 PM
+const PARTY_END_MINUTE = 30; // 7:50 PM
 const SLOT_DURATION_MINUTES = 10;
 // --- END CONFIGURATION ---
 
@@ -54,6 +54,10 @@ let isAuthReady = false; // --- NEW: Track auth state ---
 let currentUser = null; // --- NEW: Store current user ---
 
 // --- Time Slot Generation & Rendering ---
+/**
+ * Generates the *base* list of slots defined by the config.
+ * Overflow slots will be added dynamically.
+ */
 function generateAllSlots() {
     allSlots = []; // Clear and regenerate
     // --- FIX: Ensure date parsing is consistent, use local time ---
@@ -100,7 +104,8 @@ function setupPublicSlotListener() {
     // --- END NEW ---
 
     // Generate the master list of slots first
-    generateAllSlots();
+    // This will be re-run by the listener to add overflow slots
+    // generateAllSlots(); // Moved inside listener to rebuild list on change
 
     if (unsubscribePublicSlots) unsubscribePublicSlots(); // Stop previous listener
 
@@ -113,6 +118,39 @@ function setupPublicSlotListener() {
         if (doc.exists()) {
             const data = doc.data();
             const takenSlotISOs = data.takenSlots || [];
+
+            // --- NEW DYNAMIC SLOT LOGIC ---
+            // 1. Generate the base slots first (6:30 - 7:40)
+            generateAllSlots(); 
+
+            // 2. Check if we need to add overflow slots
+            if (allSlots.length > 0) {
+                let lastSlot = allSlots[allSlots.length - 1];
+
+                // 3. Keep adding new 10-min slots as long as the last one is taken
+                while (lastSlot && takenSlotISOs.includes(lastSlot.iso)) {
+                    const lastSlotStartTime = new Date(lastSlot.iso);
+                    
+                    // Calculate next slot start/end
+                    const nextSlotStartTime = new Date(lastSlotStartTime.getTime() + SLOT_DURATION_MINUTES * 60000);
+                    const nextSlotEndTime = new Date(nextSlotStartTime.getTime() + SLOT_DURATION_MINUTES * 60000);
+
+                    // Create the new slot object
+                    const newSlot = {
+                        iso: nextSlotStartTime.toISOString(),
+                        label: `${formatTime(nextSlotStartTime)} - ${formatTime(nextSlotEndTime)}`
+                    };
+
+                    // Add it to the master list
+                    allSlots.push(newSlot);
+                    
+                    // Update lastSlot for the next loop check
+                    lastSlot = newSlot;
+                }
+            }
+            // --- END DYNAMIC SLOT LOGIC ---
+
+            // 4. Render whatever is in allSlots
             renderTimeSlots(takenSlotISOs);
             slotErrorMessage.textContent = '';
         } else {
@@ -365,4 +403,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-/* Build Timestamp: 11/9/2025, 11:21:00 AM MST */
+/* Build Timestamp: 11/9/2025, 11:36:00 AM MST */
