@@ -20,9 +20,11 @@ import {
 // This *MUST* match the Document ID you create in 'publicSantaConfig'
 const PARTY_DATE_YYYY_MM_DD = "2025-12-14"; 
 
-const PARTY_START_HOUR = 17; // 5:00 PM
+const PARTY_START_HOUR = 18; // 6:00 PM
+const PARTY_START_MINUTE = 30; // 6:30 PM
 const PARTY_END_HOUR = 19; // 7:00 PM
-const SLOT_DURATION_MINUTES = 15;
+const PARTY_END_MINUTE = 50; // 7:50 PM
+const SLOT_DURATION_MINUTES = 10;
 // --- END CONFIGURATION ---
 
 // --- DOM References ---
@@ -62,10 +64,10 @@ function generateAllSlots() {
     // --- END FIX ---
     
     let currentSlotTime = new Date(partyDate.getTime());
-    currentSlotTime.setHours(PARTY_START_HOUR, 0, 0, 0);
+    currentSlotTime.setHours(PARTY_START_HOUR, PARTY_START_MINUTE, 0, 0);
 
     const endSlotTime = new Date(partyDate.getTime());
-    endSlotTime.setHours(PARTY_END_HOUR, 0, 0, 0);
+    endSlotTime.setHours(PARTY_END_HOUR, PARTY_END_MINUTE, 0, 0);
 
     while (currentSlotTime < endSlotTime) {
         const slotStart = new Date(currentSlotTime.getTime());
@@ -363,4 +365,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-/* Build Timestamp: 11/8/2025, 4:09:00 PM MST */
+/* Build Timestamp: 11/9/2025, 11:21:00 AM MST */
